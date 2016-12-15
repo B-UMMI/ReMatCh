@@ -373,14 +373,14 @@ def runDownload(ena_id, download_paired_type, asperaKey, outdir, download_cram_b
 
 	run_successfully = False
 	downloaded_files = None
-	sequencingInformation = {'run_accession': None, 'instrument_platform': None, 'instrument_model': None, 'library_layout': None, 'library_source': None, 'extra_run_accession': None, 'data_download': None}
+	sequencingInformation = {'run_accession': None, 'instrument_platform': None, 'instrument_model': None, 'library_layout': None, 'library_source': None, 'extra_run_accession': None, 'date_download': None}
 
 	readRunInfo = getReadRunInfo(ena_id)
-	if len(readRunInfo) == 2:
+	if len(readRunInfo) > 1:
 		downloadInformation = getDownloadInformation(readRunInfo)
 		downloadInformation = check_correct_links(downloadInformation)
 		sequencingInformation = getSequencingInformation(readRunInfo)
-		sequencingInformation['data_download'] = time.strftime("%Y-%m-%d")
+		sequencingInformation['date_download'] = time.strftime("%Y-%m-%d")
 
 		if instrument_platform.lower() == 'all' or sequencingInformation['instrument_platform'].lower() == instrument_platform.lower():
 			if download_paired_type.lower() == 'both' or sequencingInformation['library_layout'].lower() == download_paired_type.lower():

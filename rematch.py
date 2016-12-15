@@ -211,7 +211,7 @@ def runRematch(args):
 
 		run_successfully_fastq = False
 		time_taken_fastq = 0
-		sequencingInformation = {'run_accession': None, 'instrument_platform': None, 'instrument_model': None, 'library_layout': None, 'library_source': None, 'extra_run_accession': None, 'data_download': None}
+		sequencingInformation = {'run_accession': None, 'instrument_platform': None, 'instrument_model': None, 'library_layout': None, 'library_source': None, 'extra_run_accession': None, 'date_download': None}
 		if not searched_fastq_files:
 			# Download Files
 			time_taken_fastq, run_successfully_fastq, fastq_files, sequencingInformation = download.runDownload(sample, args.downloadLibrariesType, asperaKey, sample_outdir, args.downloadCramBam, args.threads, args.downloadInstrumentPlatform)
@@ -249,21 +249,17 @@ def main():
 	parser_required.add_argument('-r', '--reference', type=argparse.FileType('r'), metavar='/path/to/reference_sequence.fasta', help='Fasta file containing reference sequences', required=True)
 
 	parser_optional_general = parser.add_argument_group('General facultative options')
-	parser_optional_general.add_argument('-w', '--workdir', type=str, metavar='/path/to/workdir/directory/', help='Path to the directory where ReMatCh will run and produce the outputs with reads (ended with fastq.gz/fq.gz and, in case of PE data, pair-end direction coded as _R1_001 / _R2_001 or _1 / _2) already present (organized in sample folders) or downloaded', required=False, default='.')
+	parser_optional_general.add_argument('-w', '--workdir', type=str, metavar='/path/to/workdir/directory/', help='Path to the directory where ReMatCh will run and produce the outputs with reads (ended with fastq.gz/fq.gz and, in case of PE data, pair-end direction coded as _R1_001 / _R2_001 or _1 / _2) already present (organized in sample folders) or to be downloaded', required=False, default='.')
 	parser_optional_general.add_argument('-j', '--threads', type=int, metavar='N', help='Number of threads to use', required=False, default=1)
 	parser_optional_general.add_argument('--doNotUseProvidedSoftware', action='store_true', help='Tells ReMatCh to not use Bowtie2, Samtools and Bcftools that are provided with it')
 
-	parser_optional_download_exclusive = parser.add_mutually_exclusive_group()
-	parser_optional_download_exclusive.add_argument('-l', '--listIDs', type=argparse.FileType('r'), metavar='/path/to/list_IDs.txt', help='Path to list containing the IDs to be downloaded (one per line)', required=False)
-	parser_optional_download_exclusive.add_argument('-t', '--taxon', type=str, metavar='"Streptococcus agalactiae"', help='Taxon name for which ReMatCh will download fastq files', required=False)
-
 	parser_optional_rematch = parser.add_argument_group('ReMatCh module facultative options')
-	parser_optional_general.add_argument('--conservedSeq', action='store_true', help='This option can be used with conserved sequences like MLST genes to speedup the analysis by alignning reads using Bowtie2 sensitive algorithm')
+	parser_optional_rematch.add_argument('--conservedSeq', action='store_true', help='This option can be used with conserved sequences like MLST genes to speedup the analysis by alignning reads using Bowtie2 sensitive algorithm')
 	parser_optional_rematch.add_argument('--extraSeq', type=int, metavar='N', help='Sequence length added to both ends of target sequences (usefull to improve reads mapping to the target one) that will be trimmed in ReMatCh outputs', required=False, default=0)
 	parser_optional_rematch.add_argument('--minCovPresence', type=int, metavar='N', help='Reference position minimum coverage depth to consider the position to be present in the sample', required=False, default=5)
 	parser_optional_rematch.add_argument('--minCovCall', type=int, metavar='N', help='Reference position minimum coverage depth to perform a base call. Lower coverage will be coded as N', required=False, default=10)
 	parser_optional_rematch.add_argument('--minFrequencyDominantAllele', type=float, metavar='0.6', help='Minimum relative frequency of the dominant allele coverage depth (value between [0, 1]). Positions with lower values will be considered as having multiple alleles (and will be coded as N)', required=False, default=0.6)
-	parser_optional_rematch.add_argument('--minGeneCoverage', type=int, metavar='N', help='Minimum percentage of reference gene sequence covered by --minCovPresence to consider a gene to be present (value between [0, 100])', required=False, default=80)
+	parser_optional_rematch.add_argument('--minGeneCoverage', type=int, metavar='N', help='Minimum percentage of target reference gene sequence covered by --minCovPresence to consider a gene to be present (value between [0, 100])', required=False, default=80)
 
 	parser_optional_download = parser.add_argument_group('Download facultative options')
 	parser_optional_download.add_argument('-a', '--asperaKey', type=argparse.FileType('r'), metavar='/path/to/asperaweb_id_dsa.openssh', help='Tells ReMatCh to download fastq files from ENA using Aspera Connect. With this option, the path to Private-key file asperaweb_id_dsa.openssh must be provided (normaly found in ~/.aspera/connect/etc/asperaweb_id_dsa.openssh).', required=False)
@@ -271,6 +267,10 @@ def main():
 	parser_optional_download.add_argument('--downloadLibrariesType', type=str, metavar='PAIRED', help='Tells ReMatCh to download files with specific library layout', choices=['PAIRED', 'SINGLE', 'BOTH'], required=False, default='BOTH')
 	parser_optional_download.add_argument('--downloadInstrumentPlatform', type=str, metavar='ILLUMINA', help='Tells ReMatCh to download files with specific library layout', choices=['ILLUMINA', 'ALL'], required=False, default='ILLUMINA')
 	parser_optional_download.add_argument('--downloadCramBam', action='store_true', help='Tells ReMatCh to also download cram/bam files and convert them to fastq files')
+
+	parser_optional_download_exclusive = parser.add_mutually_exclusive_group()
+	parser_optional_download_exclusive.add_argument('-l', '--listIDs', type=argparse.FileType('r'), metavar='/path/to/list_IDs.txt', help='Path to list containing the IDs to be downloaded (one per line)', required=False)
+	parser_optional_download_exclusive.add_argument('-t', '--taxon', type=str, metavar='"Streptococcus agalactiae"', help='Taxon name for which ReMatCh will download fastq files', required=False)
 
 	args = parser.parse_args()
 
