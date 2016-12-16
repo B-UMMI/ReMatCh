@@ -660,7 +660,7 @@ def gather_data_together(sample, data_directory, sequences_information, outdir):
 					sample_data[sequence_counter] = {'header': sequences_information[sequence_counter]['header'], 'gene_coverage': 100 - percentage_absent, 'gene_low_coverage': percentage_lowCoverage, 'gene_number_positions_multiple_alleles': multiple_alleles_found, 'gene_mean_read_coverage': meanCoverage}
 					counter += 1
 
-		# utils.removeDirectory(gene_dir_path)
+		utils.removeDirectory(gene_dir_path)
 
 	if counter != len(sequences_information):
 		run_successfully = False
@@ -713,6 +713,6 @@ def runRematchModule(sample, fastq_files, reference_file, threads, outdir, lengt
 
 					print '\n'.join([str('number_absent_genes: ' + str(number_absent_genes)), str('number_genes_multiple_alleles: ' + str(number_genes_multiple_alleles)), str('mean_sample_coverage: ' + str(round(mean_sample_coverage, 2)))])
 
-	# utils.removeDirectory(rematch_folder)
+	utils.removeDirectory(rematch_folder)
 
 	return run_successfully, sample_data if 'sample_data' in locals() else None, {'number_absent_genes': number_absent_genes, 'number_genes_multiple_alleles': number_genes_multiple_alleles, 'mean_sample_coverage': round(mean_sample_coverage, 2)} if 'number_absent_genes' in locals() else None
