@@ -168,7 +168,7 @@ def write_sample_report(sample, outdir, time_str, run_successfully_fastq, run_su
 
 	header_general = ['sample', 'sample_run_successfully', 'sample_run_time', 'download_run_successfully', 'download_run_time', 'rematch_run_successfully', 'rematch_run_time']
 	header_data_general = ['number_absent_genes', 'number_genes_multiple_alleles', 'mean_sample_coverage']
-	header_sequencing = ['run_accession', 'instrument_platform', 'instrument_model', 'library_layout', 'library_source', 'extra_run_accession', 'data_download']
+	header_sequencing = ['run_accession', 'instrument_platform', 'instrument_model', 'library_layout', 'library_source', 'extra_run_accession', 'date_download']
 
 	with open(sample_report, 'at') as writer:
 		if not report_exist:
