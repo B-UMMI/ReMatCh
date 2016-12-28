@@ -38,7 +38,7 @@ def mappingBowtie2(fastq_files, referenceFile, threads, outdir, conserved_True):
 		command = ['bowtie2', '-q', '', '--threads', str(threads), '-x', referenceFile, '', '--no-unal', '-S', sam_file]
 
 		if len(fastq_files) == 1:
-			command[7] = '-U ' + fastq_files
+			command[7] = '-U ' + fastq_files[0]
 		elif len(fastq_files) == 2:
 			command[7] = '-1 ' + fastq_files[0] + ' -2 ' + fastq_files[1]
 		else:
