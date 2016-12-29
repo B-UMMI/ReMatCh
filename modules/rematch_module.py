@@ -612,9 +612,9 @@ def sequence_data(sample, reference_file, bam_file, outdir, threads, length_extr
 	pool.close()
 	pool.join()
 
-	run_successfully, sample_data = gather_data_together(sample, sequence_data_outdir, sequences, outdir.rsplit('/', 2)[0])
+	run_successfully, sample_data, consensus_files = gather_data_together(sample, sequence_data_outdir, sequences, outdir.rsplit('/', 2)[0])
 
-	return run_successfully, sample_data
+	return run_successfully, sample_data, consensus_files
 
 
 def chunkstring(string, length):
@@ -622,18 +622,23 @@ def chunkstring(string, length):
 
 
 def write_consensus(outdir, sample, consensus_sequence):
+	consensus_files = {}
 	for consensus_type in ['correct', 'noMatter', 'alignment']:
-		with open(os.path.join(outdir, str(sample + '.' + consensus_type + '.fasta')), 'at') as writer:
+		consensus_files[consensus_type] = sample + '.' + consensus_type + '.fasta'
+		with open(os.path.join(outdir, consensus_files[consensus_type]), 'at') as writer:
 			writer.write('>' + consensus_sequence[consensus_type]['header'] + '\n')
 			fasta_sequence_lines = chunkstring(consensus_sequence[consensus_type]['sequence'], 80)
 			for line in fasta_sequence_lines:
 				writer.write(line + '\n')
+	return consensus_files
 
 
 def gather_data_together(sample, data_directory, sequences_information, outdir):
 	run_successfully = True
 	counter = 0
 	sample_data = {}
+
+	consensus_files = None
 
 	write_consensus_first_time = True
 
@@ -655,7 +660,7 @@ def gather_data_together(sample, data_directory, sequences_information, outdir):
 							if os.path.isfile(file_to_remove):
 								os.remove(file_to_remove)
 						write_consensus_first_time = False
-					write_consensus(outdir, sample, consensus_sequence)
+					consensus_files = write_consensus(outdir, sample, consensus_sequence)
 
 					sample_data[sequence_counter] = {'header': sequences_information[sequence_counter]['header'], 'gene_coverage': 100 - percentage_absent, 'gene_low_coverage': percentage_lowCoverage, 'gene_number_positions_multiple_alleles': multiple_alleles_found, 'gene_mean_read_coverage': meanCoverage}
 					counter += 1
@@ -665,7 +670,7 @@ def gather_data_together(sample, data_directory, sequences_information, outdir):
 	if counter != len(sequences_information):
 		run_successfully = False
 
-	return run_successfully, sample_data
+	return run_successfully, sample_data, consensus_files
 
 
 rematch_timer = functools.partial(utils.timer, name='ReMatCh module')
@@ -685,7 +690,7 @@ def runRematchModule(sample, fastq_files, reference_file, threads, outdir, lengt
 		run_successfully, stdout = index_fasta_samtools(reference_file, None, None, True)
 		if run_successfully:
 			print 'Analysing alignment data'
-			run_successfully, sample_data = sequence_data(sample, reference_file, bam_file, rematch_folder, threads, length_extra_seq, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele)
+			run_successfully, sample_data, consensus_files = sequence_data(sample, reference_file, bam_file, rematch_folder, threads, length_extra_seq, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele)
 
 			if run_successfully:
 				print 'Writing report file'
@@ -715,4 +720,4 @@ def runRematchModule(sample, fastq_files, reference_file, threads, outdir, lengt
 
 	utils.removeDirectory(rematch_folder)
 
-	return run_successfully, sample_data if 'sample_data' in locals() else None, {'number_absent_genes': number_absent_genes, 'number_genes_multiple_alleles': number_genes_multiple_alleles, 'mean_sample_coverage': round(mean_sample_coverage, 2)} if 'number_absent_genes' in locals() else None
+	return run_successfully, sample_data if 'sample_data' in locals() else None, {'number_absent_genes': number_absent_genes, 'number_genes_multiple_alleles': number_genes_multiple_alleles, 'mean_sample_coverage': round(mean_sample_coverage, 2)} if 'number_absent_genes' in locals() else None, consensus_files

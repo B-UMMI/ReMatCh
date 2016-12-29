@@ -177,6 +177,26 @@ def write_sample_report(sample, outdir, time_str, run_successfully_fastq, run_su
 		writer.write('\t'.join([sample, str(all([run_successfully_fastq, run_successfully_rematch])), str(time_taken_sample), str(run_successfully_fastq), str(time_taken_fastq), str(run_successfully_rematch), str(time_taken_rematch)]) + '\t' + '\t'.join([str(sample_data_general[i]) for i in header_data_general]) + '\t' + '\t'.join([str(sequencingInformation[i]) for i in header_sequencing]) + '\t' + ','.join(fastq_used) + '\n')
 
 
+def concatenate_extraSeq_2_consensus(consensus_sequence, reference_sequence, extraSeq_length, outdir):
+	consensus_dict = rematch_module.get_sequence_information(consensus_sequence)
+	reference_dict = rematch_module.get_sequence_information(reference_sequence)
+	for k, values_consensus in consensus_dict.items():
+		for values_reference in reference_dict.values():
+			if values_reference['header'] == values_consensus['header']:
+				if extraSeq_length <= len(values_reference['sequence']):
+					consensus_dict[k]['sequence'] = values_reference['sequence'][:extraSeq_length] + consensus_dict[k]['sequence'] + values_reference['sequence'][-extraSeq_length:]
+
+	consensus_concatenated = os.path.join(outdir, 'temp.consensus_concatenated.fasta')
+	with open(consensus_concatenated, 'wt') as writer:
+		for i in consensus_dict:
+			writer.write('>' + consensus_dict[i]['header'] + '\n')
+			fasta_sequence_lines = rematch_module.chunkstring(consensus_dict[i]['sequence'], 80)
+			for line in fasta_sequence_lines:
+				writer.write(line + '\n')
+
+	return consensus_concatenated
+
+
 def runRematch(args):
 	workdir = os.path.abspath(args.workdir)
 	if not os.path.isdir(workdir):
@@ -223,7 +243,12 @@ def runRematch(args):
 		time_taken_rematch = 0
 		if run_successfully_fastq:
 			# Run ReMatCh
-			time_taken_rematch, run_successfully_rematch, data_by_gene, sample_data_general = rematch_module.runRematchModule(sample, fastq_files, os.path.abspath(args.reference.name), args.threads, sample_outdir, args.extraSeq, args.minCovPresence, args.minCovCall, args.minFrequencyDominantAllele, args.minGeneCoverage, args.conservedSeq)
+			time_taken_rematch, run_successfully_rematch, data_by_gene, sample_data_general, consensus_files = rematch_module.runRematchModule(sample, fastq_files, os.path.abspath(args.reference.name), args.threads, sample_outdir, args.extraSeq, args.minCovPresence, args.minCovCall, args.minFrequencyDominantAllele, args.minGeneCoverage, args.conservedSeq)
+			if run_successfully_rematch:
+				if args.doubleRun:
+					consensus_concatenated_fasta = concatenate_extraSeq_2_consensus(consensus_files['noMatter'], os.path.abspath(args.reference.name), args.extraSeq, sample_outdir)
+					time_taken_rematch, run_successfully_rematch, data_by_gene, sample_data_general, consensus_files = rematch_module.runRematchModule(sample, fastq_files, consensus_concatenated_fasta, args.threads, sample_outdir, args.extraSeq, args.minCovPresence, args.minCovCall, args.minFrequencyDominantAllele, args.minGeneCoverage, args.conservedSeq)
+					os.remove(consensus_concatenated_fasta)
 			if run_successfully_rematch:
 				genes = write_data_by_gene(genes, args.minGeneCoverage, sample, data_by_gene, workdir, time_str)
 
@@ -260,6 +285,7 @@ def main():
 	parser_optional_rematch.add_argument('--minCovCall', type=int, metavar='N', help='Reference position minimum coverage depth to perform a base call. Lower coverage will be coded as N', required=False, default=10)
 	parser_optional_rematch.add_argument('--minFrequencyDominantAllele', type=float, metavar='0.6', help='Minimum relative frequency of the dominant allele coverage depth (value between [0, 1]). Positions with lower values will be considered as having multiple alleles (and will be coded as N)', required=False, default=0.6)
 	parser_optional_rematch.add_argument('--minGeneCoverage', type=int, metavar='N', help='Minimum percentage of target reference gene sequence covered by --minCovPresence to consider a gene to be present (value between [0, 100])', required=False, default=80)
+	parser_optional_rematch.add_argument('--doubleRun', action='store_true', help='Tells ReMatCh to run a second time using as reference sequence the consensus sequence produced in the first time')
 
 	parser_optional_download = parser.add_argument_group('Download facultative options')
 	parser_optional_download.add_argument('-a', '--asperaKey', type=argparse.FileType('r'), metavar='/path/to/asperaweb_id_dsa.openssh', help='Tells ReMatCh to download fastq files from ENA using Aspera Connect. With this option, the path to Private-key file asperaweb_id_dsa.openssh must be provided (normaly found in ~/.aspera/connect/etc/asperaweb_id_dsa.openssh).', required=False)
