@@ -612,7 +612,7 @@ def sequence_data(sample, reference_file, bam_file, outdir, threads, length_extr
 	pool.close()
 	pool.join()
 
-	run_successfully, sample_data, consensus_files = gather_data_together(sample, sequence_data_outdir, sequences, outdir.rsplit('/', 2)[0])
+	run_successfully, sample_data, consensus_files = gather_data_together(sample, sequence_data_outdir, sequences, outdir.rsplit('/', 2)[0], debug_mode_true)
 
 	return run_successfully, sample_data, consensus_files
 
