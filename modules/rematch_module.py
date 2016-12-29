@@ -596,7 +596,7 @@ def get_sequence_information(fasta_file):
 	return sequence_dict
 
 
-def sequence_data(sample, reference_file, bam_file, outdir, threads, length_extra_seq, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele):
+def sequence_data(sample, reference_file, bam_file, outdir, threads, length_extra_seq, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, debug_mode_true):
 	sequence_data_outdir = os.path.join(outdir, 'sequence_data', '')
 	utils.removeDirectory(sequence_data_outdir)
 	os.mkdir(sequence_data_outdir)
@@ -633,7 +633,7 @@ def write_consensus(outdir, sample, consensus_sequence):
 	return consensus_files
 
 
-def gather_data_together(sample, data_directory, sequences_information, outdir):
+def gather_data_together(sample, data_directory, sequences_information, outdir, debug_mode_true):
 	run_successfully = True
 	counter = 0
 	sample_data = {}
@@ -665,7 +665,8 @@ def gather_data_together(sample, data_directory, sequences_information, outdir):
 					sample_data[sequence_counter] = {'header': sequences_information[sequence_counter]['header'], 'gene_coverage': 100 - percentage_absent, 'gene_low_coverage': percentage_lowCoverage, 'gene_number_positions_multiple_alleles': multiple_alleles_found, 'gene_mean_read_coverage': meanCoverage}
 					counter += 1
 
-		utils.removeDirectory(gene_dir_path)
+		if not debug_mode_true:
+			utils.removeDirectory(gene_dir_path)
 
 	if counter != len(sequences_information):
 		run_successfully = False
@@ -677,7 +678,7 @@ rematch_timer = functools.partial(utils.timer, name='ReMatCh module')
 
 
 @rematch_timer
-def runRematchModule(sample, fastq_files, reference_file, threads, outdir, length_extra_seq, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, minimum_gene_coverage, conserved_True):
+def runRematchModule(sample, fastq_files, reference_file, threads, outdir, length_extra_seq, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, minimum_gene_coverage, conserved_True, debug_mode_true):
 	rematch_folder = os.path.join(outdir, 'rematch_module', '')
 	utils.removeDirectory(rematch_folder)
 	os.mkdir(rematch_folder)
@@ -690,7 +691,7 @@ def runRematchModule(sample, fastq_files, reference_file, threads, outdir, lengt
 		run_successfully, stdout = index_fasta_samtools(reference_file, None, None, True)
 		if run_successfully:
 			print 'Analysing alignment data'
-			run_successfully, sample_data, consensus_files = sequence_data(sample, reference_file, bam_file, rematch_folder, threads, length_extra_seq, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele)
+			run_successfully, sample_data, consensus_files = sequence_data(sample, reference_file, bam_file, rematch_folder, threads, length_extra_seq, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, debug_mode_true)
 
 			if run_successfully:
 				print 'Writing report file'
@@ -718,6 +719,7 @@ def runRematchModule(sample, fastq_files, reference_file, threads, outdir, lengt
 
 					print '\n'.join([str('number_absent_genes: ' + str(number_absent_genes)), str('number_genes_multiple_alleles: ' + str(number_genes_multiple_alleles)), str('mean_sample_coverage: ' + str(round(mean_sample_coverage, 2)))])
 
-	utils.removeDirectory(rematch_folder)
+	if not debug_mode_true:
+		utils.removeDirectory(rematch_folder)
 
 	return run_successfully, sample_data if 'sample_data' in locals() else None, {'number_absent_genes': number_absent_genes, 'number_genes_multiple_alleles': number_genes_multiple_alleles, 'mean_sample_coverage': round(mean_sample_coverage, 2)} if 'number_absent_genes' in locals() else None, consensus_files
