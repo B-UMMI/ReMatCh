@@ -624,8 +624,8 @@ def chunkstring(string, length):
 def write_consensus(outdir, sample, consensus_sequence):
 	consensus_files = {}
 	for consensus_type in ['correct', 'noMatter', 'alignment']:
-		consensus_files[consensus_type] = sample + '.' + consensus_type + '.fasta'
-		with open(os.path.join(outdir, consensus_files[consensus_type]), 'at') as writer:
+		consensus_files[consensus_type] = os.path.join(outdir, str(sample + '.' + consensus_type + '.fasta'))
+		with open(consensus_files[consensus_type], 'at') as writer:
 			writer.write('>' + consensus_sequence[consensus_type]['header'] + '\n')
 			fasta_sequence_lines = chunkstring(consensus_sequence[consensus_type]['sequence'], 80)
 			for line in fasta_sequence_lines:
