@@ -2,6 +2,7 @@ import os.path
 import multiprocessing
 import utils
 import functools
+import sys
 
 
 def index_fasta_samtools(fasta, region_None, region_outfile_none, print_comand_True):
@@ -191,7 +192,12 @@ def get_alt_noMatter(variant_position, indel_true):
 			alt = variant_position['ALT'][index_dominant_allele - 1]
 	else:
 		if float(variant_position['info']['IDV']) / float(dp) > 0.5:
-			alt = variant_position['ALT'][0]
+			index_dominant_allele = variant_position['format']['AD'].index(str(ad_idv))
+			if index_dominant_allele == 0:
+				sys.exit('Unexpected INDEL ALT coverage depth pattern found')
+				# alt = '.'
+			else:
+				alt = variant_position['ALT'][index_dominant_allele - 1]
 			ad_idv = int(variant_position['info']['IDV'])
 		else:
 			alt = '.'
@@ -674,11 +680,34 @@ def gather_data_together(sample, data_directory, sequences_information, outdir, 
 	return run_successfully, sample_data, consensus_files
 
 
+def clean_headers_reference_file(reference_file, outdir):
+	print 'Checking if reference sequences contain | or spaces'
+	headers_changed = False
+	new_reference_file = reference_file
+	sequences = get_sequence_information(reference_file)
+	for i in sequences:
+		if any(x in sequences[i]['header'] for x in ['|', ' ']):
+			for x in ['|', ' ']:
+				sequences[i]['header'] = sequences[i]['header'].replace(x, '_')
+			headers_changed = True
+	if headers_changed:
+		print 'At least one of the those characters was found. Replacing those with _'
+		new_reference_file = os.path.join(outdir, os.path.splitext(os.path.basename(reference_file))[0] + '.headers_renamed.fasta')
+		with open(new_reference_file, 'rt') as writer:
+			writer.write('>' + sequences[i]['header'] + '\n')
+			fasta_sequence_lines = chunkstring(sequences[i]['sequence'], 80)
+			for line in fasta_sequence_lines:
+				writer.write(line + '\n')
+	return new_reference_file
+
+
 rematch_timer = functools.partial(utils.timer, name='ReMatCh module')
 
 
 @rematch_timer
 def runRematchModule(sample, fastq_files, reference_file, threads, outdir, length_extra_seq, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, minimum_gene_coverage, conserved_True, debug_mode_true):
+	reference_file = clean_headers_reference_file(reference_file, outdir)
+
 	rematch_folder = os.path.join(outdir, 'rematch_module', '')
 	utils.removeDirectory(rematch_folder)
 	os.mkdir(rematch_folder)
