@@ -192,7 +192,7 @@ def get_alt_noMatter(variant_position, indel_true):
 			alt = variant_position['ALT'][index_dominant_allele - 1]
 	else:
 		if float(variant_position['info']['IDV']) / float(dp) > 0.5:
-			index_dominant_allele = variant_position['format']['AD'].index(str(ad_idv))
+			index_dominant_allele = variant_position['format']['AD'].index(str(max(map(int, variant_position['format']['AD']))))
 			if index_dominant_allele == 0:
 				sys.exit('Unexpected INDEL ALT coverage depth pattern found')
 				# alt = '.'
