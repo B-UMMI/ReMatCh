@@ -197,6 +197,27 @@ def concatenate_extraSeq_2_consensus(consensus_sequence, reference_sequence, ext
 	return consensus_concatenated
 
 
+def clean_headers_reference_file(reference_file, outdir):
+	print 'Checking if reference sequences contain | or spaces' + '\n'
+	headers_changed = False
+	new_reference_file = reference_file
+	sequences = rematch_module.get_sequence_information(reference_file)
+	for i in sequences:
+		if any(x in sequences[i]['header'] for x in ['|', ' ']):
+			for x in ['|', ' ']:
+				sequences[i]['header'] = sequences[i]['header'].replace(x, '_')
+			headers_changed = True
+	if headers_changed:
+		print 'At least one of the those characters was found. Replacing those with _'
+		new_reference_file = os.path.join(outdir, os.path.splitext(os.path.basename(reference_file))[0] + '.headers_renamed.fasta')
+		with open(new_reference_file, 'rt') as writer:
+			writer.write('>' + sequences[i]['header'] + '\n')
+			fasta_sequence_lines = rematch_module.chunkstring(sequences[i]['sequence'], 80)
+			for line in fasta_sequence_lines:
+				writer.write(line + '\n')
+	return new_reference_file
+
+
 def runRematch(args):
 	workdir = os.path.abspath(args.workdir)
 	if not os.path.isdir(workdir):
@@ -215,6 +236,9 @@ def runRematch(args):
 
 	# Run ReMatCh for each sample
 	print '\n' + 'STARTING ReMatCh' + '\n'
+
+	# Clean sequences headers
+	reference_file = clean_headers_reference_file(os.path.abspath(args.reference.name), workdir)
 
 	# To use in combined report
 	genes_first = []
@@ -245,14 +269,14 @@ def runRematch(args):
 		time_taken_rematch_second = 0
 		if run_successfully_fastq is not False:
 			# Run ReMatCh
-			time_taken_rematch_first, run_successfully_rematch_first, data_by_gene, sample_data_general_first, consensus_files = rematch_module.runRematchModule(sample, fastq_files, os.path.abspath(args.reference.name), args.threads, sample_outdir, args.extraSeq, args.minCovPresence, args.minCovCall, args.minFrequencyDominantAllele, args.minGeneCoverage, args.conservedSeq, args.debug)
+			time_taken_rematch_first, run_successfully_rematch_first, data_by_gene, sample_data_general_first, consensus_files = rematch_module.runRematchModule(sample, fastq_files, reference_file, args.threads, sample_outdir, args.extraSeq, args.minCovPresence, args.minCovCall, args.minFrequencyDominantAllele, args.minGeneCoverage, args.conservedSeq, args.debug)
 			if run_successfully_rematch_first:
 				genes_first = write_data_by_gene(genes_first, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'first_time')
 				if args.doubleRun:
 					rematch_second_outdir = os.path.join(sample_outdir, 'rematch_second_run', '')
 					if not os.path.isdir(rematch_second_outdir):
 						os.mkdir(rematch_second_outdir)
-					consensus_concatenated_fasta = concatenate_extraSeq_2_consensus(consensus_files['noMatter'], os.path.abspath(args.reference.name), args.extraSeq, rematch_second_outdir)
+					consensus_concatenated_fasta = concatenate_extraSeq_2_consensus(consensus_files['noMatter'], reference_file, args.extraSeq, rematch_second_outdir)
 					time_taken_rematch_second, run_successfully_rematch_second, data_by_gene, sample_data_general_second, consensus_files = rematch_module.runRematchModule(sample, fastq_files, consensus_concatenated_fasta, args.threads, rematch_second_outdir, args.extraSeq, args.minCovPresence, args.minCovCall, args.minFrequencyDominantAllele, args.minGeneCoverage, args.conservedSeq, args.debug)
 					if not args.debug:
 						os.remove(consensus_concatenated_fasta)
