@@ -222,7 +222,7 @@ def get_alt_correct(variant_position, alt_noMatter, dp, ad_idv, index_dominant_a
 			else:
 				if float(ad_idv) / float(dp) < minimum_depth_frequency_dominant_allele:
 					if index_dominant_allele is not None:
-						variants_coverage = [int(variant_position['format']['AD'][i]) for i in range(0, len([j for j in variant_position['ALT'] if j != '<*>']) + 1) if i != index_dominant_allele]
+						variants_coverage = [int(variant_position['format']['AD'][i]) for i in range(0, len(variant_position['ALT']) + 1) if i != index_dominant_allele]
 						if float(max(variants_coverage)) / float(sum(variants_coverage)) > 0.5:
 							multiple_alleles = True
 							alt = 'N' * len(variant_position['REF'])

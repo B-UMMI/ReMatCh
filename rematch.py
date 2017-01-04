@@ -203,14 +203,15 @@ def clean_headers_reference_file(reference_file, outdir):
 	new_reference_file = reference_file
 	sequences = rematch_module.get_sequence_information(reference_file)
 	for i in sequences:
-		if any(x in sequences[i]['header'] for x in ['|', ' ']):
-			for x in ['|', ' ']:
+		problematic_characters = ['|', ' ', ',', '.']
+		if any(x in sequences[i]['header'] for x in problematic_characters):
+			for x in problematic_characters:
 				sequences[i]['header'] = sequences[i]['header'].replace(x, '_')
 			headers_changed = True
 	if headers_changed:
-		print 'At least one of the those characters was found. Replacing those with _'
+		print 'At least one of the those characters was found. Replacing those with _' + '\n'
 		new_reference_file = os.path.join(outdir, os.path.splitext(os.path.basename(reference_file))[0] + '.headers_renamed.fasta')
-		with open(new_reference_file, 'rt') as writer:
+		with open(new_reference_file, 'wt') as writer:
 			writer.write('>' + sequences[i]['header'] + '\n')
 			fasta_sequence_lines = rematch_module.chunkstring(sequences[i]['sequence'], 80)
 			for line in fasta_sequence_lines:
