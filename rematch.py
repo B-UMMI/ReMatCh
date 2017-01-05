@@ -198,12 +198,12 @@ def concatenate_extraSeq_2_consensus(consensus_sequence, reference_sequence, ext
 
 
 def clean_headers_reference_file(reference_file, outdir):
-	print 'Checking if reference sequences contain | or spaces' + '\n'
+	problematic_characters = ['|', ' ', ',', '.']
+	print 'Checking if reference sequences contain ' + str(problematic_characters) + '\n'
 	headers_changed = False
 	new_reference_file = reference_file
 	sequences = rematch_module.get_sequence_information(reference_file)
 	for i in sequences:
-		problematic_characters = ['|', ' ', ',', '.']
 		if any(x in sequences[i]['header'] for x in problematic_characters):
 			for x in problematic_characters:
 				sequences[i]['header'] = sequences[i]['header'].replace(x, '_')
