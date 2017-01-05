@@ -306,7 +306,10 @@ def snp_indel(variants, position, minimum_depth_presence, minimum_depth_call, mi
 	else:
 		ref, alt_correct_snp, low_coverage, multiple_alleles, alt_noMatter_snp, alt_alignment_snp = determine_variant(variants[position][entry_with_snp], minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, False)
 
-		indel_more_likely = get_indel_more_likely(variants[position], entry_with_indel)
+		indel_more_likely = entry_with_indel[0]
+		if len(entry_with_indel) > 1:
+			indel_more_likely = get_indel_more_likely(variants[position], entry_with_indel)
+
 		ref, alt_correct, low_coverage, multiple_alleles, alt_noMatter, alt_alignment = determine_variant(variants[position][entry_with_indel[indel_more_likely]], minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, True)
 
 		if alt_noMatter == '.':
