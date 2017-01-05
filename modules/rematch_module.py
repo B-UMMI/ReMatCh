@@ -194,8 +194,9 @@ def get_alt_noMatter(variant_position, indel_true):
 		if float(variant_position['info']['IDV']) / float(dp) > 0.5:
 			index_dominant_allele = variant_position['format']['AD'].index(str(max(map(int, variant_position['format']['AD']))))
 			if index_dominant_allele == 0:
-				sys.exit('Unexpected INDEL ALT coverage depth pattern found')
-				# alt = '.'
+				# sys.exit('Unexpected INDEL ALT coverage depth pattern found')
+				print '####################', variant_position, indel_true
+				alt = '.'
 			else:
 				alt = variant_position['ALT'][index_dominant_allele - 1]
 			ad_idv = int(variant_position['info']['IDV'])
@@ -279,6 +280,8 @@ def determine_variant(variant_position, minimum_depth_presence, minimum_depth_ca
 
 
 def confirm_nucleotides_indel(ref, alt, variants, position_start_indel, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele):
+	alt = list(alt)
+
 	for i in range(0, len(alt) - 1):
 		if alt[1 + i] == 'N':
 			continue
@@ -294,7 +297,8 @@ def confirm_nucleotides_indel(ref, alt, variants, position_start_indel, minimum_
 		new_ref, alt_correct, low_coverage, multiple_alleles, alt_noMatter, alt_alignment = determine_variant(variants[new_position][entry_with_snp], minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, False)
 		if alt_noMatter != '.' and alt[1 + i] != alt_noMatter:
 			alt[1 + i] = alt_noMatter
-	return alt
+
+	return ''.join(alt)
 
 
 def snp_indel(variants, position, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele):
@@ -314,8 +318,11 @@ def snp_indel(variants, position, minimum_depth_presence, minimum_depth_call, mi
 		if alt_noMatter == '.':
 			ref, alt_correct, low_coverage, multiple_alleles, alt_noMatter, alt_alignment = determine_variant(variants[position][entry_with_snp], minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, False)
 		else:
-			if alt_correct is not None and alt_correct_snp != '.' and alt_correct[0] != alt_correct_snp:
-				alt_correct = alt_correct_snp + alt_correct[1:] if len(alt_correct) > 1 else alt_correct_snp
+			if alt_correct is None and alt_correct_snp is not None:
+				alt_correct = alt_correct
+			elif alt_correct is not None and alt_correct_snp is not None:
+				if alt_correct_snp != '.' and alt_correct[0] != alt_correct_snp:
+					alt_correct = alt_correct_snp + alt_correct[1:] if len(alt_correct) > 1 else alt_correct_snp
 			if alt_noMatter_snp != '.' and alt_noMatter[0] != alt_noMatter_snp:
 				alt_noMatter = alt_noMatter_snp + alt_noMatter[1:] if len(alt_noMatter) > 1 else alt_noMatter_snp
 			if alt_alignment_snp != '.' and alt_alignment[0] != alt_alignment_snp:
