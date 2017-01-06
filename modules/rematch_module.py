@@ -192,7 +192,7 @@ def get_alt_noMatter(variant_position, indel_true):
 			alt = variant_position['ALT'][index_dominant_allele - 1]
 	else:
 		if float(variant_position['info']['IDV']) / float(dp) >= 0.5:
-			index_alleles_sorted_position = [position for depth, position in sorted(zip(map(int(variant_position['format']['AD'])), range(0, len(variant_position['format']['AD']))))]
+			index_alleles_sorted_position = [position for depth, position in sorted(zip(map(int, variant_position['format']['AD']), range(0, len(variant_position['format']['AD']))), reverse=True)]
 			if index_alleles_sorted_position[0] == 0:
 				if float(variant_position['info']['IDV']) / float(dp) > 0.5:
 					alt = variant_position['ALT'][index_alleles_sorted_position[1] - 1]

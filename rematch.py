@@ -198,7 +198,7 @@ def concatenate_extraSeq_2_consensus(consensus_sequence, reference_sequence, ext
 
 
 def clean_headers_reference_file(reference_file, outdir):
-	problematic_characters = ['|', ' ', ',', '.']
+	problematic_characters = ['|', ' ', ',', '.', '(', ')', "'", '/']
 	print 'Checking if reference sequences contain ' + str(problematic_characters) + '\n'
 	headers_changed = False
 	new_reference_file = reference_file
@@ -212,10 +212,11 @@ def clean_headers_reference_file(reference_file, outdir):
 		print 'At least one of the those characters was found. Replacing those with _' + '\n'
 		new_reference_file = os.path.join(outdir, os.path.splitext(os.path.basename(reference_file))[0] + '.headers_renamed.fasta')
 		with open(new_reference_file, 'wt') as writer:
-			writer.write('>' + sequences[i]['header'] + '\n')
-			fasta_sequence_lines = rematch_module.chunkstring(sequences[i]['sequence'], 80)
-			for line in fasta_sequence_lines:
-				writer.write(line + '\n')
+			for i in sequences:
+				writer.write('>' + sequences[i]['header'] + '\n')
+				fasta_sequence_lines = rematch_module.chunkstring(sequences[i]['sequence'], 80)
+				for line in fasta_sequence_lines:
+					writer.write(line + '\n')
 	return new_reference_file
 
 
