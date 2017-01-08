@@ -294,6 +294,10 @@ def confirm_nucleotides_indel(ref, alt, variants, position_start_indel, minimum_
 				break
 			new_position = position_start_indel + 1 + i
 
+		if new_position not in variants:
+			alt[1 + i] = ''
+			continue
+
 		entry_with_indel, entry_with_snp = indel_entry(variants[new_position])
 		new_ref, alt_correct, low_coverage, multiple_alleles, alt_noMatter, alt_alignment = determine_variant(variants[new_position][entry_with_snp], minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, False)
 		if alt_noMatter != '.' and alt[1 + i] != alt_noMatter:

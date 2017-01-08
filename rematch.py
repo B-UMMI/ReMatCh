@@ -198,7 +198,7 @@ def concatenate_extraSeq_2_consensus(consensus_sequence, reference_sequence, ext
 
 
 def clean_headers_reference_file(reference_file, outdir):
-	problematic_characters = ['|', ' ', ',', '.', '(', ')', "'", '/']
+	problematic_characters = ["|", " ", ",", ".", "(", ")", "'", "/"]
 	print 'Checking if reference sequences contain ' + str(problematic_characters) + '\n'
 	headers_changed = False
 	new_reference_file = reference_file
