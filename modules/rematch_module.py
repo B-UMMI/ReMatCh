@@ -360,6 +360,9 @@ def get_true_variants(variants, minimum_depth_presence, minimum_depth_call, mini
 			if alt_alignment != '.':
 				variants_alignment[counter] = {'REF': ref, 'ALT': alt_alignment}
 
+			if alt_noMatter != '.':
+				variants_noMatter[counter] = {'REF': ref, 'ALT': alt_noMatter}
+
 			if alt_correct is None:
 				if counter - len(last_absent_position) in absent_positions:
 					absent_positions[counter - len(last_absent_position)]['REF'] += ref
@@ -367,9 +370,6 @@ def get_true_variants(variants, minimum_depth_presence, minimum_depth_call, mini
 					absent_positions[counter] = {'REF': ref, 'ALT': ''}
 				last_absent_position += ref
 			else:
-				if alt_noMatter != '.':
-					variants_noMatter[counter] = {'REF': ref, 'ALT': alt_noMatter}
-
 				if alt_correct != '.':
 					if len(alt_correct) < len(ref):
 						if len(alt_correct) == 1:
@@ -401,17 +401,19 @@ def get_true_variants(variants, minimum_depth_presence, minimum_depth_call, mini
 	for position in absent_positions:
 		if position == 1:
 			variants_correct[position] = {'REF': absent_positions[position]['REF'], 'ALT': 'N'}
-			variants_noMatter[position] = {'REF': absent_positions[position]['REF'], 'ALT': 'N'}
+			if position not in variants:
+				variants_noMatter[position] = {'REF': absent_positions[position]['REF'], 'ALT': 'N'}
 		else:
 			if position - 1 not in variants_correct:
 				variants_correct[position - 1] = {'REF': sequence[position - 2] + absent_positions[position]['REF'], 'ALT': sequence[position - 2] + absent_positions[position]['ALT']}
 			else:
 				variants_correct[position - 1] = {'REF': variants_correct[position - 1]['REF'] + absent_positions[position]['REF'][len(variants_correct[position - 1]['REF']) - 1:], 'ALT': variants_correct[position - 1]['ALT'] + absent_positions[position]['ALT'][len(variants_correct[position - 1]['ALT']) - 1 if len(variants_correct[position - 1]['ALT']) > 0 else 0:]}
 
-			if position - 1 not in variants_noMatter:
-				variants_noMatter[position - 1] = {'REF': sequence[position - 2] + absent_positions[position]['REF'], 'ALT': sequence[position - 2] + absent_positions[position]['ALT']}
-			else:
-				variants_noMatter[position - 1] = {'REF': variants_noMatter[position - 1]['REF'] + absent_positions[position]['REF'][len(variants_noMatter[position - 1]['REF']) - 1:], 'ALT': variants_noMatter[position - 1]['ALT'] + absent_positions[position]['ALT'][len(variants_noMatter[position - 1]['ALT']) - 1 if len(variants_noMatter[position - 1]['ALT']) > 0 else 0:]}
+			if position not in variants:
+				if position - 1 not in variants_noMatter:
+					variants_noMatter[position - 1] = {'REF': sequence[position - 2] + absent_positions[position]['REF'], 'ALT': sequence[position - 2] + absent_positions[position]['ALT']}
+				else:
+					variants_noMatter[position - 1] = {'REF': variants_noMatter[position - 1]['REF'] + absent_positions[position]['REF'][len(variants_noMatter[position - 1]['REF']) - 1:], 'ALT': variants_noMatter[position - 1]['ALT'] + absent_positions[position]['ALT'][len(variants_noMatter[position - 1]['ALT']) - 1 if len(variants_noMatter[position - 1]['ALT']) > 0 else 0:]}
 
 	return variants_correct, variants_noMatter, variants_alignment, multiple_alleles_found
 
