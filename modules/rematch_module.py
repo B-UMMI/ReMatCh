@@ -180,30 +180,41 @@ def indel_entry(variant_position):
 def get_alt_noMatter(variant_position, indel_true):
 	# dp = int(variant_position['info']['DP'])
 	dp = sum(map(int, variant_position['format']['AD']))
+	index_alleles_sorted_position = [sorted(zip(map(int, variant_position['format']['AD']), range(0, len(variant_position['format']['AD']))), reverse=True)]
 	index_dominant_allele = None
 	if not indel_true:
-		ad_idv = max(map(int, variant_position['format']['AD']))
+		ad_idv = index_alleles_sorted_position[0][0]
 
-		index_dominant_allele = variant_position['format']['AD'].index(str(ad_idv))
-
-		if index_dominant_allele == 0:
-			alt = '.'
+		if len([x for x in index_alleles_sorted_position if x[0] == ad_idv]) > 1:
+			alt = 'N'
 		else:
-			alt = variant_position['ALT'][index_dominant_allele - 1]
-	else:
-		if float(variant_position['info']['IDV']) / float(dp) >= 0.5:
-			index_alleles_sorted_position = [position for depth, position in sorted(zip(map(int, variant_position['format']['AD']), range(0, len(variant_position['format']['AD']))), reverse=True)]
-			if index_alleles_sorted_position[0] == 0:
-				if float(variant_position['info']['IDV']) / float(dp) > 0.5:
-					alt = variant_position['ALT'][index_alleles_sorted_position[1] - 1]
-				else:
-					alt = '.'
+			index_dominant_allele = index_alleles_sorted_position[0][1]
+			if index_dominant_allele == 0:
+				alt = '.'
 			else:
-				alt = variant_position['ALT'][index_alleles_sorted_position[0] - 1]
-			ad_idv = int(variant_position['info']['IDV'])
+				alt = variant_position['ALT'][index_dominant_allele - 1]
+	else:
+		ad_idv = variant_position['info']['IDV']
+
+		if float(ad_idv) / float(dp) >= 0.5:
+			# depth = index_alleles_sorted_position[0][0] if float(ad_idv) / float(dp) > 0.5 else ad_idv
+			if len([x for x in index_alleles_sorted_position if x[0] == index_alleles_sorted_position[0][0]]) > 1:
+				alt = 'N'
+			else:
+				index_dominant_allele = index_alleles_sorted_position[0][1]
+				if index_dominant_allele == 0:
+					alt = '.'
+				else:
+					alt = variant_position['ALT'][index_dominant_allele - 1]
+		# elif float(ad_idv) / float(dp) == 0.5:
+		# 	if len([x for x in index_alleles_sorted_position if x[0] == ad_idv]) > 1:
+		# 		alt = 'N'
+		# 	else:
+		# 		pass
 		else:
+			# ad_idv = max(map(int, variant_position['format']['AD']))
+			ad_idv = int(variant_position['format']['AD'][0])
 			alt = '.'
-			ad_idv = max(map(int, variant_position['format']['AD']))
 
 	return alt, dp, ad_idv, index_dominant_allele
 
@@ -360,6 +371,9 @@ def get_true_variants(variants, minimum_depth_presence, minimum_depth_call, mini
 			if alt_alignment != '.':
 				variants_alignment[counter] = {'REF': ref, 'ALT': alt_alignment}
 
+			if alt_noMatter != '.':
+				variants_noMatter[counter] = {'REF': ref, 'ALT': alt_noMatter}
+
 			if alt_correct is None:
 				if counter - len(last_absent_position) in absent_positions:
 					absent_positions[counter - len(last_absent_position)]['REF'] += ref
@@ -367,9 +381,6 @@ def get_true_variants(variants, minimum_depth_presence, minimum_depth_call, mini
 					absent_positions[counter] = {'REF': ref, 'ALT': ''}
 				last_absent_position += ref
 			else:
-				if alt_noMatter != '.':
-					variants_noMatter[counter] = {'REF': ref, 'ALT': alt_noMatter}
-
 				if alt_correct != '.':
 					if len(alt_correct) < len(ref):
 						if len(alt_correct) == 1:
@@ -401,17 +412,19 @@ def get_true_variants(variants, minimum_depth_presence, minimum_depth_call, mini
 	for position in absent_positions:
 		if position == 1:
 			variants_correct[position] = {'REF': absent_positions[position]['REF'], 'ALT': 'N'}
-			variants_noMatter[position] = {'REF': absent_positions[position]['REF'], 'ALT': 'N'}
+			if position not in variants:
+				variants_noMatter[position] = {'REF': absent_positions[position]['REF'], 'ALT': 'N'}
 		else:
 			if position - 1 not in variants_correct:
 				variants_correct[position - 1] = {'REF': sequence[position - 2] + absent_positions[position]['REF'], 'ALT': sequence[position - 2] + absent_positions[position]['ALT']}
 			else:
 				variants_correct[position - 1] = {'REF': variants_correct[position - 1]['REF'] + absent_positions[position]['REF'][len(variants_correct[position - 1]['REF']) - 1:], 'ALT': variants_correct[position - 1]['ALT'] + absent_positions[position]['ALT'][len(variants_correct[position - 1]['ALT']) - 1 if len(variants_correct[position - 1]['ALT']) > 0 else 0:]}
 
-			if position - 1 not in variants_noMatter:
-				variants_noMatter[position - 1] = {'REF': sequence[position - 2] + absent_positions[position]['REF'], 'ALT': sequence[position - 2] + absent_positions[position]['ALT']}
-			else:
-				variants_noMatter[position - 1] = {'REF': variants_noMatter[position - 1]['REF'] + absent_positions[position]['REF'][len(variants_noMatter[position - 1]['REF']) - 1:], 'ALT': variants_noMatter[position - 1]['ALT'] + absent_positions[position]['ALT'][len(variants_noMatter[position - 1]['ALT']) - 1 if len(variants_noMatter[position - 1]['ALT']) > 0 else 0:]}
+			if position not in variants:
+				if position - 1 not in variants_noMatter:
+					variants_noMatter[position - 1] = {'REF': sequence[position - 2] + absent_positions[position]['REF'], 'ALT': sequence[position - 2] + absent_positions[position]['ALT']}
+				else:
+					variants_noMatter[position - 1] = {'REF': variants_noMatter[position - 1]['REF'] + absent_positions[position]['REF'][len(variants_noMatter[position - 1]['REF']) - 1:], 'ALT': variants_noMatter[position - 1]['ALT'] + absent_positions[position]['ALT'][len(variants_noMatter[position - 1]['ALT']) - 1 if len(variants_noMatter[position - 1]['ALT']) > 0 else 0:]}
 
 	return variants_correct, variants_noMatter, variants_alignment, multiple_alleles_found
 
