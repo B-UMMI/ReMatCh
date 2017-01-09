@@ -178,32 +178,38 @@ def indel_entry(variant_position):
 
 
 def get_alt_noMatter(variant_position, indel_true):
-	# dp = int(variant_position['info']['DP'])
 	dp = sum(map(int, variant_position['format']['AD']))
-	index_dominant_allele = None
+	index_alleles_sorted_position = [(position, depth) for depth, position in sorted(zip(map(int, variant_position['format']['AD']), range(0, len(variant_position['format']['AD']))), reverse=True)]
+	index_dominant_allele = index_alleles_sorted_position[0][0]
 	if not indel_true:
-		ad_idv = max(map(int, variant_position['format']['AD']))
-
-		index_dominant_allele = variant_position['format']['AD'].index(str(ad_idv))
-
-		if index_dominant_allele == 0:
-			alt = '.'
-		else:
-			alt = variant_position['ALT'][index_dominant_allele - 1]
-	else:
-		if float(variant_position['info']['IDV']) / float(dp) >= 0.5:
-			index_alleles_sorted_position = [position for depth, position in sorted(zip(map(int, variant_position['format']['AD']), range(0, len(variant_position['format']['AD']))), reverse=True)]
-			if index_alleles_sorted_position[0] == 0:
-				if float(variant_position['info']['IDV']) / float(dp) > 0.5:
-					alt = variant_position['ALT'][index_alleles_sorted_position[1] - 1]
+		ad_idv = index_alleles_sorted_position[0][1]
+		if float(ad_idv) / float(dp) >= 0.5:
+			if index_alleles_sorted_position[0][0] == 0:
+				if float(ad_idv) / float(dp) > 0.5:
+					alt = variant_position['ALT'][index_alleles_sorted_position[1][0] - 1]
+					index_dominant_allele = index_alleles_sorted_position[1][0]
 				else:
-					alt = '.'
+					alt = 'N'
+					index_dominant_allele = None
 			else:
-				alt = variant_position['ALT'][index_alleles_sorted_position[0] - 1]
-			ad_idv = int(variant_position['info']['IDV'])
+				alt = variant_position['ALT'][index_alleles_sorted_position[0][0] - 1]
 		else:
 			alt = '.'
-			ad_idv = max(map(int, variant_position['format']['AD']))
+	else:
+		ad_idv = int(variant_position['info']['IDV'])
+		if float(ad_idv) / float(dp) >= 0.5:
+			if index_alleles_sorted_position[0][0] == 0:
+				if float(ad_idv) / float(dp) > 0.5:
+					alt = variant_position['ALT'][index_alleles_sorted_position[1][0] - 1]
+					index_dominant_allele = index_alleles_sorted_position[1][0]
+				else:
+					alt = 'N'
+					index_dominant_allele = None
+			else:
+				alt = variant_position['ALT'][index_alleles_sorted_position[0][0] - 1]
+		else:
+			alt = '.'
+			ad_idv = index_alleles_sorted_position[0][1]
 
 	return alt, dp, ad_idv, index_dominant_allele
 
