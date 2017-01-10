@@ -9,7 +9,7 @@ and consensus sequences production
 
 Copyright (C) 2016 Miguel Machado <mpmachado@medicina.ulisboa.pt>
 
-Last modified: December 07, 2016
+Last modified: January 10, 2017
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@ import modules.download as download
 import modules.rematch_module as rematch_module
 
 
-version = '2.0'
+version = '3.0'
 
 
 def searchFastqFiles(directory):
@@ -144,8 +144,8 @@ def format_gene_info(gene_specific_info, minimum_gene_coverage):
 	return info
 
 
-def write_data_by_gene(genes_list, minimum_gene_coverage, sample, data_by_gene, outdir, time_str):
-	combined_report = os.path.join(outdir, 'combined_report.data_by_gene.' + time_str + '.tab')
+def write_data_by_gene(genes_list, minimum_gene_coverage, sample, data_by_gene, outdir, time_str, run_times):
+	combined_report = os.path.join(outdir, 'combined_report.data_by_gene.' + run_times + '.' + time_str + '.tab')
 	with open(combined_report, 'at') as writer:
 		if len(genes_list) == 0:
 			genes_list = [data_by_gene[i]['header'] for i in data_by_gene]
@@ -162,19 +162,62 @@ def write_data_by_gene(genes_list, minimum_gene_coverage, sample, data_by_gene, 
 	return genes_list
 
 
-def write_sample_report(sample, outdir, time_str, run_successfully_fastq, run_successfully_rematch, time_taken_fastq, time_taken_rematch, time_taken_sample, sequencingInformation, sample_data_general, fastq_used):
+def write_sample_report(sample, outdir, time_str, run_successfully_fastq, run_successfully_rematch_first, run_successfully_rematch_second, time_taken_fastq, time_taken_rematch_first, time_taken_rematch_second, time_taken_sample, sequencingInformation, sample_data_general_first, sample_data_general_second, fastq_used):
 	sample_report = os.path.join(outdir, 'sample_report.' + time_str + '.tab')
 	report_exist = os.path.isfile(sample_report)
 
-	header_general = ['sample', 'sample_run_successfully', 'sample_run_time', 'download_run_successfully', 'download_run_time', 'rematch_run_successfully', 'rematch_run_time']
+	header_general = ['sample', 'sample_run_successfully', 'sample_run_time', 'download_run_successfully', 'download_run_time', 'rematch_run_successfully_first', 'rematch_run_successfully_second', 'rematch_run_time_first', 'rematch_run_time_second']
 	header_data_general = ['number_absent_genes', 'number_genes_multiple_alleles', 'mean_sample_coverage']
 	header_sequencing = ['run_accession', 'instrument_platform', 'instrument_model', 'library_layout', 'library_source', 'extra_run_accession', 'date_download']
 
 	with open(sample_report, 'at') as writer:
 		if not report_exist:
-			writer.write('#' + '\t'.join(header_general) + '\t' + '\t'.join(header_data_general) + '\t' + '\t'.join(header_sequencing) + '\t' + 'fastq_used' + '\n')
+			writer.write('#' + '\t'.join(header_general) + '\t' + '_first\t'.join(header_data_general) + '_first\t' + '_second\t'.join(header_data_general) + '_second\t' + '\t'.join(header_sequencing) + '\t' + 'fastq_used' + '\n')
 
-		writer.write('\t'.join([sample, str(all([run_successfully_fastq, run_successfully_rematch])), str(time_taken_sample), str(run_successfully_fastq), str(time_taken_fastq), str(run_successfully_rematch), str(time_taken_rematch)]) + '\t' + '\t'.join([str(sample_data_general[i]) for i in header_data_general]) + '\t' + '\t'.join([str(sequencingInformation[i]) for i in header_sequencing]) + '\t' + ','.join(fastq_used) + '\n')
+		writer.write('\t'.join([sample, str(all([run_successfully_fastq is not False, run_successfully_rematch_first is not False, run_successfully_rematch_second is not False])), str(time_taken_sample), str(run_successfully_fastq), str(time_taken_fastq), str(run_successfully_rematch_first), str(time_taken_rematch_first), str(run_successfully_rematch_second), str(time_taken_rematch_second)]) + '\t' + '\t'.join([str(sample_data_general_first[i]) for i in header_data_general]) + '\t' + '\t'.join([str(sample_data_general_second[i]) for i in header_data_general]) + '\t' + '\t'.join([str(sequencingInformation[i]) for i in header_sequencing]) + '\t' + ','.join(fastq_used) + '\n')
+
+
+def concatenate_extraSeq_2_consensus(consensus_sequence, reference_sequence, extraSeq_length, outdir):
+	consensus_dict = rematch_module.get_sequence_information(consensus_sequence)
+	reference_dict = rematch_module.get_sequence_information(reference_sequence)
+	for k, values_consensus in consensus_dict.items():
+		for values_reference in reference_dict.values():
+			if values_reference['header'] == values_consensus['header']:
+				if extraSeq_length <= len(values_reference['sequence']):
+					consensus_dict[k]['sequence'] = values_reference['sequence'][:extraSeq_length] + consensus_dict[k]['sequence'] + values_reference['sequence'][-extraSeq_length:]
+
+	consensus_concatenated = os.path.join(outdir, 'consensus_concatenated_extraSeq.fasta')
+	with open(consensus_concatenated, 'wt') as writer:
+		for i in consensus_dict:
+			writer.write('>' + consensus_dict[i]['header'] + '\n')
+			fasta_sequence_lines = rematch_module.chunkstring(consensus_dict[i]['sequence'], 80)
+			for line in fasta_sequence_lines:
+				writer.write(line + '\n')
+
+	return consensus_concatenated
+
+
+def clean_headers_reference_file(reference_file, outdir):
+	problematic_characters = ["|", " ", ",", ".", "(", ")", "'", "/"]
+	print 'Checking if reference sequences contain ' + str(problematic_characters) + '\n'
+	headers_changed = False
+	new_reference_file = reference_file
+	sequences = rematch_module.get_sequence_information(reference_file)
+	for i in sequences:
+		if any(x in sequences[i]['header'] for x in problematic_characters):
+			for x in problematic_characters:
+				sequences[i]['header'] = sequences[i]['header'].replace(x, '_')
+			headers_changed = True
+	if headers_changed:
+		print 'At least one of the those characters was found. Replacing those with _' + '\n'
+		new_reference_file = os.path.join(outdir, os.path.splitext(os.path.basename(reference_file))[0] + '.headers_renamed.fasta')
+		with open(new_reference_file, 'wt') as writer:
+			for i in sequences:
+				writer.write('>' + sequences[i]['header'] + '\n')
+				fasta_sequence_lines = rematch_module.chunkstring(sequences[i]['sequence'], 80)
+				for line in fasta_sequence_lines:
+					writer.write(line + '\n')
+	return new_reference_file
 
 
 def runRematch(args):
@@ -196,8 +239,12 @@ def runRematch(args):
 	# Run ReMatCh for each sample
 	print '\n' + 'STARTING ReMatCh' + '\n'
 
+	# Clean sequences headers
+	reference_file = clean_headers_reference_file(os.path.abspath(args.reference.name), workdir)
+
 	# To use in combined report
-	genes = []
+	genes_first = []
+	genes_second = []
 
 	number_samples_successfully = 0
 	for sample in listIDs:
@@ -209,7 +256,7 @@ def runRematch(args):
 		if not os.path.isdir(sample_outdir):
 			os.mkdir(sample_outdir)
 
-		run_successfully_fastq = False
+		run_successfully_fastq = None
 		time_taken_fastq = 0
 		sequencingInformation = {'run_accession': None, 'instrument_platform': None, 'instrument_model': None, 'library_layout': None, 'library_source': None, 'extra_run_accession': None, 'date_download': None}
 		if not searched_fastq_files:
@@ -217,15 +264,26 @@ def runRematch(args):
 			time_taken_fastq, run_successfully_fastq, fastq_files, sequencingInformation = download.runDownload(sample, args.downloadLibrariesType, asperaKey, sample_outdir, args.downloadCramBam, args.threads, args.downloadInstrumentPlatform)
 		else:
 			fastq_files = listIDs[sample]
-			run_successfully_fastq = True
 
-		run_successfully_rematch = False
-		time_taken_rematch = 0
-		if run_successfully_fastq:
+		run_successfully_rematch_first = None
+		run_successfully_rematch_second = None
+		time_taken_rematch_first = 0
+		time_taken_rematch_second = 0
+		if run_successfully_fastq is not False:
 			# Run ReMatCh
-			time_taken_rematch, run_successfully_rematch, data_by_gene, sample_data_general = rematch_module.runRematchModule(sample, fastq_files, os.path.abspath(args.reference.name), args.threads, sample_outdir, args.extraSeq, args.minCovPresence, args.minCovCall, args.minFrequencyDominantAllele, args.minGeneCoverage, args.conservedSeq)
-			if run_successfully_rematch:
-				genes = write_data_by_gene(genes, args.minGeneCoverage, sample, data_by_gene, workdir, time_str)
+			time_taken_rematch_first, run_successfully_rematch_first, data_by_gene, sample_data_general_first, consensus_files = rematch_module.runRematchModule(sample, fastq_files, reference_file, args.threads, sample_outdir, args.extraSeq, args.minCovPresence, args.minCovCall, args.minFrequencyDominantAllele, args.minGeneCoverage, args.conservedSeq, args.debug)
+			if run_successfully_rematch_first:
+				genes_first = write_data_by_gene(genes_first, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'first_run')
+				if args.doubleRun:
+					rematch_second_outdir = os.path.join(sample_outdir, 'rematch_second_run', '')
+					if not os.path.isdir(rematch_second_outdir):
+						os.mkdir(rematch_second_outdir)
+					consensus_concatenated_fasta = concatenate_extraSeq_2_consensus(consensus_files['noMatter'], reference_file, args.extraSeq, rematch_second_outdir)
+					time_taken_rematch_second, run_successfully_rematch_second, data_by_gene, sample_data_general_second, consensus_files = rematch_module.runRematchModule(sample, fastq_files, consensus_concatenated_fasta, args.threads, rematch_second_outdir, args.extraSeq, args.minCovPresence, args.minCovCall, args.minFrequencyDominantAllele, args.minGeneCoverage, args.conservedSeq, args.debug)
+					if not args.debug:
+						os.remove(consensus_concatenated_fasta)
+					if run_successfully_rematch_second:
+						genes_second = write_data_by_gene(genes_second, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'second_run')
 
 		if not searched_fastq_files and not args.keepDownloadedFastq and fastq_files is not None:
 			for fastq in fastq_files:
@@ -233,9 +291,9 @@ def runRematch(args):
 
 		time_taken = utils.runTime(sample_start_time)
 
-		write_sample_report(sample, workdir, time_str, run_successfully_fastq, run_successfully_rematch, time_taken_fastq, time_taken_rematch, time_taken, sequencingInformation, sample_data_general if run_successfully_rematch else {'number_absent_genes': None, 'number_genes_multiple_alleles': None, 'mean_sample_coverage': None}, fastq_files if fastq_files is not None else '')
+		write_sample_report(sample, workdir, time_str, run_successfully_fastq, run_successfully_rematch_first, run_successfully_rematch_second, time_taken_fastq, time_taken_rematch_first, time_taken_rematch_second, time_taken, sequencingInformation, sample_data_general_first if run_successfully_rematch_first else {'number_absent_genes': None, 'number_genes_multiple_alleles': None, 'mean_sample_coverage': None}, sample_data_general_second if run_successfully_rematch_second else {'number_absent_genes': None, 'number_genes_multiple_alleles': None, 'mean_sample_coverage': None}, fastq_files if fastq_files is not None else '')
 
-		if all([run_successfully_fastq, run_successfully_rematch]):
+		if all([run_successfully_fastq is not False, run_successfully_rematch_first is not False, run_successfully_rematch_second is not False]):
 			number_samples_successfully += 1
 
 	return number_samples_successfully, len(listIDs)
@@ -260,6 +318,8 @@ def main():
 	parser_optional_rematch.add_argument('--minCovCall', type=int, metavar='N', help='Reference position minimum coverage depth to perform a base call. Lower coverage will be coded as N', required=False, default=10)
 	parser_optional_rematch.add_argument('--minFrequencyDominantAllele', type=float, metavar='0.6', help='Minimum relative frequency of the dominant allele coverage depth (value between [0, 1]). Positions with lower values will be considered as having multiple alleles (and will be coded as N)', required=False, default=0.6)
 	parser_optional_rematch.add_argument('--minGeneCoverage', type=int, metavar='N', help='Minimum percentage of target reference gene sequence covered by --minCovPresence to consider a gene to be present (value between [0, 100])', required=False, default=80)
+	parser_optional_rematch.add_argument('--doubleRun', action='store_true', help='Tells ReMatCh to run a second time using as reference the noMatter consensus sequence produced in the first run. This will improve consensus sequence determination for sequences with high percentage of target reference gene sequence covered')
+	parser_optional_rematch.add_argument('--debug', action='store_true', help='DeBug Mode: do not remove temporary files')
 
 	parser_optional_download = parser.add_argument_group('Download facultative options')
 	parser_optional_download.add_argument('-a', '--asperaKey', type=argparse.FileType('r'), metavar='/path/to/asperaweb_id_dsa.openssh', help='Tells ReMatCh to download fastq files from ENA using Aspera Connect. With this option, the path to Private-key file asperaweb_id_dsa.openssh must be provided (normaly found in ~/.aspera/connect/etc/asperaweb_id_dsa.openssh).', required=False)
