@@ -9,7 +9,7 @@ and consensus sequences production
 
 Copyright (C) 2016 Miguel Machado <mpmachado@medicina.ulisboa.pt>
 
-Last modified: December 07, 2016
+Last modified: January 10, 2017
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@ import modules.download as download
 import modules.rematch_module as rematch_module
 
 
-version = '2.0'
+version = '3.0'
 
 
 def searchFastqFiles(directory):
