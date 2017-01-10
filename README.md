@@ -43,7 +43,7 @@ Usage
                       [--doNotUseProvidedSoftware]
                       [--conservedSeq] [--extraSeq N] [--minCovPresence N]
                       [--minCovCall N] [--minFrequencyDominantAllele 0.6]
-                      [--minGeneCoverage N]
+                      [--minGeneCoverage N] [--doubleRun] [--debug]
                       [-a /path/to/asperaweb_id_dsa.openssh] [-k]
                       [--downloadLibrariesType PAIRED]
                       [--downloadInstrumentPlatform ILLUMINA] [--downloadCramBam]
@@ -94,6 +94,12 @@ Usage
       --minGeneCoverage N   Minimum percentage of target reference gene sequence covered
                             by --minCovPresence to consider a gene to be present
                             (value between [0, 100]) (default: 80)
+      --doubleRun           Tells ReMatCh to run a second time using as reference the
+                            noMatter consensus sequence produced in the first run.
+                            This will improve consensus sequence determination for
+                            sequences with high percentage of target reference gene
+                            sequence covered (default: False)
+      --debug               DeBug Mode: do not remove temporary files (default: False)
 
     Download facultative options:
       -a /path/to/asperaweb_id_dsa.openssh, --asperaKey /path/to/asperaweb_id_dsa.openssh
@@ -123,6 +129,8 @@ Usage
       -t "Streptococcus agalactiae", --taxon "Streptococcus agalactiae"
                             Taxon name for which ReMatCh will download fastq files
                             (default: None)
+
+
 
 **Running ReMatCh in local samples**  
 To run ReMatCh in local fastq files, please organize those files in sample folders.  
@@ -164,11 +172,16 @@ ReMatCh running log file.
  - *sample_run_time* - Global sample running time
  - *download_run_successfully* - Reports whether the sample downloading (if requested) run successfully
  - *download_run_time* - Download running time
- - *rematch_run_successfully* - Reports whether the ReMatCh module run successfully
- - *rematch_run_time* - ReMatCh running time
- - *number_absent_genes* - Number of absent genes
- - *number_genes_multiple_alleles* - Number of genes with multiple alleles among the genes present
- - *mean_sample_coverage* - Mean sample coverage depth (only considering the genes present)
+ - *rematch_run_successfully_first* - Reports whether the first run of ReMatCh module run successfully
+ - *rematch_run_successfully_second* - Reports whether the second run of ReMatCh module run successfully
+ - *rematch_run_time_first* - ReMatCh first running time
+ - *rematch_run_time_second* - ReMatCh second running time
+ - *number_absent_genes_first* - Number of absent genes determined in the first ReMatch run
+ - *number_genes_multiple_alleles_first* - Number of genes with multiple alleles among the genes present determined in the first ReMatch run
+ - *mean_sample_coverage_first* - Mean sample coverage depth (only considering the genes present) determined in the first ReMatch run
+ - *number_absent_genes_second* - Number of absent genes determined in the second ReMatch run
+ - *number_genes_multiple_alleles_second* - Number of genes with multiple alleles among the genes present determined in the second ReMatch run
+ - *mean_sample_coverage_second* - Mean sample coverage depth (only considering the genes present) determined in the second ReMatch run
  - *run_accession* - ENA Run Accession number used to download
  - *instrument_platform* - Sequencing technology used reported by ENA
  - *instrument_model* - Instrument model used for sequencing reported by ENA
@@ -179,6 +192,7 @@ ReMatCh running log file.
  - *fastq_used* - Fastq files used in ReMatCh module
 
 **combined_report.data_by_gene.*.tab**  
+_combined_report.data_by_gene.first_run.\*.tab_ and _combined_report.data_by_gene.second_run.\*.tab_  
 This file contains a report with gene (in columns) presence/absence and coverage depth for the different samples (in lines).  
 In the case of genes being present (genes with at least `--minGeneCoverage` percentage of target reference gene sequence covered with `--minCovPresence` reads), the script will provide the mean target sequence coverage, otherwise will report "absent_" for genes not present.  
 In case of multiple alleles occurrence, if the frequency of the dominant allele is lower than `--minFrequencyDominantAllele` and the frequency of the most frequent minority allele is higher than 50% of the total of the minority alleles or is 50% but only 2 minority alleles exist, "multiAlleles_" will be reported.  
@@ -192,6 +206,8 @@ For each sample, three fasta files will be produced:
  - *sample.correct.fasta* - Fasta file containing the target gene sequence with the correct nucleotides. Positions with less than `--minCovPresence` coverage depth will be considered as deletions, with less than `--minCovCall` coverage depth will be coded as "N" (due to low certainty in calling SNP) and positions with possible multiple alleles will also be considered as "N".
  - *sample.alignment.fasta* - Will be exactly the same as *sample.correct.fasta*, but INDELs will be coded as "N" in order to produce sequences with the same size that can be then concatenated to produce an alignment file
  - *rematchModule_report.txt* - Report file containg gene information: 1) gene name, 2) percentage of target gene sequence covered with at least `--minCovPresence` read depth, 3) Mean target gene coverage depth of present positions, 4) percentage of target gene sequence with lower `--minCovCall` coverage depth, 5) number of positions in target gene sequence containing multiple alleles. The general sample information will also be stored: number of absent genes, number of genes with multiple alleles among the genes present and the mean sample coverage depth (only considering the genes present).
+ - *rematch_module/* - Folder containing the temporary files. Only kept if `--debug` option is specified. It will contain the *alignment.bam*, bam and fasta indexes, *sequence_data/* folder with subfolders (named with numbers) for each sequence in `--reference` file. In each sequence folder the different consensus _\*.vcf_ files and the original _samtools_mpileup.\*.vcf_ and _samtools_depth.\*.vcf_ files
+ - *rematch_second_run/* - Folder containing the same files/folders described above, but for the *second_run*. Only created if `--doubleRun` is set
 
 
 

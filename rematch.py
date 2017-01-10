@@ -273,7 +273,7 @@ def runRematch(args):
 			# Run ReMatCh
 			time_taken_rematch_first, run_successfully_rematch_first, data_by_gene, sample_data_general_first, consensus_files = rematch_module.runRematchModule(sample, fastq_files, reference_file, args.threads, sample_outdir, args.extraSeq, args.minCovPresence, args.minCovCall, args.minFrequencyDominantAllele, args.minGeneCoverage, args.conservedSeq, args.debug)
 			if run_successfully_rematch_first:
-				genes_first = write_data_by_gene(genes_first, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'first_time')
+				genes_first = write_data_by_gene(genes_first, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'first_run')
 				if args.doubleRun:
 					rematch_second_outdir = os.path.join(sample_outdir, 'rematch_second_run', '')
 					if not os.path.isdir(rematch_second_outdir):
@@ -283,7 +283,7 @@ def runRematch(args):
 					if not args.debug:
 						os.remove(consensus_concatenated_fasta)
 					if run_successfully_rematch_second:
-						genes_second = write_data_by_gene(genes_second, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'second_time')
+						genes_second = write_data_by_gene(genes_second, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'second_run')
 
 		if not searched_fastq_files and not args.keepDownloadedFastq and fastq_files is not None:
 			for fastq in fastq_files:
@@ -318,7 +318,7 @@ def main():
 	parser_optional_rematch.add_argument('--minCovCall', type=int, metavar='N', help='Reference position minimum coverage depth to perform a base call. Lower coverage will be coded as N', required=False, default=10)
 	parser_optional_rematch.add_argument('--minFrequencyDominantAllele', type=float, metavar='0.6', help='Minimum relative frequency of the dominant allele coverage depth (value between [0, 1]). Positions with lower values will be considered as having multiple alleles (and will be coded as N)', required=False, default=0.6)
 	parser_optional_rematch.add_argument('--minGeneCoverage', type=int, metavar='N', help='Minimum percentage of target reference gene sequence covered by --minCovPresence to consider a gene to be present (value between [0, 100])', required=False, default=80)
-	parser_optional_rematch.add_argument('--doubleRun', action='store_true', help='Tells ReMatCh to run a second time using as reference sequence the consensus sequence produced in the first time')
+	parser_optional_rematch.add_argument('--doubleRun', action='store_true', help='Tells ReMatCh to run a second time using as reference the noMatter consensus sequence produced in the first run. This will improve consensus sequence determination for sequences with high percentage of target reference gene sequence covered')
 	parser_optional_rematch.add_argument('--debug', action='store_true', help='DeBug Mode: do not remove temporary files')
 
 	parser_optional_download = parser.add_argument_group('Download facultative options')

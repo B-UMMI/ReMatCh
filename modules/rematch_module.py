@@ -2,7 +2,6 @@ import os.path
 import multiprocessing
 import utils
 import functools
-import sys
 
 
 def index_fasta_samtools(fasta, region_None, region_outfile_none, print_comand_True):
@@ -185,14 +184,6 @@ def get_alt_noMatter(variant_position, indel_true):
 	if not indel_true:
 		ad_idv = index_alleles_sorted_position[0][0]
 
-		# if len([x for x in index_alleles_sorted_position if x[0] == ad_idv]) > 1:
-		# 	alt = 'N'
-		# else:
-		# 	index_dominant_allele = index_alleles_sorted_position[0][1]
-		# 	if index_dominant_allele == 0:
-		# 		alt = '.'
-		# 	else:
-		# 		alt = variant_position['ALT'][index_dominant_allele - 1]
 		if len([x for x in index_alleles_sorted_position if x[0] == ad_idv]) > 1:
 			index_alleles_sorted_position = sorted([x for x in index_alleles_sorted_position if x[0] == ad_idv])
 
@@ -206,23 +197,15 @@ def get_alt_noMatter(variant_position, indel_true):
 		ad_idv = variant_position['info']['IDV']
 
 		if float(ad_idv) / float(dp) >= 0.5:
-			# if len([x for x in index_alleles_sorted_position if x[0] == index_alleles_sorted_position[0][0]]) > 1:
-			# 	alt = 'N'
-			# else:
-			# 	index_dominant_allele = index_alleles_sorted_position[0][1]
-			# 	if index_dominant_allele == 0:
-			# 		alt = '.'
-			# 	else:
-			# 		alt = variant_position['ALT'][index_dominant_allele - 1]
 			if len([x for x in index_alleles_sorted_position if x[0] == index_alleles_sorted_position[0][0]]) > 1:
 				index_alleles_sorted_position = sorted([x for x in index_alleles_sorted_position if x[0] == index_alleles_sorted_position[0][0]])
+
 			index_dominant_allele = index_alleles_sorted_position[0][1]
 			if index_dominant_allele == 0:
 				alt = '.'
 			else:
 				alt = variant_position['ALT'][index_dominant_allele - 1]
 		else:
-			# ad_idv = max(map(int, variant_position['format']['AD']))
 			ad_idv = int(variant_position['format']['AD'][0])
 			alt = '.'
 
