@@ -429,9 +429,9 @@ def clean_variant_in_extra_seq_left(variant_dict, position, length_extra_seq, mu
 
 		temp_variant = variant_dict[position]
 		del variant_dict[position]
-		variant_dict[length_extra_seq + 1] = {}
-		variant_dict[length_extra_seq + 1]['REF'] = temp_variant['REF'][length_extra_seq - position + 1:]
-		variant_dict[length_extra_seq + 1]['ALT'] = temp_variant['ALT'][length_extra_seq - position + 1:] if len(temp_variant['ALT']) >= length_extra_seq - position + 1 else 'N'
+		variant_dict[length_extra_seq] = {}
+		variant_dict[length_extra_seq]['REF'] = temp_variant['REF'][length_extra_seq - position:]
+		variant_dict[length_extra_seq]['ALT'] = temp_variant['ALT'][length_extra_seq - position:] if len(temp_variant['ALT']) > length_extra_seq - position else temp_variant['REF'][length_extra_seq - position]
 	else:
 		del variant_dict[position]
 
