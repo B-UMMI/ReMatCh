@@ -233,9 +233,9 @@ def trace_unhandled_exceptions(func):
 	return wrapped_func
 
 
-def kill_subprocess_Popen(subprocess_Popen):
+def kill_subprocess_Popen(subprocess_Popen, command):
+	print 'Command run out of time: ' + str(command)
 	subprocess_Popen.kill()
-	return True
 
 
 def runCommandPopenCommunicate(command, shell_True, timeout_sec_None, print_comand_True):
@@ -256,19 +256,11 @@ def runCommandPopenCommunicate(command, shell_True, timeout_sec_None, print_coma
 	if timeout_sec_None is None:
 		stdout, stderr = proc.communicate()
 	else:
-		if test_timeout:
-			timer = Timer(timeout_sec_None, kill_subprocess_Popen(proc))
-		else:
-			timer = Timer(timeout_sec_None, proc.kill)
+		timer = Timer(timeout_sec_None, kill_subprocess_Popen, args=(proc, command,))
 		timer.start()
 		stdout, stderr = proc.communicate()
-		if test_timeout:
-			killed = timer.cancel()
-			if killed:
-				print 'Command run time out'
-				proc.returncode == 1
-		else:
-			timer.cancel()
+		timer.cancel()
+		print timer
 
 	if proc.returncode == 0:
 		run_successfully = True
