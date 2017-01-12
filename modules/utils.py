@@ -10,9 +10,6 @@ import os.path
 import sys
 
 
-test_timeout = True
-
-
 def start_logger(workdir):
 	time_str = time.strftime("%Y%m%d-%H%M%S")
 	sys.stdout = Logger(workdir, time_str)
@@ -236,6 +233,7 @@ def trace_unhandled_exceptions(func):
 def kill_subprocess_Popen(subprocess_Popen, command):
 	print 'Command run out of time: ' + str(command)
 	subprocess_Popen.kill()
+	raise ValueError('Command run out of time: ' + str(command))
 
 
 def runCommandPopenCommunicate(command, shell_True, timeout_sec_None, print_comand_True):
@@ -256,11 +254,17 @@ def runCommandPopenCommunicate(command, shell_True, timeout_sec_None, print_coma
 	if timeout_sec_None is None:
 		stdout, stderr = proc.communicate()
 	else:
-		timer = Timer(timeout_sec_None, kill_subprocess_Popen, args=(proc, command,))
-		timer.start()
-		stdout, stderr = proc.communicate()
-		timer.cancel()
-		print timer
+		run = None
+		try:
+			timer = Timer(timeout_sec_None, kill_subprocess_Popen, args=(proc, command,))
+			timer.start()
+			stdout, stderr = proc.communicate()
+			timer.cancel()
+			run = True
+		except Exception as e:
+			print e
+			run = False
+		print run
 
 	if proc.returncode == 0:
 		run_successfully = True
