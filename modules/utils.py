@@ -236,6 +236,7 @@ killed_by_timer = False
 def kill_subprocess_Popen(subprocess_Popen, command):
 	print 'Command run out of time: ' + str(command)
 	subprocess_Popen.kill()
+	global killed_by_timer
 	killed_by_timer = True
 
 
@@ -261,15 +262,16 @@ def runCommandPopenCommunicate(command, shell_True, timeout_sec_None, print_coma
 		timer.start()
 		stdout, stderr = proc.communicate()
 		timer.cancel()
-		print killed_by_timer
 
 	if proc.returncode == 0:
 		run_successfully = True
 	else:
-		if not print_comand_True:
+		if not print_comand_True and not killed_by_timer:
 			print 'Running: ' + str(command)
-		print 'STDOUT'
-		print stdout.decode("utf-8")
-		print 'STDERR'
-		print stderr.decode("utf-8")
+		if len(stdout) > 0:
+			print 'STDOUT'
+			print stdout.decode("utf-8")
+		if len(stderr) > 0:
+			print 'STDERR'
+			print stderr.decode("utf-8")
 	return run_successfully, stdout, stderr
