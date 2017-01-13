@@ -287,7 +287,8 @@ def runRematch(args):
 
 		if not searched_fastq_files and not args.keepDownloadedFastq and fastq_files is not None:
 			for fastq in fastq_files:
-				os.remove(fastq)
+				if os.path.isfile(fastq):
+					os.remove(fastq)
 
 		time_taken = utils.runTime(sample_start_time)
 
