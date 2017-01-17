@@ -131,9 +131,9 @@ def getListIDs(workdir, fileListIDs, taxon_name):
 	return listIDs, searched_fastq_files
 
 
-def format_gene_info(gene_specific_info, minimum_gene_coverage):
+def format_gene_info(gene_specific_info, minimum_gene_coverage, minimum_gene_identity):
 	info = None
-	if gene_specific_info['gene_coverage'] >= minimum_gene_coverage:
+	if gene_specific_info['gene_coverage'] >= minimum_gene_coverage or gene_specific_info['gene_identity'] >= minimum_gene_identity:
 		if gene_specific_info['gene_number_positions_multiple_alleles'] == 0:
 			info = str(gene_specific_info['gene_mean_read_coverage'])
 		else:
@@ -144,7 +144,7 @@ def format_gene_info(gene_specific_info, minimum_gene_coverage):
 	return info
 
 
-def write_data_by_gene(genes_list, minimum_gene_coverage, sample, data_by_gene, outdir, time_str, run_times):
+def write_data_by_gene(genes_list, minimum_gene_coverage, sample, data_by_gene, outdir, time_str, run_times, minimum_gene_identity):
 	combined_report = os.path.join(outdir, 'combined_report.data_by_gene.' + run_times + '.' + time_str + '.tab')
 	with open(combined_report, 'at') as writer:
 		if len(genes_list) == 0:
@@ -156,7 +156,7 @@ def write_data_by_gene(genes_list, minimum_gene_coverage, sample, data_by_gene, 
 
 		results = {}
 		for i in data_by_gene:
-			results[data_by_gene[i]['header']] = format_gene_info(data_by_gene[i], minimum_gene_coverage)
+			results[data_by_gene[i]['header']] = format_gene_info(data_by_gene[i], minimum_gene_coverage, minimum_gene_identity)
 
 		writer.write(sample + '\t' + '\t'.join([results[gene] for gene in genes_list]) + '\n')
 	return genes_list
@@ -271,19 +271,19 @@ def runRematch(args):
 		time_taken_rematch_second = 0
 		if run_successfully_fastq is not False:
 			# Run ReMatCh
-			time_taken_rematch_first, run_successfully_rematch_first, data_by_gene, sample_data_general_first, consensus_files = rematch_module.runRematchModule(sample, fastq_files, reference_file, args.threads, sample_outdir, args.extraSeq, args.minCovPresence, args.minCovCall, args.minFrequencyDominantAllele, args.minGeneCoverage, args.conservedSeq, args.debug)
+			time_taken_rematch_first, run_successfully_rematch_first, data_by_gene, sample_data_general_first, consensus_files = rematch_module.runRematchModule(sample, fastq_files, reference_file, args.threads, sample_outdir, args.extraSeq, args.minCovPresence, args.minCovCall, args.minFrequencyDominantAllele, args.minGeneCoverage, args.conservedSeq, args.debug, args.numMapLoc, args.minGeneIdentity)
 			if run_successfully_rematch_first:
-				genes_first = write_data_by_gene(genes_first, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'first_run')
+				genes_first = write_data_by_gene(genes_first, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'first_run', args.minGeneIdentity)
 				if args.doubleRun:
 					rematch_second_outdir = os.path.join(sample_outdir, 'rematch_second_run', '')
 					if not os.path.isdir(rematch_second_outdir):
 						os.mkdir(rematch_second_outdir)
 					consensus_concatenated_fasta = concatenate_extraSeq_2_consensus(consensus_files['noMatter'], reference_file, args.extraSeq, rematch_second_outdir)
-					time_taken_rematch_second, run_successfully_rematch_second, data_by_gene, sample_data_general_second, consensus_files = rematch_module.runRematchModule(sample, fastq_files, consensus_concatenated_fasta, args.threads, rematch_second_outdir, args.extraSeq, args.minCovPresence, args.minCovCall, args.minFrequencyDominantAllele, args.minGeneCoverage, args.conservedSeq, args.debug)
+					time_taken_rematch_second, run_successfully_rematch_second, data_by_gene, sample_data_general_second, consensus_files = rematch_module.runRematchModule(sample, fastq_files, consensus_concatenated_fasta, args.threads, rematch_second_outdir, args.extraSeq, args.minCovPresence, args.minCovCall, args.minFrequencyDominantAllele, args.minGeneCoverage, args.conservedSeq, args.debug, args.numMapLoc, args.minGeneIdentity)
 					if not args.debug:
 						os.remove(consensus_concatenated_fasta)
 					if run_successfully_rematch_second:
-						genes_second = write_data_by_gene(genes_second, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'second_run')
+						genes_second = write_data_by_gene(genes_second, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'second_run', args.minGeneIdentity)
 
 		if not searched_fastq_files and not args.keepDownloadedFastq and fastq_files is not None:
 			for fastq in fastq_files:
@@ -319,6 +319,8 @@ def main():
 	parser_optional_rematch.add_argument('--minCovCall', type=int, metavar='N', help='Reference position minimum coverage depth to perform a base call. Lower coverage will be coded as N', required=False, default=10)
 	parser_optional_rematch.add_argument('--minFrequencyDominantAllele', type=float, metavar='0.6', help='Minimum relative frequency of the dominant allele coverage depth (value between [0, 1]). Positions with lower values will be considered as having multiple alleles (and will be coded as N)', required=False, default=0.6)
 	parser_optional_rematch.add_argument('--minGeneCoverage', type=int, metavar='N', help='Minimum percentage of target reference gene sequence covered by --minCovPresence to consider a gene to be present (value between [0, 100])', required=False, default=80)
+	parser_optional_rematch.add_argument('--minGeneIdentity', type=int, metavar='N', help='Minimum percentage of identity of reference gene sequence covered by --minCovCall to consider a gene to be present (value between [0, 100]). One INDEL will be considered as one difference', required=False, default=70)
+	parser_optional_rematch.add_argument('--numMapLoc', type=int, metavar='N', help='Maximum number of locations to which a read can map (sometimes useful when mapping against similar sequences)', required=False, default=1)
 	parser_optional_rematch.add_argument('--doubleRun', action='store_true', help='Tells ReMatCh to run a second time using as reference the noMatter consensus sequence produced in the first run. This will improve consensus sequence determination for sequences with high percentage of target reference gene sequence covered')
 	parser_optional_rematch.add_argument('--debug', action='store_true', help='DeBug Mode: do not remove temporary files')
 

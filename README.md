@@ -43,7 +43,8 @@ Usage
                       [--doNotUseProvidedSoftware]
                       [--conservedSeq] [--extraSeq N] [--minCovPresence N]
                       [--minCovCall N] [--minFrequencyDominantAllele 0.6]
-                      [--minGeneCoverage N] [--doubleRun] [--debug]
+                      [--minGeneCoverage N] [--minGeneIdentity N] [--doubleRun]
+                      [--debug]
                       [-a /path/to/asperaweb_id_dsa.openssh] [-k]
                       [--downloadLibrariesType PAIRED]
                       [--downloadInstrumentPlatform ILLUMINA] [--downloadCramBam]
@@ -94,6 +95,10 @@ Usage
       --minGeneCoverage N   Minimum percentage of target reference gene sequence covered
                             by --minCovPresence to consider a gene to be present
                             (value between [0, 100]) (default: 80)
+      --minGeneIdentity N   Minimum percentage of identity of reference gene sequence
+                            covered by --minCovCall to consider a gene to be present
+                            (value between [0, 100]). One INDEL will be considered
+                            as one difference (default: 70)
       --doubleRun           Tells ReMatCh to run a second time using as reference the
                             noMatter consensus sequence produced in the first run.
                             This will improve consensus sequence determination for
@@ -194,7 +199,7 @@ ReMatCh running log file.
 **combined_report.data_by_gene.*.tab**  
 _combined_report.data_by_gene.first_run.\*.tab_ and _combined_report.data_by_gene.second_run.\*.tab_  
 This file contains a report with gene (in columns) presence/absence and coverage depth for the different samples (in lines).  
-In the case of genes being present (genes with at least `--minGeneCoverage` percentage of target reference gene sequence covered with `--minCovPresence` reads), the script will provide the mean target sequence coverage, otherwise will report "absent_" for genes not present.  
+In the case of genes being present (genes with at least `--minGeneCoverage` percentage of target reference gene sequence covered with `--minCovPresence` reads and with at least `--minGeneIdentity` percentage identity of target reference gene sequence covered with `--minCovCall` reads), the script will provide the mean target sequence coverage, otherwise will report "absent_" for genes not present.  
 In case of multiple alleles occurrence, if the frequency of the dominant allele is lower than `--minFrequencyDominantAllele` and the frequency of the most frequent minority allele is higher than 50% of the total of the minority alleles or is 50% but only 2 minority alleles exist, "multiAlleles_" will be reported.  
 
 **cpu_information.*.cpu.txt** and **cpu_information.*.slurm.txt**  
@@ -205,7 +210,7 @@ For each sample, three fasta files will be produced:
  - *sample.noMatter.fasta* - Fasta file containing the target gene sequence with the more probable nucleotides (determined by the majority rule for positions covered by >= *--minCovPresence*). Positions with less than `--minCovPresence` coverage depth will be considered as deletions.
  - *sample.correct.fasta* - Fasta file containing the target gene sequence with the correct nucleotides. Positions with less than `--minCovPresence` coverage depth will be considered as deletions, with less than `--minCovCall` coverage depth will be coded as "N" (due to low certainty in calling SNP) and positions with possible multiple alleles will also be considered as "N".
  - *sample.alignment.fasta* - Will be exactly the same as *sample.correct.fasta*, but INDELs will be coded as "N" in order to produce sequences with the same size that can be then concatenated to produce an alignment file
- - *rematchModule_report.txt* - Report file containg gene information: 1) gene name, 2) percentage of target gene sequence covered with at least `--minCovPresence` read depth, 3) Mean target gene coverage depth of present positions, 4) percentage of target gene sequence with lower `--minCovCall` coverage depth, 5) number of positions in target gene sequence containing multiple alleles. The general sample information will also be stored: number of absent genes, number of genes with multiple alleles among the genes present and the mean sample coverage depth (only considering the genes present).
+ - *rematchModule_report.txt* - Report file containing gene information: 1) gene name, 2) percentage of target gene sequence covered with at least `--minCovPresence` read depth, 3) Mean target gene coverage depth of present positions, 4) percentage of target gene sequence with lower `--minCovCall` coverage depth, 5) number of positions in target gene sequence containing multiple alleles, 6) percentage identity of target gene sequence covered with at least `--minCovCall` read depth. The general sample information will also be stored: number of absent genes, number of genes with multiple alleles among the genes present and the mean sample coverage depth (only considering the genes present).
  - *rematch_module/* - Folder containing the temporary files. Only kept if `--debug` option is specified. It will contain the *alignment.bam*, bam and fasta indexes, *sequence_data/* folder with subfolders (named with numbers) for each sequence in `--reference` file. In each sequence folder the different consensus _\*.vcf_ files and the original _samtools_mpileup.\*.vcf_ and _samtools_depth.\*.vcf_ files
  - *rematch_second_run/* - Folder containing the same files/folders described above, but for the *second_run*. Only created if `--doubleRun` is set
 

@@ -28,26 +28,26 @@ def indexSequenceBowtie2(referenceFile, threads):
 
 
 # Mapping with Bowtie2
-def mappingBowtie2(fastq_files, referenceFile, threads, outdir, conserved_True):
+def mappingBowtie2(fastq_files, referenceFile, threads, outdir, conserved_True, numMapLoc):
 	sam_file = os.path.join(outdir, str('alignment.sam'))
 
 	# Index reference file
 	run_successfully = indexSequenceBowtie2(referenceFile, threads)
 
 	if run_successfully:
-		command = ['bowtie2', '-q', '', '--threads', str(threads), '-x', referenceFile, '', '--no-unal', '-S', sam_file]
+		command = ['bowtie2', '-k', str(numMapLoc), '-q', '', '--threads', str(threads), '-x', referenceFile, '', '--no-unal', '-S', sam_file]
 
 		if len(fastq_files) == 1:
-			command[7] = '-U ' + fastq_files[0]
+			command[9] = '-U ' + fastq_files[0]
 		elif len(fastq_files) == 2:
-			command[7] = '-1 ' + fastq_files[0] + ' -2 ' + fastq_files[1]
+			command[9] = '-1 ' + fastq_files[0] + ' -2 ' + fastq_files[1]
 		else:
 			return False, None
 
 		if conserved_True:
-			command[2] = '--sensitive'
+			command[4] = '--sensitive'
 		else:
-			command[2] = '--very-sensitive-local'
+			command[4] = '--very-sensitive-local'
 
 		run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, False, None, True)
 
@@ -76,14 +76,14 @@ def indexAlignment(alignment_file):
 	return run_successfully
 
 
-def mapping_reads(fastq_files, reference_file, threads, outdir, conserved_True):
+def mapping_reads(fastq_files, reference_file, threads, outdir, conserved_True, numMapLoc):
 	# Create a symbolic link to the reference_file
 	reference_link = os.path.join(outdir, os.path.basename(reference_file))
 	os.symlink(reference_file, reference_link)
 
 	bam_file = None
 	# Mapping reads using Bowtie2
-	run_successfully, sam_file = mappingBowtie2(fastq_files, reference_link, threads, outdir, conserved_True)
+	run_successfully, sam_file = mappingBowtie2(fastq_files, reference_link, threads, outdir, conserved_True, numMapLoc)
 
 	if run_successfully:
 		# Convert sam to bam and sort bam
@@ -210,6 +210,19 @@ def get_alt_noMatter(variant_position, indel_true):
 			alt = '.'
 
 	return alt, dp, ad_idv, index_dominant_allele
+
+
+def count_number_diferences(ref, alt):
+	number_diferences = 0
+
+	if len(ref) != len(alt):
+		number_diferences += 1
+
+	for i in range(0, min(len(ref), len(alt))):
+		if ref[i] != alt[i]:
+			number_diferences += 1
+
+	return number_diferences
 
 
 def get_alt_correct(variant_position, alt_noMatter, dp, ad_idv, index_dominant_allele, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele):
@@ -423,6 +436,8 @@ def get_true_variants(variants, minimum_depth_presence, minimum_depth_call, mini
 
 
 def clean_variant_in_extra_seq_left(variant_dict, position, length_extra_seq, multiple_alleles_found, number_multi_alleles):
+	number_diferences = 0
+
 	if position + len(variant_dict[position]['REF']) - 1 > length_extra_seq:
 		if multiple_alleles_found is not None and position in multiple_alleles_found:
 			number_multi_alleles += 1
@@ -432,10 +447,11 @@ def clean_variant_in_extra_seq_left(variant_dict, position, length_extra_seq, mu
 		variant_dict[length_extra_seq] = {}
 		variant_dict[length_extra_seq]['REF'] = temp_variant['REF'][length_extra_seq - position:]
 		variant_dict[length_extra_seq]['ALT'] = temp_variant['ALT'][length_extra_seq - position:] if len(temp_variant['ALT']) > length_extra_seq - position else temp_variant['REF'][length_extra_seq - position]
+		number_diferences = count_number_diferences(variant_dict[length_extra_seq]['REF'], variant_dict[length_extra_seq]['ALT'])
 	else:
 		del variant_dict[position]
 
-	return variant_dict, number_multi_alleles
+	return variant_dict, number_multi_alleles, number_diferences
 
 
 def clean_variant_in_extra_seq_rigth(variant_dict, position, sequence_length, length_extra_seq):
@@ -443,31 +459,34 @@ def clean_variant_in_extra_seq_rigth(variant_dict, position, sequence_length, le
 		variant_dict[position]['REF'] = variant_dict[position]['REF'][: - (position - (sequence_length - length_extra_seq)) + 1]
 		variant_dict[position]['ALT'] = variant_dict[position]['ALT'][: - (position - (sequence_length - length_extra_seq)) + 1] if len(variant_dict[position]['ALT']) >= - (position - (sequence_length - length_extra_seq)) + 1 else variant_dict[position]['ALT']
 
-	return variant_dict
+	number_diferences = count_number_diferences(variant_dict[position]['REF'], variant_dict[position]['ALT'])
+
+	return variant_dict, number_diferences
 
 
 def cleanning_variants_extra_seq(variants_correct, variants_noMatter, variants_alignment, multiple_alleles_found, length_extra_seq, sequence_length):
 	number_multi_alleles = 0
+	number_diferences = 0
 
 	counter = 1
 	while counter <= sequence_length:
 		if counter <= length_extra_seq:
 			if counter in variants_correct:
-				variants_correct, number_multi_alleles = clean_variant_in_extra_seq_left(variants_correct, counter, length_extra_seq, multiple_alleles_found, number_multi_alleles)
+				variants_correct, number_multi_alleles, number_diferences = clean_variant_in_extra_seq_left(variants_correct, counter, length_extra_seq, multiple_alleles_found, number_multi_alleles)
 			if counter in variants_noMatter:
-				variants_noMatter, ignore = clean_variant_in_extra_seq_left(variants_noMatter, counter, length_extra_seq, None, None)
+				variants_noMatter, ignore, ignore = clean_variant_in_extra_seq_left(variants_noMatter, counter, length_extra_seq, None, None)
 			if counter in variants_alignment:
-				variants_alignment, ignore = clean_variant_in_extra_seq_left(variants_alignment, counter, length_extra_seq, None, None)
+				variants_alignment, ignore, ignore = clean_variant_in_extra_seq_left(variants_alignment, counter, length_extra_seq, None, None)
 		elif counter > length_extra_seq and counter <= sequence_length - length_extra_seq:
 			if counter in variants_correct:
 				if counter in multiple_alleles_found:
 					number_multi_alleles += 1
-
-				variants_correct = clean_variant_in_extra_seq_rigth(variants_correct, counter, sequence_length, length_extra_seq)
+				variants_correct, number_diferences_found = clean_variant_in_extra_seq_rigth(variants_correct, counter, sequence_length, length_extra_seq)
+				number_diferences += number_diferences_found
 			if counter in variants_noMatter:
-				variants_noMatter = clean_variant_in_extra_seq_rigth(variants_noMatter, counter, sequence_length, length_extra_seq)
+				variants_noMatter, ignore = clean_variant_in_extra_seq_rigth(variants_noMatter, counter, sequence_length, length_extra_seq)
 			if counter in variants_alignment:
-				variants_alignment = clean_variant_in_extra_seq_rigth(variants_alignment, counter, sequence_length, length_extra_seq)
+				variants_alignment, ignore = clean_variant_in_extra_seq_rigth(variants_alignment, counter, sequence_length, length_extra_seq)
 		else:
 			if counter in variants_correct:
 				del variants_correct[counter]
@@ -478,7 +497,7 @@ def cleanning_variants_extra_seq(variants_correct, variants_noMatter, variants_a
 
 		counter += 1
 
-	return variants_correct, variants_noMatter, variants_alignment, number_multi_alleles
+	return variants_correct, variants_noMatter, variants_alignment, number_multi_alleles, number_diferences
 
 
 def get_coverage(gene_coverage):
@@ -581,7 +600,7 @@ def compute_consensus_sequence(reference_file, sequence_to_analyse, compressed_v
 def create_sample_consensus_sequence(outdir, sequence_to_analyse, reference_file, variants, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, sequence, length_extra_seq):
 	variants_correct, variants_noMatter, variants_alignment, multiple_alleles_found = get_true_variants(variants, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, sequence)
 
-	variants_correct, variants_noMatter, variants_alignment, number_multi_alleles = cleanning_variants_extra_seq(variants_correct, variants_noMatter, variants_alignment, multiple_alleles_found, length_extra_seq, len(sequence))
+	variants_correct, variants_noMatter, variants_alignment, number_multi_alleles, number_diferences = cleanning_variants_extra_seq(variants_correct, variants_noMatter, variants_alignment, multiple_alleles_found, length_extra_seq, len(sequence))
 
 	run_successfully = False
 	consensus = {'correct': {}, 'noMatter': {}, 'alignment': {}}
@@ -592,7 +611,7 @@ def create_sample_consensus_sequence(outdir, sequence_to_analyse, reference_file
 			if run_successfully:
 				consensus[variant_type.split('_', 1)[1]] = {'header': sequence_dict['header'], 'sequence': sequence_dict['sequence'][length_extra_seq:len(sequence_dict['sequence']) - length_extra_seq]}
 
-	return run_successfully, number_multi_alleles, consensus
+	return run_successfully, number_multi_alleles, consensus, number_diferences
 
 
 @utils.trace_unhandled_exceptions
@@ -600,6 +619,7 @@ def analyse_sequence_data(bam_file, sequence_information, outdir, counter, refer
 	percentage_absent = None
 	percentage_lowCoverage = None
 	meanCoverage = None
+	number_diferences = 0
 
 	# Create vcf file (for multiple alleles check)
 	run_successfully, gene_vcf = create_vcf(bam_file, sequence_information['header'], outdir, counter, reference_file)
@@ -613,11 +633,11 @@ def analyse_sequence_data(bam_file, sequence_information, outdir, counter, refer
 
 			coverage = get_coverage(gene_coverage)
 
-			run_successfully, number_multi_alleles, consensus_sequence = create_sample_consensus_sequence(outdir, sequence_information['header'], reference_file, variants, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, sequence_information['sequence'], length_extra_seq)
+			run_successfully, number_multi_alleles, consensus_sequence, number_diferences = create_sample_consensus_sequence(outdir, sequence_information['header'], reference_file, variants, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, sequence_information['sequence'], length_extra_seq)
 
 			percentage_absent, percentage_lowCoverage, meanCoverage = get_coverage_report(coverage, sequence_information['length'], minimum_depth_presence, minimum_depth_call, length_extra_seq)
 
-	utils.saveVariableToPickle([run_successfully, counter, number_multi_alleles, percentage_absent, percentage_lowCoverage, meanCoverage, consensus_sequence], outdir, str('coverage_info.' + str(counter)))
+	utils.saveVariableToPickle([run_successfully, counter, number_multi_alleles, percentage_absent, percentage_lowCoverage, meanCoverage, consensus_sequence, number_diferences], outdir, str('coverage_info.' + str(counter)))
 
 
 def get_sequence_information(fasta_file):
@@ -700,7 +720,7 @@ def gather_data_together(sample, data_directory, sequences_information, outdir, 
 				file_path = os.path.join(gene_dir_path, file_found)
 
 				if run_successfully:
-					run_successfully, sequence_counter, multiple_alleles_found, percentage_absent, percentage_lowCoverage, meanCoverage, consensus_sequence = utils.extractVariableFromPickle(file_path)
+					run_successfully, sequence_counter, multiple_alleles_found, percentage_absent, percentage_lowCoverage, meanCoverage, consensus_sequence, number_diferences = utils.extractVariableFromPickle(file_path)
 
 					if write_consensus_first_time:
 						for consensus_type in ['correct', 'noMatter', 'alignment']:
@@ -710,7 +730,7 @@ def gather_data_together(sample, data_directory, sequences_information, outdir, 
 						write_consensus_first_time = False
 					consensus_files = write_consensus(outdir, sample, consensus_sequence)
 
-					sample_data[sequence_counter] = {'header': sequences_information[sequence_counter]['header'], 'gene_coverage': 100 - percentage_absent, 'gene_low_coverage': percentage_lowCoverage, 'gene_number_positions_multiple_alleles': multiple_alleles_found, 'gene_mean_read_coverage': meanCoverage}
+					sample_data[sequence_counter] = {'header': sequences_information[sequence_counter]['header'], 'gene_coverage': 100 - percentage_absent, 'gene_low_coverage': percentage_lowCoverage, 'gene_number_positions_multiple_alleles': multiple_alleles_found, 'gene_mean_read_coverage': meanCoverage, 'gene_identity': 100 - (float(number_diferences) / sequences_information[sequence_counter]['length'])}
 					counter += 1
 
 		if not debug_mode_true:
@@ -726,13 +746,13 @@ rematch_timer = functools.partial(utils.timer, name='ReMatCh module')
 
 
 @rematch_timer
-def runRematchModule(sample, fastq_files, reference_file, threads, outdir, length_extra_seq, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, minimum_gene_coverage, conserved_True, debug_mode_true):
+def runRematchModule(sample, fastq_files, reference_file, threads, outdir, length_extra_seq, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, minimum_gene_coverage, conserved_True, debug_mode_true, numMapLoc, minimum_gene_identity):
 	rematch_folder = os.path.join(outdir, 'rematch_module', '')
 	utils.removeDirectory(rematch_folder)
 	os.mkdir(rematch_folder)
 
 	# Map reads
-	run_successfully, bam_file, reference_file = mapping_reads(fastq_files, reference_file, threads, rematch_folder, conserved_True)
+	run_successfully, bam_file, reference_file = mapping_reads(fastq_files, reference_file, threads, rematch_folder, conserved_True, numMapLoc)
 
 	if run_successfully:
 		# Index reference file
@@ -747,11 +767,11 @@ def runRematchModule(sample, fastq_files, reference_file, threads, outdir, lengt
 				number_genes_multiple_alleles = 0
 				mean_sample_coverage = 0
 				with open(os.path.join(outdir, 'rematchModule_report.txt'), 'wt') as writer:
-					writer.write('\t'.join(['#gene', 'percentage_gene_coverage', 'gene_mean_read_coverage', 'percentage_gene_low_coverage', 'number_positions_multiple_alleles']) + '\n')
+					writer.write('\t'.join(['#gene', 'percentage_gene_coverage', 'gene_mean_read_coverage', 'percentage_gene_low_coverage', 'number_positions_multiple_alleles', 'percentage_gene_identity']) + '\n')
 					for i in range(1, len(sample_data) + 1):
-						writer.write('\t'.join([sample_data[i]['header'], str(round(sample_data[i]['gene_coverage'], 2)), str(round(sample_data[i]['gene_mean_read_coverage'], 2)), str(round(sample_data[i]['gene_low_coverage'], 2)), str(sample_data[i]['gene_number_positions_multiple_alleles'])]) + '\n')
+						writer.write('\t'.join([sample_data[i]['header'], str(round(sample_data[i]['gene_coverage'], 2)), str(round(sample_data[i]['gene_mean_read_coverage'], 2)), str(round(sample_data[i]['gene_low_coverage'], 2)), str(sample_data[i]['gene_number_positions_multiple_alleles']), str(round(sample_data[i]['gene_identity'], 2))]) + '\n')
 
-						if sample_data[i]['gene_coverage'] < minimum_gene_coverage:
+						if sample_data[i]['gene_coverage'] < minimum_gene_coverage or sample_data[i]['gene_identity'] < minimum_gene_identity:
 							number_absent_genes += 1
 						else:
 							mean_sample_coverage += sample_data[i]['gene_mean_read_coverage']
