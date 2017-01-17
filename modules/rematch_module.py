@@ -790,4 +790,4 @@ def runRematchModule(sample, fastq_files, reference_file, threads, outdir, lengt
 	if not debug_mode_true:
 		utils.removeDirectory(rematch_folder)
 
-	return run_successfully, sample_data if 'sample_data' in locals() else None, {'number_absent_genes': number_absent_genes, 'number_genes_multiple_alleles': number_genes_multiple_alleles, 'mean_sample_coverage': round(mean_sample_coverage, 2)} if 'number_absent_genes' in locals() else None, consensus_files
+	return run_successfully, sample_data if 'sample_data' in locals() else None, {'number_absent_genes': number_absent_genes, 'number_genes_multiple_alleles': number_genes_multiple_alleles, 'mean_sample_coverage': round(mean_sample_coverage, 2)} if 'number_absent_genes' in locals() else None, consensus_files if consensus_files in locals() else None
