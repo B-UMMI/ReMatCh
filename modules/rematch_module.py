@@ -219,7 +219,7 @@ def count_number_diferences(ref, alt):
 		number_diferences += 1
 
 	for i in range(0, min(len(ref), len(alt))):
-		if ref[i] != alt[i]:
+		if alt[i] != 'N' and ref[i] != alt[i]:
 			number_diferences += 1
 
 	return number_diferences
