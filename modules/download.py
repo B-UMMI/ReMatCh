@@ -15,6 +15,8 @@ def getReadRunInfo(ena_id):
 	try:
 		url = urllib.urlopen(url)
 		readRunInfo = url.read().splitlines()
+		if len(readRunInfo) <= 1:
+			readRunInfo = None
 	except Exception as error:
 		print error
 
@@ -376,7 +378,7 @@ def runDownload(ena_id, download_paired_type, asperaKey, outdir, download_cram_b
 	sequencingInformation = {'run_accession': None, 'instrument_platform': None, 'instrument_model': None, 'library_layout': None, 'library_source': None, 'extra_run_accession': None, 'date_download': None}
 
 	readRunInfo = getReadRunInfo(ena_id)
-	if len(readRunInfo) > 1:
+	if readRunInfo is not None:
 		downloadInformation = getDownloadInformation(readRunInfo)
 		downloadInformation = check_correct_links(downloadInformation)
 		sequencingInformation = getSequencingInformation(readRunInfo)
