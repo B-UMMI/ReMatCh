@@ -250,6 +250,8 @@ def runCommandPopenCommunicate(command, shell_True, timeout_sec_None, print_coma
 		proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 	else:
 		proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+	not_killed_by_timer = True
 	if timeout_sec_None is None:
 		stdout, stderr = proc.communicate()
 	else:
