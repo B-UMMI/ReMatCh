@@ -166,7 +166,7 @@ def write_sample_report(sample, outdir, time_str, run_successfully_fastq, run_su
 	sample_report = os.path.join(outdir, 'sample_report.' + time_str + '.tab')
 	report_exist = os.path.isfile(sample_report)
 
-	header_general = ['sample', 'sample_run_successfully', 'sample_run_time', 'download_run_successfully', 'download_run_time', 'rematch_run_successfully_first', 'rematch_run_successfully_second', 'rematch_run_time_first', 'rematch_run_time_second']
+	header_general = ['sample', 'sample_run_successfully', 'sample_run_time', 'download_run_successfully', 'download_run_time', 'rematch_run_successfully_first', 'rematch_run_time_first', 'rematch_run_successfully_second', 'rematch_run_time_second']
 	header_data_general = ['number_absent_genes', 'number_genes_multiple_alleles', 'mean_sample_coverage']
 	header_sequencing = ['run_accession', 'instrument_platform', 'instrument_model', 'library_layout', 'library_source', 'extra_run_accession', 'date_download']
 
