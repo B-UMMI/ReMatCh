@@ -162,11 +162,11 @@ def write_data_by_gene(genes_list, minimum_gene_coverage, sample, data_by_gene, 
 	return genes_list
 
 
-def write_sample_report(sample, outdir, time_str, run_successfully_fastq, run_successfully_rematch_first, run_successfully_rematch_second, time_taken_fastq, time_taken_rematch_first, time_taken_rematch_second, time_taken_sample, sequencingInformation, sample_data_general_first, sample_data_general_second, fastq_used):
+def write_sample_report(sample, outdir, time_str, fileSize, run_successfully_fastq, run_successfully_rematch_first, run_successfully_rematch_second, time_taken_fastq, time_taken_rematch_first, time_taken_rematch_second, time_taken_sample, sequencingInformation, sample_data_general_first, sample_data_general_second, fastq_used):
 	sample_report = os.path.join(outdir, 'sample_report.' + time_str + '.tab')
 	report_exist = os.path.isfile(sample_report)
 
-	header_general = ['sample', 'sample_run_successfully', 'sample_run_time', 'download_run_successfully', 'download_run_time', 'rematch_run_successfully_first', 'rematch_run_time_first', 'rematch_run_successfully_second', 'rematch_run_time_second']
+	header_general = ['sample', 'sample_run_successfully', 'sample_run_time', 'files_size', 'download_run_successfully', 'download_run_time', 'rematch_run_successfully_first', 'rematch_run_time_first', 'rematch_run_successfully_second', 'rematch_run_time_second']
 	header_data_general = ['number_absent_genes', 'number_genes_multiple_alleles', 'mean_sample_coverage']
 	header_sequencing = ['run_accession', 'instrument_platform', 'instrument_model', 'library_layout', 'library_source', 'extra_run_accession', 'date_download']
 
@@ -174,7 +174,7 @@ def write_sample_report(sample, outdir, time_str, run_successfully_fastq, run_su
 		if not report_exist:
 			writer.write('#' + '\t'.join(header_general) + '\t' + '_first\t'.join(header_data_general) + '_first\t' + '_second\t'.join(header_data_general) + '_second\t' + '\t'.join(header_sequencing) + '\t' + 'fastq_used' + '\n')
 
-		writer.write('\t'.join([sample, str(all([run_successfully_fastq is not False, run_successfully_rematch_first is not False, run_successfully_rematch_second is not False])), str(time_taken_sample), str(run_successfully_fastq), str(time_taken_fastq), str(run_successfully_rematch_first), str(time_taken_rematch_first), str(run_successfully_rematch_second), str(time_taken_rematch_second)]) + '\t' + '\t'.join([str(sample_data_general_first[i]) for i in header_data_general]) + '\t' + '\t'.join([str(sample_data_general_second[i]) for i in header_data_general]) + '\t' + '\t'.join([str(sequencingInformation[i]) for i in header_sequencing]) + '\t' + ','.join(fastq_used) + '\n')
+		writer.write('\t'.join([sample, str(all([run_successfully_fastq is not False, run_successfully_rematch_first is not False, run_successfully_rematch_second is not False])), str(time_taken_sample), str(fileSize), str(run_successfully_fastq), str(time_taken_fastq), str(run_successfully_rematch_first), str(time_taken_rematch_first), str(run_successfully_rematch_second), str(time_taken_rematch_second)]) + '\t' + '\t'.join([str(sample_data_general_first[i]) for i in header_data_general]) + '\t' + '\t'.join([str(sample_data_general_second[i]) for i in header_data_general]) + '\t' + '\t'.join([str(sequencingInformation[i]) for i in header_sequencing]) + '\t' + ','.join(fastq_used) + '\n')
 
 
 def concatenate_extraSeq_2_consensus(consensus_sequence, reference_sequence, extraSeq_length, outdir):
@@ -265,6 +265,8 @@ def runRematch(args):
 		else:
 			fastq_files = listIDs[sample]
 
+		fileSize = sum(os.path.getsize(fastq) for fastq in fastq_files)
+
 		run_successfully_rematch_first = None
 		run_successfully_rematch_second = None
 		time_taken_rematch_first = 0
@@ -292,7 +294,7 @@ def runRematch(args):
 
 		time_taken = utils.runTime(sample_start_time)
 
-		write_sample_report(sample, workdir, time_str, run_successfully_fastq, run_successfully_rematch_first, run_successfully_rematch_second, time_taken_fastq, time_taken_rematch_first, time_taken_rematch_second, time_taken, sequencingInformation, sample_data_general_first if run_successfully_rematch_first else {'number_absent_genes': None, 'number_genes_multiple_alleles': None, 'mean_sample_coverage': None}, sample_data_general_second if run_successfully_rematch_second else {'number_absent_genes': None, 'number_genes_multiple_alleles': None, 'mean_sample_coverage': None}, fastq_files if fastq_files is not None else '')
+		write_sample_report(sample, workdir, time_str, fileSize, run_successfully_fastq, run_successfully_rematch_first, run_successfully_rematch_second, time_taken_fastq, time_taken_rematch_first, time_taken_rematch_second, time_taken, sequencingInformation, sample_data_general_first if run_successfully_rematch_first else {'number_absent_genes': None, 'number_genes_multiple_alleles': None, 'mean_sample_coverage': None}, sample_data_general_second if run_successfully_rematch_second else {'number_absent_genes': None, 'number_genes_multiple_alleles': None, 'mean_sample_coverage': None}, fastq_files if fastq_files is not None else '')
 
 		if all([run_successfully_fastq is not False, run_successfully_rematch_first is not False, run_successfully_rematch_second is not False]):
 			number_samples_successfully += 1

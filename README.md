@@ -174,7 +174,8 @@ ReMatCh running log file.
 **sample_report.*.tab**
  - *sample* - Sample ID
  - *sample_run_successfully* - Reports whether the sample globally run successfully
- - *sample_run_time* - Global sample running time
+ - *sample_run_time* - Global sample running time (in seconds)
+ - *files_size* - Sum of files size (in bytes)
  - *download_run_successfully* - Reports whether the sample downloading (if requested) run successfully
  - *download_run_time* - Download running time
  - *rematch_run_successfully_first* - Reports whether the first run of ReMatCh module run successfully
