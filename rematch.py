@@ -265,13 +265,14 @@ def runRematch(args):
 		else:
 			fastq_files = listIDs[sample]
 
-		fileSize = sum(os.path.getsize(fastq) for fastq in fastq_files)
+		fileSize = None
 
 		run_successfully_rematch_first = None
 		run_successfully_rematch_second = None
 		time_taken_rematch_first = 0
 		time_taken_rematch_second = 0
 		if run_successfully_fastq is not False:
+			fileSize = sum(os.path.getsize(fastq) for fastq in fastq_files)
 			# Run ReMatCh
 			time_taken_rematch_first, run_successfully_rematch_first, data_by_gene, sample_data_general_first, consensus_files = rematch_module.runRematchModule(sample, fastq_files, reference_file, args.threads, sample_outdir, args.extraSeq, args.minCovPresence, args.minCovCall, args.minFrequencyDominantAllele, args.minGeneCoverage, args.conservedSeq, args.debug, args.numMapLoc, args.minGeneIdentity)
 			if run_successfully_rematch_first:
