@@ -144,22 +144,25 @@ def format_gene_info(gene_specific_info, minimum_gene_coverage, minimum_gene_ide
 	return info
 
 
-def write_data_by_gene(genes_list, minimum_gene_coverage, sample, data_by_gene, outdir, time_str, run_times, minimum_gene_identity):
+def write_data_by_gene(gene_list_reference, minimum_gene_coverage, sample, data_by_gene, outdir, time_str, run_times, minimum_gene_identity):
 	combined_report = os.path.join(outdir, 'combined_report.data_by_gene.' + run_times + '.' + time_str + '.tab')
+	combined_report_exist = os.path.isfile(combined_report)
 	with open(combined_report, 'at') as writer:
-		if len(genes_list) == 0:
-			genes_list = [data_by_gene[i]['header'] for i in data_by_gene]
-			writer.write('#sample' + '\t' + '\t'.join(genes_list) + '\n')
-
-		if len(data_by_gene) != len(genes_list):
-			sys.exit('Different number of genes found')
+		if not combined_report_exist:
+			writer.write('#sample' + '\t' + '\t'.join(gene_list_reference) + '\n')
 
 		results = {}
+		headers = []
 		for i in data_by_gene:
 			results[data_by_gene[i]['header']] = format_gene_info(data_by_gene[i], minimum_gene_coverage, minimum_gene_identity)
+			headers.append(data_by_gene[i]['header'])
 
-		writer.write(sample + '\t' + '\t'.join([results[gene] for gene in genes_list]) + '\n')
-	return genes_list
+		if len(headers) != gene_list_reference:
+			for gene in gene_list_reference:
+				if gene not in headers:
+					results[gene] = 'NA'
+
+		writer.write(sample + '\t' + '\t'.join([results[gene] for gene in gene_list_reference]) + '\n')
 
 
 def write_sample_report(sample, outdir, time_str, fileSize, run_successfully_fastq, run_successfully_rematch_first, run_successfully_rematch_second, time_taken_fastq, time_taken_rematch_first, time_taken_rematch_second, time_taken_sample, sequencingInformation, sample_data_general_first, sample_data_general_second, fastq_used):
@@ -178,8 +181,8 @@ def write_sample_report(sample, outdir, time_str, fileSize, run_successfully_fas
 
 
 def concatenate_extraSeq_2_consensus(consensus_sequence, reference_sequence, extraSeq_length, outdir):
-	consensus_dict = rematch_module.get_sequence_information(consensus_sequence)
-	reference_dict = rematch_module.get_sequence_information(reference_sequence)
+	consensus_dict, genes = rematch_module.get_sequence_information(consensus_sequence)
+	reference_dict, genes = rematch_module.get_sequence_information(reference_sequence)
 	for k, values_consensus in consensus_dict.items():
 		for values_reference in reference_dict.values():
 			if values_reference['header'] == values_consensus['header']:
@@ -202,7 +205,7 @@ def clean_headers_reference_file(reference_file, outdir):
 	print 'Checking if reference sequences contain ' + str(problematic_characters) + '\n'
 	headers_changed = False
 	new_reference_file = reference_file
-	sequences = rematch_module.get_sequence_information(reference_file)
+	sequences, genes = rematch_module.get_sequence_information(reference_file)
 	for i in sequences:
 		if any(x in sequences[i]['header'] for x in problematic_characters):
 			for x in problematic_characters:
@@ -217,7 +220,7 @@ def clean_headers_reference_file(reference_file, outdir):
 				fasta_sequence_lines = rematch_module.chunkstring(sequences[i]['sequence'], 80)
 				for line in fasta_sequence_lines:
 					writer.write(line + '\n')
-	return new_reference_file
+	return new_reference_file, genes
 
 
 def runRematch(args):
@@ -240,11 +243,9 @@ def runRematch(args):
 	print '\n' + 'STARTING ReMatCh' + '\n'
 
 	# Clean sequences headers
-	reference_file = clean_headers_reference_file(os.path.abspath(args.reference.name), workdir)
+	reference_file, gene_list_reference = clean_headers_reference_file(os.path.abspath(args.reference.name), workdir)
 
 	# To use in combined report
-	genes_first = []
-	genes_second = []
 
 	number_samples_successfully = 0
 	for sample in listIDs:
@@ -276,7 +277,7 @@ def runRematch(args):
 			# Run ReMatCh
 			time_taken_rematch_first, run_successfully_rematch_first, data_by_gene, sample_data_general_first, consensus_files = rematch_module.runRematchModule(sample, fastq_files, reference_file, args.threads, sample_outdir, args.extraSeq, args.minCovPresence, args.minCovCall, args.minFrequencyDominantAllele, args.minGeneCoverage, args.conservedSeq, args.debug, args.numMapLoc, args.minGeneIdentity)
 			if run_successfully_rematch_first:
-				genes_first = write_data_by_gene(genes_first, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'first_run', args.minGeneIdentity)
+				write_data_by_gene(gene_list_reference, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'first_run', args.minGeneIdentity)
 				if args.doubleRun:
 					rematch_second_outdir = os.path.join(sample_outdir, 'rematch_second_run', '')
 					if not os.path.isdir(rematch_second_outdir):
@@ -286,7 +287,7 @@ def runRematch(args):
 					if not args.debug:
 						os.remove(consensus_concatenated_fasta)
 					if run_successfully_rematch_second:
-						genes_second = write_data_by_gene(genes_second, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'second_run', args.minGeneIdentity)
+						write_data_by_gene(gene_list_reference, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'second_run', args.minGeneIdentity)
 
 		if not searched_fastq_files and not args.keepDownloadedFastq and fastq_files is not None:
 			for fastq in fastq_files:

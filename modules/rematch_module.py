@@ -2,6 +2,7 @@ import os.path
 import multiprocessing
 import utils
 import functools
+import sys
 
 
 def index_fasta_samtools(fasta, region_None, region_outfile_none, print_comand_True):
@@ -640,28 +641,45 @@ def analyse_sequence_data(bam_file, sequence_information, outdir, counter, refer
 	utils.saveVariableToPickle([run_successfully, counter, number_multi_alleles, percentage_absent, percentage_lowCoverage, meanCoverage, consensus_sequence, number_diferences], outdir, str('coverage_info.' + str(counter)))
 
 
-def get_sequence_information(fasta_file):
+def get_sequence_information(fasta_file, length_extra_seq):
 	sequence_dict = {}
+	headers = []
 
 	with open(fasta_file, 'rtU') as reader:
 		blank_line_found = False
 		sequence_counter = 0
+		temp_sequence_dict = {}
 		for line in reader:
 			line = line.splitlines()[0]
 			if len(line) > 0:
 				if not blank_line_found:
 					if line.startswith('>'):
+						if len(temp_sequence_dict) > 0:
+							if temp_sequence_dict.values()[0]['length'] - 2 * length_extra_seq > 0:
+								sequence_dict[temp_sequence_dict.keys()[0]] = temp_sequence_dict.values()[0]
+								headers.append(temp_sequence_dict.values()[0]['header'])
+							else:
+								print temp_sequence_dict.values()[0]['header'] + ' sequence ignored due to length <= 0'
+							temp_sequence_dict = {}
+
+						if line[1:] in headers:
+							sys.exit('Found duplicated sequence headers')
+
 						sequence_counter += 1
-						sequence_dict[sequence_counter] = {'header': line[1:], 'sequence': '', 'length': 0}
+						temp_sequence_dict[sequence_counter] = {'header': line[1:], 'sequence': '', 'length': 0}
 					else:
-						sequence_dict[sequence_counter]['sequence'] += line
-						sequence_dict[sequence_counter]['length'] += len(line)
+						temp_sequence_dict[sequence_counter]['sequence'] += line
+						temp_sequence_dict[sequence_counter]['length'] += len(line)
 				else:
-					sequence_dict = None
+					sys.exit('It was found a blank line between the fasta file above line ' + line)
 			else:
 				blank_line_found = True
 
-	return sequence_dict
+		if len(temp_sequence_dict) > 0:
+			if temp_sequence_dict.values()[0]['length'] - 2 * length_extra_seq > 0:
+				sequence_dict[temp_sequence_dict.keys()[0]] = temp_sequence_dict.values()[0]
+
+	return sequence_dict, headers
 
 
 def sequence_data(sample, reference_file, bam_file, outdir, threads, length_extra_seq, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, debug_mode_true):
@@ -669,7 +687,7 @@ def sequence_data(sample, reference_file, bam_file, outdir, threads, length_extr
 	utils.removeDirectory(sequence_data_outdir)
 	os.mkdir(sequence_data_outdir)
 
-	sequences = get_sequence_information(reference_file)
+	sequences, headers = get_sequence_information(reference_file)
 
 	pool = multiprocessing.Pool(processes=threads)
 	for sequence_counter in sequences:
