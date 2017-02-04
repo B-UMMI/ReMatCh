@@ -181,8 +181,8 @@ def write_sample_report(sample, outdir, time_str, fileSize, run_successfully_fas
 
 
 def concatenate_extraSeq_2_consensus(consensus_sequence, reference_sequence, extraSeq_length, outdir):
-	consensus_dict, genes = rematch_module.get_sequence_information(consensus_sequence)
-	reference_dict, genes = rematch_module.get_sequence_information(reference_sequence)
+	consensus_dict, genes = rematch_module.get_sequence_information(consensus_sequence, extraSeq_length)
+	reference_dict, genes = rematch_module.get_sequence_information(reference_sequence, extraSeq_length)
 	for k, values_consensus in consensus_dict.items():
 		for values_reference in reference_dict.values():
 			if values_reference['header'] == values_consensus['header']:
@@ -200,12 +200,12 @@ def concatenate_extraSeq_2_consensus(consensus_sequence, reference_sequence, ext
 	return consensus_concatenated
 
 
-def clean_headers_reference_file(reference_file, outdir):
+def clean_headers_reference_file(reference_file, outdir, extraSeq):
 	problematic_characters = ["|", " ", ",", ".", "(", ")", "'", "/"]
 	print 'Checking if reference sequences contain ' + str(problematic_characters) + '\n'
 	headers_changed = False
 	new_reference_file = reference_file
-	sequences, genes = rematch_module.get_sequence_information(reference_file)
+	sequences, genes = rematch_module.get_sequence_information(reference_file, extraSeq)
 	for i in sequences:
 		if any(x in sequences[i]['header'] for x in problematic_characters):
 			for x in problematic_characters:
@@ -243,7 +243,7 @@ def runRematch(args):
 	print '\n' + 'STARTING ReMatCh' + '\n'
 
 	# Clean sequences headers
-	reference_file, gene_list_reference = clean_headers_reference_file(os.path.abspath(args.reference.name), workdir)
+	reference_file, gene_list_reference = clean_headers_reference_file(os.path.abspath(args.reference.name), workdir, args.extraSeq)
 
 	# To use in combined report
 
