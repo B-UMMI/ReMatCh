@@ -245,6 +245,9 @@ def runRematch(args):
 	# Clean sequences headers
 	reference_file, gene_list_reference = clean_headers_reference_file(os.path.abspath(args.reference.name), workdir, args.extraSeq)
 
+	if len(gene_list_reference) == 0:
+		sys.exit('No sequences left')
+
 	# To use in combined report
 
 	number_samples_successfully = 0

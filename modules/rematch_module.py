@@ -678,6 +678,7 @@ def get_sequence_information(fasta_file, length_extra_seq):
 		if len(temp_sequence_dict) > 0:
 			if temp_sequence_dict.values()[0]['length'] - 2 * length_extra_seq > 0:
 				sequence_dict[temp_sequence_dict.keys()[0]] = temp_sequence_dict.values()[0]
+				headers.append(temp_sequence_dict.values()[0]['header'])
 
 	return sequence_dict, headers
 
@@ -687,7 +688,7 @@ def sequence_data(sample, reference_file, bam_file, outdir, threads, length_extr
 	utils.removeDirectory(sequence_data_outdir)
 	os.mkdir(sequence_data_outdir)
 
-	sequences, headers = get_sequence_information(reference_file)
+	sequences, headers = get_sequence_information(reference_file, length_extra_seq)
 
 	pool = multiprocessing.Pool(processes=threads)
 	for sequence_counter in sequences:
