@@ -181,8 +181,8 @@ def write_sample_report(sample, outdir, time_str, fileSize, run_successfully_fas
 
 
 def concatenate_extraSeq_2_consensus(consensus_sequence, reference_sequence, extraSeq_length, outdir):
+	reference_dict, ignore = rematch_module.get_sequence_information(reference_sequence, extraSeq_length)
 	consensus_dict, genes = rematch_module.get_sequence_information(consensus_sequence, extraSeq_length)
-	reference_dict, genes = rematch_module.get_sequence_information(reference_sequence, extraSeq_length)
 	for k, values_consensus in consensus_dict.items():
 		for values_reference in reference_dict.values():
 			if values_reference['header'] == values_consensus['header']:
@@ -197,7 +197,7 @@ def concatenate_extraSeq_2_consensus(consensus_sequence, reference_sequence, ext
 			for line in fasta_sequence_lines:
 				writer.write(line + '\n')
 
-	return consensus_concatenated
+	return consensus_concatenated, genes
 
 
 def clean_headers_reference_file(reference_file, outdir, extraSeq):
@@ -285,12 +285,15 @@ def runRematch(args):
 					rematch_second_outdir = os.path.join(sample_outdir, 'rematch_second_run', '')
 					if not os.path.isdir(rematch_second_outdir):
 						os.mkdir(rematch_second_outdir)
-					consensus_concatenated_fasta = concatenate_extraSeq_2_consensus(consensus_files['noMatter'], reference_file, args.extraSeq, rematch_second_outdir)
-					time_taken_rematch_second, run_successfully_rematch_second, data_by_gene, sample_data_general_second, consensus_files = rematch_module.runRematchModule(sample, fastq_files, consensus_concatenated_fasta, args.threads, rematch_second_outdir, args.extraSeq, args.minCovPresence, args.minCovCall, args.minFrequencyDominantAllele, args.minGeneCoverage, args.conservedSeq, args.debug, args.numMapLoc, args.minGeneIdentity)
-					if not args.debug:
-						os.remove(consensus_concatenated_fasta)
-					if run_successfully_rematch_second:
-						write_data_by_gene(gene_list_reference, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'second_run', args.minGeneIdentity)
+					consensus_concatenated_fasta, consensus_concatenated_gene_list = concatenate_extraSeq_2_consensus(consensus_files['noMatter'], reference_file, args.extraSeq, rematch_second_outdir)
+					if len(consensus_concatenated_gene_list) > 0:
+						time_taken_rematch_second, run_successfully_rematch_second, data_by_gene, sample_data_general_second, consensus_files = rematch_module.runRematchModule(sample, fastq_files, consensus_concatenated_fasta, args.threads, rematch_second_outdir, args.extraSeq, args.minCovPresence, args.minCovCall, args.minFrequencyDominantAllele, args.minGeneCoverage, args.conservedSeq, args.debug, args.numMapLoc, args.minGeneIdentity)
+						if not args.debug:
+							os.remove(consensus_concatenated_fasta)
+						if run_successfully_rematch_second:
+							write_data_by_gene(gene_list_reference, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'second_run', args.minGeneIdentity)
+					else:
+						print 'No sequences left after ReMatCh module first run. Second run will not be performed'
 
 		if not searched_fastq_files and not args.keepDownloadedFastq and fastq_files is not None:
 			for fastq in fastq_files:
