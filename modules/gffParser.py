@@ -7,7 +7,6 @@ from Bio.SeqRecord import SeqRecord
 from Bio.Alphabet import IUPAC
 import ntpath
 
-
 def parseID(filename):
 	gffIDs=[]
 	with open(filename, 'r') as in_handle:
@@ -16,7 +15,47 @@ def parseID(filename):
 			gffIDs.append(line)
 	return gffIDs
 
+def retrieveSeq_File(fastaFile, coordFile, extraSeq, filename, outputDir):
+	handle = open(fastaFile, "rU")
+	records_dict = SeqIO.to_dict(SeqIO.parse(handle, "fasta"))
+	handle.close()
 
+	Seq2Get={}
+	with open(coordFile, 'r') as sequeces2get:
+		for line in sequeces2get:
+			line=line.split(',')
+			coords=(int(line[-2]), int(line[-1]))
+			contigID=line[0]
+			if contigID in Seq2Get.keys():
+				Seq2Get[contigID].append(coords)
+			else:
+				Seq2Get[contigID]=[coords]
+
+	with open(outputDir+'/'+filename+'.fasta','w') as output_handle:
+		fails=0
+		successes=0
+		records=[]
+		for contig, listCoords in Seq2Get.items():
+			contigSeq=records_dict[contig].seq
+			for coord in listCoords:
+				#print locus
+				coord1=coord[0]-extraSeq
+				coord2=coord[1]+extraSeq
+				if coord1 < 0 or coord2 > len(contigSeq):
+					fail_log=open(outputDir+'/'+filename+'_fails.txt', 'a')
+					fail_log.write(contig + ',' + str(coord[0])+','+ str(coord[1])+'\n')
+					fail_log.close()
+					fails+=1
+				else:
+					geneseq=str(contigSeq[coord1:coord2])
+					record = SeqRecord(Seq(geneseq), id=str(str(contig)+'_'+str(coord1)+'_'+str(coord2)), description='')
+					records.append(record)
+					successes+=1
+		SeqIO.write(records, output_handle, "fasta")
+
+	print 'Retrived %s features successfully from %s with %s bp as extra sequence.' % (str(successes), filename, str(extraSeq))
+	if fails>0:
+		print '%s featrued failed to retrieve. Check %s_fails.txt file.' % (str(fails), filename)
 
 def retrieveSeq(fastaFile, gffFeatures, extraSeq, filename, outputDir):
 	#parsing the sequence file into a SeqIO dictionary. one contig per entry
@@ -25,7 +64,8 @@ def retrieveSeq(fastaFile, gffFeatures, extraSeq, filename, outputDir):
 	handle.close()
 
 	with open(outputDir+'/'+filename+'.fasta','w') as output_handle:
-		lala=0
+		fails=0
+		successes=0
 		records=[]
 		for locus, location in gffFeatures.items():
 			#print locus
@@ -33,8 +73,10 @@ def retrieveSeq(fastaFile, gffFeatures, extraSeq, filename, outputDir):
 			coord1=location[1]-extraSeq
 			coord2=location[2]+extraSeq
 			if coord1 < 0 or coord2 > len(contigSeq):
-				print locus
-				lala+=1
+				fail_log=open(outputDir+'/'+filename+'_fails.txt', 'a')
+				fail_log.write(locus+'\n')
+				fail_log.close()
+				fails+=1
 			else:
 				geneseq=str(contigSeq[coord1:coord2])
 				if location[3] == '-':
@@ -42,10 +84,11 @@ def retrieveSeq(fastaFile, gffFeatures, extraSeq, filename, outputDir):
 					geneseq =str(seq.reverse_complement())
 				record = SeqRecord(Seq(geneseq), id=str(locus+':'+str(location[0])+'_'+str(location[1])+'_'+str(location[2])), description='')
 				records.append(record)
+				successes+=1
 		SeqIO.write(records, output_handle, "fasta")
-		print lala
-			#output.write('>'+locus+'_'+str(location[0])+'_'+str(location[1])+'_'+str(location[2])+'\n')
-			#output.write(geneseq)
+		print 'Retrived %s features successfully from %s with %s bp as extra sequence.' % (str(successes), filename, str(extraSeq))
+		if fails>0:
+			print '%s featrued failed to retrieve. Check %s_fails.txt file.' % (str(fails), filename)
 
 def parseFeatures(tempGFF):
 	#parsing the feature file into a dictionary
@@ -54,11 +97,9 @@ def parseFeatures(tempGFF):
 	with open(tempGFF, 'r') as temp_genes:
 		for line in temp_genes:
 			line=line.split('\t')
-			#print line
 			if "CDS" in line[2]:
 				ID=line[-1].split(';')
 				locusID=str(ID[0].split('=')[1])
-				#print locusID
 				contig=line[0]
 				begining=int(line[3])-1 #to get the full sequence
 				end=int(line[4])
@@ -67,45 +108,60 @@ def parseFeatures(tempGFF):
 				gffFeatures[locusID]=location
 	return gffFeatures
 
-def gffParser(gffFile, extraSeq, outputDir, keepTemporaryFiles, selectIDs):
+def gffParser(gffFile, extraSeq=0, outputDir='.', keepTemporaryFiles=False, selectIDs=None, coordFile=None):
 
 	filename=ntpath.basename(gffFile).replace('.gff', '')
-	#print filename
 
 	#cleaning temp files if they exist
 	if os.path.isfile(outputDir+'/'+filename+'_features.gff'):
 		os.remove(outputDir+'/'+filename+'_features.gff')
 	if os.path.isfile(outputDir+'/'+filename+'_sequence.fasta'):
 		os.remove(outputDir+'/'+filename+'_sequence.fasta')
+
+	#cleaning fails file if it exists
+	if os.path.isfile(outputDir+'/'+filename+'_fails.txt'):
+		os.remove(outputDir+'/'+filename+'_fails.txt')
+
+	if coordFile is None:
 	
-	#separating the gff into 2 different files: one with the features and another with the conting sequences
-	with open(gffFile, 'r') as in_handle, open(outputDir+'/'+filename+'_features.gff', 'a') as temp_genes, open(outputDir+'/'+filename+'_sequence.fasta', 'a') as temp_contigs:
-		for line in in_handle: 
-			if not line.startswith('##'):
-				if '\t' in line:
-					if selectIDs is not None:
-						items=line.split('\t')
-						ID=items[-1].split(';')[0]
-						ID=ID.split('=')[1]
-						if ID in selectIDs:
+		#separating the gff into 2 different files: one with the features and another with the conting sequences
+		with open(gffFile, 'r') as in_handle, open(outputDir+'/'+filename+'_features.gff', 'a') as temp_genes, open(outputDir+'/'+filename+'_sequence.fasta', 'a') as temp_contigs:
+			for line in in_handle: 
+				if not line.startswith('##'):
+					if '\t' in line:
+						if selectIDs is not None:
+							items=line.split('\t')
+							ID=items[-1].split(';')[0]
+							ID=ID.split('=')[1]
+							if ID in selectIDs:
+								temp_genes.write(line)
+						else:
 							temp_genes.write(line)
 					else:
-						temp_genes.write(line)
-				else:
-					temp_contigs.write(line)
+						temp_contigs.write(line)
 
-	gffFiles=parseFeatures(outputDir+'/'+filename+'_features.gff')
+		gffFiles=parseFeatures(outputDir+'/'+filename+'_features.gff')
 
-	retrieveSeq(outputDir+'/'+filename+'_sequence.fasta', gffFiles, extraSeq, filename, outputDir)
+		retrieveSeq(outputDir+'/'+filename+'_sequence.fasta', gffFiles, extraSeq, filename, outputDir)
 	
+	else:
+		with open(gffFile, 'r') as in_handle, open(outputDir+'/'+filename+'_sequence.fasta', 'a') as temp_contigs:
+			for line in in_handle:
+				if not line.startswith('##'):
+					if '\t' in line:
+						pass
+					else:
+						temp_contigs.write(line)
+
+		retrieveSeq_File(outputDir+'/'+filename+'_sequence.fasta', coordFile, extraSeq, filename, outputDir)
 
 	#removing temp files
 	if not keepTemporaryFiles:
-		os.remove(outputDir+'/'+filename+'_features.gff')
+		try:
+			os.remove(outputDir+'/'+filename+'_features.gff')
+		except:
+			pass
 		os.remove(outputDir+'/'+filename+'_sequence.fasta')
-
-
-
 
 def main():
 
@@ -117,7 +173,7 @@ def main():
 	parser.add_argument('-k','--keepTemporaryFiles', help='Keep temporary gff(without sequence) and fasta files.', default=False, action='store_true', required=False)
 	parser.add_argument('-o', '--outputDir', help='Path to where the output is to be saved.', default='.')
 	parser.add_argument('-s', '--select', help='txt file with the IDs of interest, one per line', default=None)
-	#parser.add-argument('--verbose')
+	parser.add_argument('-f', '--fromFile', help='use contig ID and coords (contig,strart,end) in a csv file. One per line.')
 	parser.add_argument('--version', help='Display version, and exit.', default=False, action='store_true')
 
 	args = parser.parse_args()
@@ -140,10 +196,8 @@ def main():
 	else:
 		IDs=None
 
-	print 'parsing gff file...'
-	gffParser(args.input, args.extra_seq, args.outputDir, args.keepTemporaryFiles, IDs)
+	gffParser(args.input, args.extra_seq, args.outputDir, args.keepTemporaryFiles, IDs, args.fromFile)
 
-	print "Finished"
 	sys.exit(0)
 
 
