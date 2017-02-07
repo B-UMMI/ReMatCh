@@ -8,6 +8,7 @@ from Bio.Alphabet import IUPAC
 import ntpath
 
 def parseID(filename):
+	#get wanted feature IDs
 	gffIDs=[]
 	with open(filename, 'r') as in_handle:
 		for line in in_handle:
@@ -16,6 +17,7 @@ def parseID(filename):
 	return gffIDs
 
 def retrieveSeq_File(fastaFile, coordFile, extraSeq, filename, outputDir):
+	#Parsing the sequence file, using the provided txt file containing the contig ID and positions to retrieve sequences.
 	handle = open(fastaFile, "rU")
 	records_dict = SeqIO.to_dict(SeqIO.parse(handle, "fasta"))
 	handle.close()
@@ -38,7 +40,6 @@ def retrieveSeq_File(fastaFile, coordFile, extraSeq, filename, outputDir):
 		for contig, listCoords in Seq2Get.items():
 			contigSeq=records_dict[contig].seq
 			for coord in listCoords:
-				#print locus
 				coord1=coord[0]-extraSeq
 				coord2=coord[1]+extraSeq
 				if coord1 < 0 or coord2 > len(contigSeq):
@@ -86,9 +87,9 @@ def retrieveSeq(fastaFile, gffFeatures, extraSeq, filename, outputDir):
 				records.append(record)
 				successes+=1
 		SeqIO.write(records, output_handle, "fasta")
-		print 'Retrived %s features successfully from %s with %s bp as extra sequence.' % (str(successes), filename, str(extraSeq))
-		if fails>0:
-			print '%s featrued failed to retrieve. Check %s_fails.txt file.' % (str(fails), filename)
+	print 'Retrived %s features successfully from %s with %s bp as extra sequence.' % (str(successes), filename, str(extraSeq))
+	if fails>0:
+		print '%s featrued failed to retrieve. Check %s_fails.txt file.' % (str(fails), filename)
 
 def parseFeatures(tempGFF):
 	#parsing the feature file into a dictionary
@@ -108,7 +109,7 @@ def parseFeatures(tempGFF):
 				gffFeatures[locusID]=location
 	return gffFeatures
 
-def gffParser(gffFile, extraSeq=0, outputDir='.', keepTemporaryFiles=False, selectIDs=None, coordFile=None):
+def gffParser(gffFile, extraSeq=0, outputDir='.', keepTemporaryFiles=False, IDs=None, coordFile=None):
 
 	filename=ntpath.basename(gffFile).replace('.gff', '')
 
@@ -123,6 +124,11 @@ def gffParser(gffFile, extraSeq=0, outputDir='.', keepTemporaryFiles=False, sele
 		os.remove(outputDir+'/'+filename+'_fails.txt')
 
 	if coordFile is None:
+
+		if IDs is not None:
+			selectIDs=parseID(IDs)
+		else:
+			selectIDs=None
 	
 		#separating the gff into 2 different files: one with the features and another with the conting sequences
 		with open(gffFile, 'r') as in_handle, open(outputDir+'/'+filename+'_features.gff', 'a') as temp_genes, open(outputDir+'/'+filename+'_sequence.fasta', 'a') as temp_contigs:
@@ -189,14 +195,7 @@ def main():
 		print "error: argument -i/--input is required"
 		sys.exit(1)
 
-	#START
-
-	if args.select is not None:
-		IDs=parseID(args.select)
-	else:
-		IDs=None
-
-	gffParser(args.input, args.extra_seq, args.outputDir, args.keepTemporaryFiles, IDs, args.fromFile)
+	gffParser(args.input, args.extra_seq, args.outputDir, args.keepTemporaryFiles, args.select, args.fromFile)
 
 	sys.exit(0)
 
