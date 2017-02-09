@@ -42,9 +42,9 @@ Parser for GFF3 files, as the ones obtained by [PROKKA] (https://github.com/tsee
   		--version           Display version, and exit.
 
 **Output**
-*<input_filename>.fasta*
+*input_filename.fasta*  
 Multi-fasta file with the retrieved sequences. The header contains the feature ID, followed by ':', and the position of that feature in the sequence (contig_start_end). 
 If the `-fromFile` option is used, the header will contain only the position of that feature in the sequence (contig_start_end). 
 
-*<input_filename>.txt*
+*input_filename.txt*  
 Feature ID of the sequences that failed to be retireved, due to the start position or end position being outside of the sequence where the feature is (due to the `-extraSeq` option). 
