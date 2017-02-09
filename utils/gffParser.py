@@ -171,15 +171,15 @@ def gffParser(gffFile, extraSeq=0, outputDir='.', keepTemporaryFiles=False, IDs=
 
 def main():
 
-	version='1.4.5'
+	version='1.0.0'
 
 	parser = argparse.ArgumentParser(description='GFF3 parser for feature sequence retrival, containing both sequences and annotations.', epilog='by C I Mendes (cimendes@medicina.ulisboa.pt)')
 	parser.add_argument('-i', '--input', help='GFF3 file to parse, containing both sequences and annotations (like the one obtained from PROKKA).', required=True)#,type=type=argparse.FileType('r'), required=True)
-	parser.add_argument('-x', '--extra_seq', help='Extra sequence to retrieve per feature in gff.', default=0, type=int, required=False)
+	parser.add_argument('-x', '--extraSeq', help='Extra sequence to retrieve per feature in gff.', default=0, type=int, required=False)
 	parser.add_argument('-k','--keepTemporaryFiles', help='Keep temporary gff(without sequence) and fasta files.', default=False, action='store_true', required=False)
 	parser.add_argument('-o', '--outputDir', help='Path to where the output is to be saved.', default='.')
 	parser.add_argument('-s', '--select', help='txt file with the IDs of interest, one per line', default=None)
-	parser.add_argument('-f', '--fromFile', help='use contig ID and coords (contig,strart,end) in a csv file. One per line.')
+	parser.add_argument('-f', '--fromFile', help='Sequence coordinates to be retrieved. Requires contig ID and coords (contig,strart,end) in a csv file. One per line.')
 	parser.add_argument('--version', help='Display version, and exit.', default=False, action='store_true')
 
 	args = parser.parse_args()
@@ -195,7 +195,7 @@ def main():
 		print "error: argument -i/--input is required"
 		sys.exit(1)
 
-	gffParser(args.input, args.extra_seq, args.outputDir, args.keepTemporaryFiles, args.select, args.fromFile)
+	gffParser(args.input, args.extraSeq, args.outputDir, args.keepTemporaryFiles, args.select, args.fromFile)
 
 	sys.exit(0)
 
