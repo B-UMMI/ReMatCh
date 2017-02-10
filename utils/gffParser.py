@@ -173,31 +173,20 @@ def main():
 
 	version='1.0.0'
 
-	parser = argparse.ArgumentParser(description='GFF3 parser for feature sequence retrival, containing both sequences and annotations.', epilog='by C I Mendes (cimendes@medicina.ulisboa.pt)')
-	parser.add_argument('-i', '--input', help='GFF3 file to parse, containing both sequences and annotations (like the one obtained from PROKKA).', required=True)#,type=type=argparse.FileType('r'), required=True)
+	parser = argparse.ArgumentParser(prog='gffParser.py', description='GFF3 parser for feature sequence retrival.', epilog='by C I Mendes (cimendes@medicina.ulisboa.pt)')
+	parser.add_argument('-i', '--input', help='GFF3 file to parse, containing both sequences and annotations (like the one obtained from PROKKA).', type=type=argparse.FileType('r'), required=True)
 	parser.add_argument('-x', '--extraSeq', help='Extra sequence to retrieve per feature in gff.', default=0, type=int, required=False)
-	parser.add_argument('-k','--keepTemporaryFiles', help='Keep temporary gff(without sequence) and fasta files.', default=False, action='store_true', required=False)
-	parser.add_argument('-o', '--outputDir', help='Path to where the output is to be saved.', default='.')
-	parser.add_argument('-s', '--select', help='txt file with the IDs of interest, one per line', default=None)
-	parser.add_argument('-f', '--fromFile', help='Sequence coordinates to be retrieved. Requires contig ID and coords (contig,strart,end) in a csv file. One per line.')
-	parser.add_argument('--version', help='Display version, and exit.', default=False, action='store_true')
+	parser.add_argument('-k','--keepTemporaryFiles', help='Keep temporary gff(without sequence) and fasta files.', action='store_true')
+	parser.add_argument('-o', '--outputDir', help='Path to where the output is to be saved.', default='.', required=False)
+	parser.add_argument('--version', help='Version information', action='version', version=str('%(prog)s v' + version))
+
+	parser_optional_selected_regions_exclusive = parser.add_mutually_exclusive_group()
+	parser_optional_selected_regions_exclusive.add_argument('-s', '--select', help='txt file with the IDs of interest, one per line', type=type=argparse.FileType('r'), required=False)
+	parser_optional_selected_regions_exclusive.add_argument('-f', '--fromFile', help='Sequence coordinates to be retrieved. Requires contig ID and coords (contig,strart,end) in a csv file. One per line.', type=type=argparse.FileType('r'), required=False)
 
 	args = parser.parse_args()
-
-	#version
-	if args.version:
-		print sys.stdout, "Current version: %s" %(version)
-		sys.exit(0)
-
-	#check if something is missing
-	if args.input is None:
-		parser.print_usage()
-		print "error: argument -i/--input is required"
-		sys.exit(1)
-
-	gffParser(args.input, args.extraSeq, args.outputDir, args.keepTemporaryFiles, args.select, args.fromFile)
-
-	sys.exit(0)
+	
+	gffParser(os.path.abspath(args.input.name), args.extraSeq, os.path.abspath(args.outputDir), args.keepTemporaryFiles, os.path.abspath(args.select.name) if args.select is not None else None, os.path.abspath(args.fromFile.name) if args.fromFile is not None else None)
 
 
 if __name__ == "__main__":
