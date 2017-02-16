@@ -49,7 +49,7 @@ def retrieveSeq_File(fastaFile, coordFile, extraSeq, filename, outputDir):
 					fails+=1
 				else:
 					geneseq=str(contigSeq[coord1:coord2])
-					record = SeqRecord(Seq(geneseq), id=str(str(contig)+'_'+str(coord1)+'_'+str(coord2)), description='')
+					record = SeqRecord(Seq(geneseq), id=str(str(contig)+'#'+str(coord1)+'_'+str(coord2)), description='')
 					records.append(record)
 					successes+=1
 		SeqIO.write(records, output_handle, "fasta")
@@ -83,7 +83,7 @@ def retrieveSeq(fastaFile, gffFeatures, extraSeq, filename, outputDir):
 				if location[3] == '-':
 					seq = Seq(geneseq)
 					geneseq =str(seq.reverse_complement())
-				record = SeqRecord(Seq(geneseq), id=str(locus+':'+str(location[0])+'_'+str(location[1])+'_'+str(location[2])), description='')
+				record = SeqRecord(Seq(geneseq), id=str(locus+'-'+str(location[0])+'#'+str(location[1])+'_'+str(location[2])), description='')
 				records.append(record)
 				successes+=1
 		SeqIO.write(records, output_handle, "fasta")
@@ -174,15 +174,17 @@ def main():
 	version='1.0.0'
 
 	parser = argparse.ArgumentParser(prog='gffParser.py', description='GFF3 parser for feature sequence retrival.', epilog='by C I Mendes (cimendes@medicina.ulisboa.pt)')
-	parser.add_argument('-i', '--input', help='GFF3 file to parse, containing both sequences and annotations (like the one obtained from PROKKA).', type=type=argparse.FileType('r'), required=True)
+	parser.add_argument('--version', help='Version information', action='version', version=str('%(prog)s v' + version))
+
+	parser.add_argument('-i', '--input', help='GFF3 file to parse, containing both sequences and annotations (like the one obtained from PROKKA).', type=argparse.FileType('r'), required=True)
 	parser.add_argument('-x', '--extraSeq', help='Extra sequence to retrieve per feature in gff.', default=0, type=int, required=False)
 	parser.add_argument('-k','--keepTemporaryFiles', help='Keep temporary gff(without sequence) and fasta files.', action='store_true')
 	parser.add_argument('-o', '--outputDir', help='Path to where the output is to be saved.', default='.', required=False)
-	parser.add_argument('--version', help='Version information', action='version', version=str('%(prog)s v' + version))
+	
 
 	parser_optional_selected_regions_exclusive = parser.add_mutually_exclusive_group()
-	parser_optional_selected_regions_exclusive.add_argument('-s', '--select', help='txt file with the IDs of interest, one per line', type=type=argparse.FileType('r'), required=False)
-	parser_optional_selected_regions_exclusive.add_argument('-f', '--fromFile', help='Sequence coordinates to be retrieved. Requires contig ID and coords (contig,strart,end) in a csv file. One per line.', type=type=argparse.FileType('r'), required=False)
+	parser_optional_selected_regions_exclusive.add_argument('-s', '--select', help='txt file with the IDs of interest, one per line', type=argparse.FileType('r'), required=False)
+	parser_optional_selected_regions_exclusive.add_argument('-f', '--fromFile', help='Sequence coordinates to be retrieved. Requires contig ID and coords (contig,strart,end) in a csv file. One per line.', type=argparse.FileType('r'), required=False)
 
 	args = parser.parse_args()
 	
