@@ -101,7 +101,7 @@ def mapping_reads(fastq_files, reference_file, threads, outdir, conserved_True, 
 def create_vcf(bam_file, sequence_to_analyse, outdir, counter, reference_file):
 	gene_vcf = os.path.join(outdir, 'samtools_mpileup.sequence_' + str(counter) + '.vcf')
 
-	command = ['samtools', 'mpileup', '--count-orphans', '--no-BAQ', '--min-BQ', '0', '--min-MQ', '0', '--fasta-ref', reference_file, '--region', sequence_to_analyse, '--output', gene_vcf, '--VCF', '--uncompressed', '--output-tags', 'INFO/AD,AD,DP', bam_file]
+	command = ['samtools', 'mpileup', '--count-orphans', '--no-BAQ', '--min-BQ', '0', '--min-MQ', str(7), '--fasta-ref', reference_file, '--region', sequence_to_analyse, '--output', gene_vcf, '--VCF', '--uncompressed', '--output-tags', 'INFO/AD,AD,DP', bam_file]
 
 	run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, False, None, False)
 	if not run_successfully:
