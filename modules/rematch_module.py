@@ -178,7 +178,6 @@ def indel_entry(variant_position):
 
 
 def get_alt_noMatter(variant_position, indel_true):
-	# dp = int(variant_position['info']['DP'])
 	dp = sum(map(int, variant_position['format']['AD']))
 	index_alleles_sorted_position = sorted(zip(map(int, variant_position['format']['AD']), range(0, len(variant_position['format']['AD']))), reverse=True)
 	index_dominant_allele = None
@@ -267,7 +266,7 @@ def get_alt_correct(variant_position, alt_noMatter, dp, ad_idv, index_dominant_a
 
 def get_alt_alignment(ref, alt):
 	if alt is None:
-		alt = 'N'
+		alt = 'N' * len(ref)
 	else:
 		if len(ref) != len(alt):
 			if len(alt) < len(ref):
@@ -527,7 +526,6 @@ def get_coverage_report(coverage, sequence_length, minimum_depth_presence, minim
 		if counter > length_extra_seq and counter <= sequence_length - length_extra_seq:
 			if coverage[counter] < minimum_depth_presence:
 				count_absent += 1
-				count_lowCoverage += 1
 			else:
 				if coverage[counter] < minimum_depth_call:
 					count_lowCoverage += 1
@@ -535,10 +533,12 @@ def get_coverage_report(coverage, sequence_length, minimum_depth_presence, minim
 		counter += 1
 
 	mean_coverage = 0
+	percentage_lowCoverage = 0
 	if sequence_length - 2 * length_extra_seq - count_absent > 0:
 		mean_coverage = float(sum_coverage) / float(sequence_length - 2 * length_extra_seq - count_absent)
+		percentage_lowCoverage = float(count_lowCoverage) / float(sequence_length - 2 * length_extra_seq - count_absent) * 100
 
-	return float(count_absent) / float(sequence_length - 2 * length_extra_seq) * 100, float(count_lowCoverage) / float(sequence_length - 2 * length_extra_seq) * 100, mean_coverage
+	return count_absent, percentage_lowCoverage, mean_coverage
 
 
 # Get genome coverage data
@@ -617,7 +617,7 @@ def create_sample_consensus_sequence(outdir, sequence_to_analyse, reference_file
 
 @utils.trace_unhandled_exceptions
 def analyse_sequence_data(bam_file, sequence_information, outdir, counter, reference_file, length_extra_seq, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele):
-	percentage_absent = None
+	count_absent = None
 	percentage_lowCoverage = None
 	meanCoverage = None
 	number_diferences = 0
@@ -636,9 +636,9 @@ def analyse_sequence_data(bam_file, sequence_information, outdir, counter, refer
 
 			run_successfully, number_multi_alleles, consensus_sequence, number_diferences = create_sample_consensus_sequence(outdir, sequence_information['header'], reference_file, variants, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, sequence_information['sequence'], length_extra_seq)
 
-			percentage_absent, percentage_lowCoverage, meanCoverage = get_coverage_report(coverage, sequence_information['length'], minimum_depth_presence, minimum_depth_call, length_extra_seq)
+			count_absent, percentage_lowCoverage, meanCoverage = get_coverage_report(coverage, sequence_information['length'], minimum_depth_presence, minimum_depth_call, length_extra_seq)
 
-	utils.saveVariableToPickle([run_successfully, counter, number_multi_alleles, percentage_absent, percentage_lowCoverage, meanCoverage, consensus_sequence, number_diferences], outdir, str('coverage_info.' + str(counter)))
+	utils.saveVariableToPickle([run_successfully, counter, number_multi_alleles, count_absent, percentage_lowCoverage, meanCoverage, consensus_sequence, number_diferences], outdir, str('coverage_info.' + str(counter)))
 
 
 def get_sequence_information(fasta_file, length_extra_seq):
@@ -701,7 +701,7 @@ def sequence_data(sample, reference_file, bam_file, outdir, threads, length_extr
 	pool.close()
 	pool.join()
 
-	run_successfully, sample_data, consensus_files = gather_data_together(sample, sequence_data_outdir, sequences, outdir.rsplit('/', 2)[0], debug_mode_true)
+	run_successfully, sample_data, consensus_files = gather_data_together(sample, sequence_data_outdir, sequences, outdir.rsplit('/', 2)[0], debug_mode_true, length_extra_seq)
 
 	return run_successfully, sample_data, consensus_files
 
@@ -722,7 +722,7 @@ def write_consensus(outdir, sample, consensus_sequence):
 	return consensus_files
 
 
-def gather_data_together(sample, data_directory, sequences_information, outdir, debug_mode_true):
+def gather_data_together(sample, data_directory, sequences_information, outdir, debug_mode_true, length_extra_seq):
 	run_successfully = True
 	counter = 0
 	sample_data = {}
@@ -741,7 +741,7 @@ def gather_data_together(sample, data_directory, sequences_information, outdir, 
 				file_path = os.path.join(gene_dir_path, file_found)
 
 				if run_successfully:
-					run_successfully, sequence_counter, multiple_alleles_found, percentage_absent, percentage_lowCoverage, meanCoverage, consensus_sequence, number_diferences = utils.extractVariableFromPickle(file_path)
+					run_successfully, sequence_counter, multiple_alleles_found, count_absent, percentage_lowCoverage, meanCoverage, consensus_sequence, number_diferences = utils.extractVariableFromPickle(file_path)
 
 					if write_consensus_first_time:
 						for consensus_type in ['correct', 'noMatter', 'alignment']:
@@ -751,7 +751,11 @@ def gather_data_together(sample, data_directory, sequences_information, outdir, 
 						write_consensus_first_time = False
 					consensus_files = write_consensus(outdir, sample, consensus_sequence)
 
-					sample_data[sequence_counter] = {'header': sequences_information[sequence_counter]['header'], 'gene_coverage': 100 - percentage_absent, 'gene_low_coverage': percentage_lowCoverage, 'gene_number_positions_multiple_alleles': multiple_alleles_found, 'gene_mean_read_coverage': meanCoverage, 'gene_identity': 100 - (float(number_diferences) / sequences_information[sequence_counter]['length'])}
+					gene_identity = 0
+					if sequences_information[sequence_counter]['length'] - 2 * length_extra_seq - count_absent > 0:
+						gene_identity = 100 - (float(number_diferences) / (sequences_information[sequence_counter]['length'] - 2 * length_extra_seq - count_absent))
+
+					sample_data[sequence_counter] = {'header': sequences_information[sequence_counter]['header'], 'gene_coverage': 100 - (float(count_absent) / (sequences_information[sequence_counter]['length'] - 2 * length_extra_seq)), 'gene_low_coverage': percentage_lowCoverage, 'gene_number_positions_multiple_alleles': multiple_alleles_found, 'gene_mean_read_coverage': meanCoverage, 'gene_identity': gene_identity}
 					counter += 1
 
 		if not debug_mode_true:

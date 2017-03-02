@@ -143,7 +143,7 @@ def general_information(logfile, version, outdir, time_str, doNotUseProvidedSoft
 	print sys.executable + ' ' + script_path + ' ' + ' '.join(sys.argv[1:])
 
 	# Print directory where programme was lunch
-	print '\n' + 'PRESENT DIRECTORY :'
+	print '\n' + 'PRESENT DIRECTORY:'
 	present_directory = os.path.abspath(os.getcwd())
 	print present_directory
 

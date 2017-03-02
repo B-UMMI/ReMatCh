@@ -134,7 +134,7 @@ def download(downloadInformation_type, asperaKey, outdir):
 	return run_successfully
 
 
-def downloadFiles(downloadInformation, sequencingInformation, download_paired_type, asperaKey, outdir, download_cram_bam_True):
+def downloadFiles(downloadInformation, asperaKey, outdir, download_cram_bam_True):
 	run_successfully = False
 	cram_index_run_successfully = False
 
@@ -384,9 +384,9 @@ def runDownload(ena_id, download_paired_type, asperaKey, outdir, download_cram_b
 		sequencingInformation = getSequencingInformation(readRunInfo)
 		sequencingInformation['date_download'] = time.strftime("%Y-%m-%d")
 
-		if instrument_platform.lower() == 'all' or sequencingInformation['instrument_platform'].lower() == instrument_platform.lower():
-			if download_paired_type.lower() == 'both' or sequencingInformation['library_layout'].lower() == download_paired_type.lower():
-				run_successfully, cram_index_run_successfully = downloadFiles(downloadInformation, sequencingInformation, download_paired_type, asperaKey, download_dir, download_cram_bam_True)
+		if instrument_platform.lower() == 'all' or (sequencingInformation['instrument_platform'] is not None and sequencingInformation['instrument_platform'].lower() == instrument_platform.lower()):
+			if download_paired_type.lower() == 'both' or (sequencingInformation['library_layout'] is not None and sequencingInformation['library_layout'].lower() == download_paired_type.lower()):
+				run_successfully, cram_index_run_successfully = downloadFiles(download_paired_type, asperaKey, download_dir, download_cram_bam_True)
 				if run_successfully:
 					run_successfully, downloaded_files = get_fastq_files(download_dir, cram_index_run_successfully, threads, sequencingInformation['library_layout'])
 				if run_successfully and downloaded_files is not None:

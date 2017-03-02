@@ -7,9 +7,9 @@ rematch.py - Reads mapping against target sequences, checking mapping
 and consensus sequences production
 <https://github.com/B-UMMI/ReMatCh/>
 
-Copyright (C) 2016 Miguel Machado <mpmachado@medicina.ulisboa.pt>
+Copyright (C) 2017 Miguel Machado <mpmachado@medicina.ulisboa.pt>
 
-Last modified: January 10, 2017
+Last modified: February 09, 2017
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@ import modules.download as download
 import modules.rematch_module as rematch_module
 
 
-version = '3.0'
+version = '3.1'
 
 
 def searchFastqFiles(directory):
@@ -182,7 +182,7 @@ def write_sample_report(sample, outdir, time_str, fileSize, run_successfully_fas
 
 def concatenate_extraSeq_2_consensus(consensus_sequence, reference_sequence, extraSeq_length, outdir):
 	reference_dict, ignore = rematch_module.get_sequence_information(reference_sequence, extraSeq_length)
-	consensus_dict, genes = rematch_module.get_sequence_information(consensus_sequence, extraSeq_length)
+	consensus_dict, genes = rematch_module.get_sequence_information(consensus_sequence, 0)
 	for k, values_consensus in consensus_dict.items():
 		for values_reference in reference_dict.values():
 			if values_reference['header'] == values_consensus['header']:
@@ -201,7 +201,7 @@ def concatenate_extraSeq_2_consensus(consensus_sequence, reference_sequence, ext
 
 
 def clean_headers_reference_file(reference_file, outdir, extraSeq):
-	problematic_characters = ["|", " ", ",", ".", "(", ")", "'", "/"]
+	problematic_characters = ["|", " ", ",", ".", "(", ")", "'", "/", ":"]
 	print 'Checking if reference sequences contain ' + str(problematic_characters) + '\n'
 	headers_changed = False
 	new_reference_file = reference_file
@@ -294,6 +294,8 @@ def runRematch(args):
 							write_data_by_gene(gene_list_reference, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'second_run', args.minGeneIdentity)
 					else:
 						print 'No sequences left after ReMatCh module first run. Second run will not be performed'
+						if os.path.isfile(consensus_concatenated_fasta):
+							os.remove(consensus_concatenated_fasta)
 
 		if not searched_fastq_files and not args.keepDownloadedFastq and fastq_files is not None:
 			for fastq in fastq_files:
