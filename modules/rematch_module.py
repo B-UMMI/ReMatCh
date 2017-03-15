@@ -312,31 +312,24 @@ def confirm_nucleotides_indel(ref, alt, variants, position_start_indel, minimum_
 	alt = list(alt)
 
 	for i in range(0, len(alt) - 1):
-		if alt[1 + i] != 'N':
-			if len(alt) < len(ref):
-				new_position = position_start_indel + len(alt) - i
-				# new_position = position_start_indel + len(alt) - i - 1
-				# alt_position = len(alt) - i - 1
-			else:
-				# if i + 1 > len(ref):
-				if i + 1 > len(ref) - 1:
-					break
-				new_position = position_start_indel + 1 + i
-				# alt_position = 1 + i
+		if len(alt) < len(ref):
+			new_position = position_start_indel + len(alt) - i - 1
+			alt_position = len(alt) - i - 1
+		else:
+			if i + 1 > len(ref):
+				break
+			new_position = position_start_indel + 1 + i
+			alt_position = 1 + i
 
+		if alt[alt_position] != 'N':
 			if new_position not in variants:
-				alt[1 + i] = ''
-				# alt[alt_position] = ''
-				continue
-
-			# if alt[alt_position] != 'N':
+				alt = alt[: alt_position]
+				break
 
 			entry_with_indel, entry_with_snp = indel_entry(variants[new_position])
 			new_ref, alt_correct, low_coverage, multiple_alleles, alt_noMatter, alt_alignment = determine_variant(variants[new_position][entry_with_snp], minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, False)
-			# if alt_noMatter != '.' and alt[alt_position] != alt_noMatter:
-			if alt_noMatter != '.' and alt[1 + i] != alt_noMatter:
-				alt[1 + i] = alt_noMatter
-				# alt[alt_position] = alt_noMatter
+			if alt_noMatter != '.' and alt[alt_position] != alt_noMatter:
+				alt[alt_position] = alt_noMatter
 
 	return ''.join(alt)
 
