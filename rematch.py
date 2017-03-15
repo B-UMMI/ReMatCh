@@ -296,6 +296,8 @@ def runRematch(args):
 						print 'No sequences left after ReMatCh module first run. Second run will not be performed'
 						if os.path.isfile(consensus_concatenated_fasta):
 							os.remove(consensus_concatenated_fasta)
+						if os.path.isdir(rematch_second_outdir):
+							utils.removeDirectory(rematch_second_outdir)
 
 		if not searched_fastq_files and not args.keepDownloadedFastq and fastq_files is not None:
 			for fastq in fastq_files:

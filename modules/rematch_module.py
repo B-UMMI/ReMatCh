@@ -404,6 +404,11 @@ def get_true_variants(variants, minimum_depth_presence, minimum_depth_call, mini
 		if counter in variants:
 			ref, alt_correct, low_coverage, multiple_alleles, alt_noMatter, alt_alignment = snp_indel(variants, counter, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele)
 
+			if len(ref) != len(alt_alignment):
+				print 'Position: ' + str(counter) + '; Reference: ' + ref + '; Alternative for alignment: ' + alt_alignment
+				print 'Contact the developer'
+				sys.exit('ERROR: reference and alternative for alignment output have different length')
+
 			if alt_alignment != '.':
 				variants_alignment[counter] = {'REF': ref, 'ALT': alt_alignment}
 
@@ -563,7 +568,7 @@ def get_coverage_report(coverage, sequence_length, minimum_depth_presence, minim
 		counter += 1
 
 	mean_coverage = 0
-	percentage_lowCoverage = 0
+	percentage_lowCoverage = 100
 	if sequence_length - 2 * length_extra_seq - count_absent > 0:
 		mean_coverage = float(sum_coverage) / float(sequence_length - 2 * length_extra_seq - count_absent)
 		percentage_lowCoverage = float(count_lowCoverage) / float(sequence_length - 2 * length_extra_seq - count_absent) * 100
