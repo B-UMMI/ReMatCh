@@ -171,7 +171,7 @@ def write_sample_report(sample, outdir, time_str, fileSize, run_successfully_fas
 
 	header_general = ['sample', 'sample_run_successfully', 'sample_run_time', 'files_size', 'download_run_successfully', 'download_run_time', 'rematch_run_successfully_first', 'rematch_run_time_first', 'rematch_run_successfully_second', 'rematch_run_time_second']
 	header_data_general = ['number_absent_genes', 'number_genes_multiple_alleles', 'mean_sample_coverage']
-	header_sequencing = ['run_accession', 'instrument_platform', 'instrument_model', 'library_layout', 'library_source', 'extra_run_accession', 'date_download']
+	header_sequencing = ['run_accession', 'instrument_platform', 'instrument_model', 'library_layout', 'library_source', 'extra_run_accession', 'nominal_length', 'read_count', 'base_count', 'date_download']
 
 	with open(sample_report, 'at') as writer:
 		if not report_exist:
@@ -262,7 +262,7 @@ def runRematch(args):
 
 		run_successfully_fastq = None
 		time_taken_fastq = 0
-		sequencingInformation = {'run_accession': None, 'instrument_platform': None, 'instrument_model': None, 'library_layout': None, 'library_source': None, 'extra_run_accession': None, 'date_download': None}
+		sequencingInformation = {'run_accession': None, 'instrument_platform': None, 'instrument_model': None, 'library_layout': None, 'library_source': None, 'extra_run_accession': None, 'nominal_length': None, 'read_count': None, 'base_count': None, 'date_download': None}
 		if not searched_fastq_files:
 			# Download Files
 			time_taken_fastq, run_successfully_fastq, fastq_files, sequencingInformation = download.runDownload(sample, args.downloadLibrariesType, asperaKey, sample_outdir, args.downloadCramBam, args.threads, args.downloadInstrumentPlatform)

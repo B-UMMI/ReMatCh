@@ -49,7 +49,7 @@ def getSequencingInformation(readRunInfo):
 	header_line = readRunInfo[0].split('\t')
 	info_line = readRunInfo[1].split('\t')
 
-	sequencingInformation = {'run_accession': None, 'instrument_platform': None, 'instrument_model': None, 'library_layout': None, 'library_source': None, 'extra_run_accession': None}
+	sequencingInformation = {'run_accession': None, 'instrument_platform': None, 'instrument_model': None, 'library_layout': None, 'library_source': None, 'extra_run_accession': None, 'nominal_length': None, 'read_count': None, 'base_count': None}
 
 	for i in range(0, len(header_line)):
 		header = header_line[i].lower()
@@ -375,7 +375,7 @@ def runDownload(ena_id, download_paired_type, asperaKey, outdir, download_cram_b
 
 	run_successfully = False
 	downloaded_files = None
-	sequencingInformation = {'run_accession': None, 'instrument_platform': None, 'instrument_model': None, 'library_layout': None, 'library_source': None, 'extra_run_accession': None, 'date_download': None}
+	sequencingInformation = {'run_accession': None, 'instrument_platform': None, 'instrument_model': None, 'library_layout': None, 'library_source': None, 'extra_run_accession': None, 'nominal_length': None, 'read_count': None, 'base_count': None, 'date_download': None}
 
 	readRunInfo = getReadRunInfo(ena_id)
 	if readRunInfo is not None:

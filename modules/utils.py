@@ -237,10 +237,9 @@ def kill_subprocess_Popen(subprocess_Popen, command):
 
 def runCommandPopenCommunicate(command, shell_True, timeout_sec_None, print_comand_True):
 	run_successfully = False
-	if isinstance(command, basestring):
-		command = shlex.split(command)
-	else:
-		command = shlex.split(' '.join(command))
+	if not isinstance(command, basestring):
+		command = ' '.join(command)
+	command = shlex.split(command)
 
 	if print_comand_True:
 		print 'Running: ' + ' '.join(command)
