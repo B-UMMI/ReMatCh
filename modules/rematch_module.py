@@ -194,7 +194,7 @@ def get_alt_noMatter(variant_position, indel_true):
 			alt = variant_position['ALT'][index_dominant_allele - 1]
 
 	else:
-		ad_idv = variant_position['info']['IDV']
+		ad_idv = int(variant_position['info']['IDV'])
 
 		if float(ad_idv) / float(dp) >= 0.5:
 			if len([x for x in index_alleles_sorted_position if x[0] == index_alleles_sorted_position[0][0]]) > 1:
