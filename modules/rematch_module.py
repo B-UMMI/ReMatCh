@@ -308,7 +308,7 @@ def determine_variant(variant_position, minimum_depth_presence, minimum_depth_ca
 	return variant_position['REF'], alt_correct, low_coverage, multiple_alleles, alt_noMatter, alt_alignment
 
 
-def confirm_nucleotides_indel(ref, alt, variants, position_start_indel, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele):
+def confirm_nucleotides_indel(ref, alt, variants, position_start_indel, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, alignment_true):
 	alt = list(alt)
 
 	for i in range(0, len(alt) - 1):
@@ -323,8 +323,11 @@ def confirm_nucleotides_indel(ref, alt, variants, position_start_indel, minimum_
 
 		if alt[alt_position] != 'N':
 			if new_position not in variants:
-				alt = alt[: alt_position]
-				break
+				if alignment_true:
+					alt[alt_position] = 'N'
+				else:
+					alt = alt[: alt_position]
+					break
 
 			entry_with_indel, entry_with_snp = indel_entry(variants[new_position])
 			new_ref, alt_correct, low_coverage, multiple_alleles, alt_noMatter, alt_alignment = determine_variant(variants[new_position][entry_with_snp], minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, False)
@@ -374,11 +377,11 @@ def snp_indel(variants, position, minimum_depth_presence, minimum_depth_call, mi
 				print 'snp_indel.alt_alignment_2', alt_alignment
 
 			if alt_noMatter != '.':
-				alt_noMatter = confirm_nucleotides_indel(ref, alt_noMatter, variants, position, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele)
+				alt_noMatter = confirm_nucleotides_indel(ref, alt_noMatter, variants, position, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, False)
 			if alt_correct is not None and alt_correct != '.':
-				alt_correct = confirm_nucleotides_indel(ref, alt_correct, variants, position, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele)
+				alt_correct = confirm_nucleotides_indel(ref, alt_correct, variants, position, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, False)
 			if alt_alignment != '.':
-				alt_alignment = confirm_nucleotides_indel(ref, alt_alignment, variants, position, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele)
+				alt_alignment = confirm_nucleotides_indel(ref, alt_alignment, variants, position, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, True)
 			if variants[position][indel_more_likely]['REF'] == 'TAAAAAAAAAA':
 				print 'snp_indel.alt_correct_3', alt_correct
 				print 'snp_indel.alt_noMatter_3', alt_noMatter
