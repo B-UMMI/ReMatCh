@@ -404,7 +404,7 @@ def get_true_variants(variants, minimum_depth_presence, minimum_depth_call, mini
 		if counter in variants:
 			ref, alt_correct, low_coverage, multiple_alleles, alt_noMatter, alt_alignment = snp_indel(variants, counter, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele)
 
-			if len(ref) != len(alt_alignment):
+			if len(ref) != len(alt_alignment) and alt_alignment != '.':
 				print 'Position: ' + str(counter) + '; Reference: ' + ref + '; Alternative for alignment: ' + alt_alignment
 				print 'Contact the developer'
 				sys.exit('ERROR: reference and alternative for alignment output have different length')
