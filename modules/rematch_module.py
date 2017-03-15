@@ -270,6 +270,8 @@ def get_alt_alignment(ref, alt):
 	else:
 		if len(ref) != len(alt):
 			if len(alt) < len(ref):
+				if alt == '.':
+					alt = ref
 				alt += 'N' * (len(ref) - len(alt))
 			else:
 				if alt[:len(ref)] == ref:
