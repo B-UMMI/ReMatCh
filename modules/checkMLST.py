@@ -68,16 +68,16 @@ def downloadPubMLSTxml(originalSpecies, outdir):
 		SequenceDict = {}
 
 		for RetrievalDate, URL in info.items():
-			outDit = os.path.join(pubmlst_dir, str(SchemaName.replace(' ', '_') + '_' + RetrievalDate))  # compatible with windows? See if it already exists, if so, break
+			schema_date = SchemaName.replace(' ', '_') + '_' + RetrievalDate
+			outDit = os.path.join(pubmlst_dir, schema_date)  # compatible with windows? See if it already exists, if so, break
 
 			if os.path.isdir(outDit):
-				pickle = os.path.join(outDit, str(SchemaName.replace(' ', '_') + '_' + RetrievalDate + '.pkl'))
+				pickle = os.path.join(outDit, str(schema_date + '.pkl'))
 				if os.path.isfile(pickle):
 					print "\tschema files already exist for %s" % (SchemaName)
-					toSave = utils.extractVariableFromPickle(pickle)
-					break
-				else:
-					print 'MPM: 1'
+					mlst_dicts = utils.extractVariableFromPickle(pickle)
+					return mlst_dicts
+
 			elif any(SchemaName.replace(' ', '_') in x for x in os.listdir(pubmlst_dir)):
 				print "Older version of %s's scheme found! Deleting..." % (SchemaName)
 				for directory in glob(str(outDit + str(SchemaName.replace(' ', '_') + '_*'))):
@@ -96,36 +96,18 @@ def downloadPubMLSTxml(originalSpecies, outdir):
 			for lociName, lociURL in URL[1].items():
 				if lociName not in SequenceDict.keys():
 					SequenceDict[lociName] = {}
-				urllib.urlretrieve(lociURL, os.path.join(outDit, lociURL.rsplit('/', 1)[1]))
-				sequences, headers=rematch_module.get_sequence_information(outDit+'/'+os.path.basename(lociURL),0)
+				url_file = os.path.join(outDit, lociURL.rsplit('/', 1)[1])
+				urllib.urlretrieve(lociURL, url_file)
+				sequences, headers = rematch_module.get_sequence_information(url_file, 0)
 				for key in sequences.keys():
-					header=re.sub("\D", "", sequences[key]['header'])
-					sequence=sequences[key]['sequence'].upper()
-					SequenceDict[lociName][sequence]=header
-				os.remove(outDit+'/'+os.path.basename(lociURL))
-			toSave=[SequenceDict,STdict]
-			utils.saveVariableToPickle(toSave,outDit,SchemaName.replace(' ','_')+'_'+RetrievalDate)
-	'''
-	for k,v in STdict.items():
-		print v + '->' + k
+					header = re.sub("\D", "", sequences[key]['header'])
+					sequence = sequences[key]['sequence'].upper()
+					SequenceDict[lociName][sequence] = header
+				os.remove(url_file)
+			mlst_dicts = [SequenceDict, STdict]
+			utils.saveVariableToPickle(mlst_dicts, outDit, schema_date)
+	return mlst_dicts
 
-	for k,v in SequenceDict.items():
-		print k
-		for key,value in v.items():
-			print value
-			print key
-
-	if not ToSkip:
-		toSave=[SequenceDict,STdict]
-		utils.saveVariableToPickle(toSave,outDit,SchemaName.replace(' ','_')+'_'+RetrievalDate)
-		return True
-	else:
-		return False
-
-	'''
-	#print SequenceDict, STdict
-	#print len(out)
-	return toSave
 
 def main():
 	outdir = '.'
