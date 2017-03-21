@@ -51,15 +51,17 @@ def downloadPubMLSTxml(originalSpecies, outdir):
 								loci[locusID.strip()] = locusUrl
 							xmlData[scheme.text.strip()][retrieved].append(loci)
 	if success == 0:
-		sys.exit("\tError. No schema found for %s" % (originalSpecies))
+		sys.exit("\tError. No schema found for %s. Please refer to https://pubmlst.org/databases/" % (originalSpecies))
 	elif success > 1:
-		print "\tWarning. More than one schema found for %s. Loading both..." % (originalSpecies)
+		keys = xmlData.keys()
+		keys = sorted(keys)
+		print "\tWarning. More than one schema found for %s. only keeping the first one... %s" % (originalSpecies, keys[0])
+		for key in keys[1:]:
+			del xmlData[key]
 
 	pubmlst_dir = os.path.join(outdir, 'pubmlst', '')
 	if not os.path.isdir(pubmlst_dir):
 		os.makedirs(pubmlst_dir)
-
-	out = []
 
 	for SchemaName, info in xmlData.items():
 		STdict = {}
@@ -73,11 +75,9 @@ def downloadPubMLSTxml(originalSpecies, outdir):
 				if os.path.isfile(pickle):
 					print "\tschema files already exist for %s" % (SchemaName)
 					toSave = utils.extractVariableFromPickle(pickle)
-					out.append(toSave)
 					break
 				else:
 					print 'MPM: 1'
-
 			elif any(SchemaName.replace(' ', '_') in x for x in os.listdir(pubmlst_dir)):
 				print "Older version of %s's scheme found! Deleting..." % (SchemaName)
 				for directory in glob(str(outDit + str(SchemaName.replace(' ', '_') + '_*'))):
@@ -105,7 +105,6 @@ def downloadPubMLSTxml(originalSpecies, outdir):
 				os.remove(outDit+'/'+os.path.basename(lociURL))
 			toSave=[SequenceDict,STdict]
 			utils.saveVariableToPickle(toSave,outDit,SchemaName.replace(' ','_')+'_'+RetrievalDate)
-			out.append(toSave)
 	'''
 	for k,v in STdict.items():
 		print v + '->' + k
@@ -126,9 +125,10 @@ def downloadPubMLSTxml(originalSpecies, outdir):
 	'''
 	#print SequenceDict, STdict
 	#print len(out)
-	return out
+	return toSave
 
 def main():
+	outdir = '.'
 	'''agalactiae=downloadPubMLSTxml('Streptococcus agalactiae')
 
 	pyogenes=downloadPubMLSTxml('Streptococcus pyogenes')
@@ -137,17 +137,17 @@ def main():
 
 	aspergillus=downloadPubMLSTxml('Aspergillus fumigatus')
 	'''
-	salmonella=downloadPubMLSTxml('Salmonella enterica')
+	salmonella=downloadPubMLSTxml('Salmonella enterica', outdir)
 
-	yersinia=downloadPubMLSTxml('Yersinia pseudotuberculosis')
+	yersinia=downloadPubMLSTxml('Yersinia pseudotuberculosis', outdir)
 
-	campy=downloadPubMLSTxml('Campylobacter jejuni')
+	campy=downloadPubMLSTxml('Campylobacter jejuni', outdir)
 
-	acineto, lala=downloadPubMLSTxml('Acinetobacter baumannii')
+	acineto, lala=downloadPubMLSTxml('Acinetobacter baumannii', outdir)
 	#print acineto
 	#print lala
 
-	downloadPubMLSTxml('lala') #TODO
+	downloadPubMLSTxml('lala', outdir) #TODO
 
 if __name__ == "__main__":
 	main()
