@@ -295,15 +295,6 @@ def determine_variant(variant_position, minimum_depth_presence, minimum_depth_ca
 	alt_correct, low_coverage, multiple_alleles = get_alt_correct(variant_position, alt_noMatter, dp, ad_idv, index_dominant_allele, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele)
 
 	alt_alignment = get_alt_alignment(variant_position['REF'], alt_correct)
-	if variant_position['REF'] == 'TAAAAAAAAAA':
-		print 'variant_position', variant_position
-		print 'indel_true', indel_true
-		print 'alt_noMatter', alt_noMatter
-		print 'dp', dp
-		print 'ad_idv', ad_idv
-		print 'index_dominant_allele', index_dominant_allele
-		print 'alt_correct', alt_correct
-		print 'alt_alignment', alt_alignment
 
 	return variant_position['REF'], alt_correct, low_coverage, multiple_alleles, alt_noMatter, alt_alignment
 
@@ -354,27 +345,15 @@ def snp_indel(variants, position, minimum_depth_presence, minimum_depth_call, mi
 		if alt_noMatter == '.':
 			ref, alt_correct, low_coverage, multiple_alleles, alt_noMatter, alt_alignment = ref_snp, alt_correct_snp, low_coverage_snp, multiple_alleles_snp, alt_noMatter_snp, alt_alignment_snp
 		else:
-			if variants[position][indel_more_likely]['REF'] == 'TAAAAAAAAAA':
-				print 'snp_indel.alt_correct', alt_correct
-				print 'snp_indel.alt_correct_snp', alt_correct_snp
 			if alt_correct is None and alt_correct_snp is not None:
 				alt_correct = alt_correct_snp
 			elif alt_correct is not None and alt_correct_snp is not None:
 				if alt_correct_snp != '.' and alt_correct[0] != alt_correct_snp:
 					alt_correct = alt_correct_snp + alt_correct[1:] if len(alt_correct) > 1 else alt_correct_snp
-			if variants[position][indel_more_likely]['REF'] == 'TAAAAAAAAAA':
-				print 'snp_indel.alt_correct_2', alt_correct
-				print 'snp_indel.alt_noMatter', alt_noMatter
-				print 'snp_indel.alt_noMatter_snp', alt_noMatter_snp
-				print 'snp_indel.alt_alignment', alt_alignment
-				print 'snp_indel.alt_alignment_snp', alt_alignment_snp
 			if alt_noMatter_snp != '.' and alt_noMatter[0] != alt_noMatter_snp:
 				alt_noMatter = alt_noMatter_snp + alt_noMatter[1:] if len(alt_noMatter) > 1 else alt_noMatter_snp
 			if alt_alignment_snp != '.' and alt_alignment[0] != alt_alignment_snp:
 				alt_alignment = alt_alignment_snp + alt_alignment[1:] if len(alt_alignment) > 1 else alt_alignment_snp
-			if variants[position][indel_more_likely]['REF'] == 'TAAAAAAAAAA':
-				print 'snp_indel.alt_noMatter_2', alt_noMatter
-				print 'snp_indel.alt_alignment_2', alt_alignment
 
 			if alt_noMatter != '.':
 				alt_noMatter = confirm_nucleotides_indel(ref, alt_noMatter, variants, position, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, False)
@@ -382,10 +361,6 @@ def snp_indel(variants, position, minimum_depth_presence, minimum_depth_call, mi
 				alt_correct = confirm_nucleotides_indel(ref, alt_correct, variants, position, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, False)
 			if alt_alignment != '.':
 				alt_alignment = confirm_nucleotides_indel(ref, alt_alignment, variants, position, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, True)
-			if variants[position][indel_more_likely]['REF'] == 'TAAAAAAAAAA':
-				print 'snp_indel.alt_correct_3', alt_correct
-				print 'snp_indel.alt_noMatter_3', alt_noMatter
-				print 'snp_indel.alt_alignment_3', alt_alignment
 
 	return ref, alt_correct, low_coverage, multiple_alleles, alt_noMatter, alt_alignment
 
@@ -404,10 +379,10 @@ def get_true_variants(variants, minimum_depth_presence, minimum_depth_call, mini
 		if counter in variants:
 			ref, alt_correct, low_coverage, multiple_alleles, alt_noMatter, alt_alignment = snp_indel(variants, counter, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele)
 
-			if len(ref) != len(alt_alignment) and alt_alignment != '.':
-				print 'Position: ' + str(counter) + '; Reference: ' + ref + '; Alternative for alignment: ' + alt_alignment
-				print 'Contact the developer'
-				sys.exit('ERROR: reference and alternative for alignment output have different length')
+			# if len(ref) != len(alt_alignment) and alt_alignment != '.':
+			# 	print 'Position: ' + str(counter) + '; Reference: ' + ref + '; Alternative for alignment: ' + alt_alignment
+			# 	print 'Contact the developer'
+			# 	sys.exit('ERROR: reference and alternative for alignment output have different length')
 
 			if alt_alignment != '.':
 				variants_alignment[counter] = {'REF': ref, 'ALT': alt_alignment}
@@ -651,7 +626,7 @@ def create_sample_consensus_sequence(outdir, sequence_to_analyse, reference_file
 
 
 @utils.trace_unhandled_exceptions
-def analyse_sequence_data(bam_file, sequence_information, outdir, counter, reference_file, length_extra_seq, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele):
+def analyse_sequence_data(bam_file, sequence_information, outdir, counter, reference_file, length_extra_seq, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, threads):
 	count_absent = None
 	percentage_lowCoverage = None
 	meanCoverage = None
@@ -720,6 +695,13 @@ def get_sequence_information(fasta_file, length_extra_seq):
 	return sequence_dict, headers
 
 
+def determine_threads_2_use(number_sequences, threads):
+	if number_sequences >= threads:
+		return 1
+	else:
+		return threads / number_sequences
+
+
 def sequence_data(sample, reference_file, bam_file, outdir, threads, length_extra_seq, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, debug_mode_true):
 	sequence_data_outdir = os.path.join(outdir, 'sequence_data', '')
 	utils.removeDirectory(sequence_data_outdir)
@@ -727,12 +709,14 @@ def sequence_data(sample, reference_file, bam_file, outdir, threads, length_extr
 
 	sequences, headers = get_sequence_information(reference_file, length_extra_seq)
 
+	threads_2_use = determine_threads_2_use(len(sequences), threads)
+
 	pool = multiprocessing.Pool(processes=threads)
 	for sequence_counter in sequences:
 		sequence_dir = os.path.join(sequence_data_outdir, str(sequence_counter), '')
 		utils.removeDirectory(sequence_dir)
 		os.makedirs(sequence_dir)
-		pool.apply_async(analyse_sequence_data, args=(bam_file, sequences[sequence_counter], sequence_dir, sequence_counter, reference_file, length_extra_seq, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele,))
+		pool.apply_async(analyse_sequence_data, args=(bam_file, sequences[sequence_counter], sequence_dir, sequence_counter, reference_file, length_extra_seq, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, threads_2_use,))
 	pool.close()
 	pool.join()
 

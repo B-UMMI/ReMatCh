@@ -1,24 +1,23 @@
-import argparse, sys, os
+import sys
+import os
 import urllib2
 import urllib
-try:
-    import xml.etree.cElementTree as ET
-except ImportError:
-    import xml.etree.ElementTree as ET
-import time
 import csv
+from glob import glob
+import re
+try:
+	import xml.etree.cElementTree as ET
+except ImportError:
+	import xml.etree.ElementTree as ET
 import utils
 import rematch_module
-import utils
-from glob import glob
-import shutil
-import re
 
-def downloadPubMLSTxml(originalSpecies, xmlURL='http://pubmlst.org/data/dbases.xml'):
 
+def downloadPubMLSTxml(originalSpecies, outdir):
+	xmlURL = 'http://pubmlst.org/data/dbases.xml'
 	print '\n' + 'Searching MLST database for ' + originalSpecies
 
-	species=originalSpecies.upper()
+	species = originalSpecies.upper()
 
 	try:
 		content = urllib2.urlopen(xmlURL)
@@ -28,85 +27,76 @@ def downloadPubMLSTxml(originalSpecies, xmlURL='http://pubmlst.org/data/dbases.x
 		print "Ooops!There might be a problem with the PubMLST service, try later or check if the xml is well formated at " + xmlURL
 		raise
 
-	xmlData={}
+	xmlData = {}
 
-	success=0
+	success = 0
 	for scheme in tree.findall('species'):
 		if scheme.text.strip().upper() == species or species in scheme.text.strip().upper():
-			success+=1
-			xmlData[scheme.text.strip()]={}
-			for info in scheme: #mlst
-				for database in info: #database
+			success += 1
+			xmlData[scheme.text.strip()] = {}
+			for info in scheme:  # mlst
+				for database in info:  # database
 					for retrievedDate in database.findall('retrieved'):
 						retrieved = retrievedDate.text
-						xmlData[scheme.text.strip()][retrieved]=[]
+						xmlData[scheme.text.strip()][retrieved] = []
 					for profile in database.findall('profiles'):
-							profileURl=profile.find('url').text
+							profileURl = profile.find('url').text
 							xmlData[scheme.text.strip()][retrieved].append(profileURl)
 					for lociScheme in database.findall('loci'):
-						loci={}
+						loci = {}
 						for locus in lociScheme:
-							locusID=locus.text
+							locusID = locus.text
 							for locusInfo in locus:
-								locusUrl=locusInfo.text
-								loci[locusID.strip()]=locusUrl
+								locusUrl = locusInfo.text
+								loci[locusID.strip()] = locusUrl
 							xmlData[scheme.text.strip()][retrieved].append(loci)
-	if success==0:
+	if success == 0:
 		sys.exit("\tError. No schema found for %s" % (originalSpecies))
-	elif success>1:
+	elif success > 1:
 		print "\tWarning. More than one schema foind for %s. Loading both..." % (originalSpecies)
 
-	#uncomment for verbose
-	'''
-	print '\n'
-	for key,value in xmlData.items():
-		print 'species: ' + key
-		for k,v in value.items():
-			print 'Date of Retrieval: ' + k
-			print 'Profile URL: ' + v[0]
-			for loci, url in v[1].items():
-				print "Loci name: " + loci
-				print "Loci URL: " + url
-	'''
-	if not os.path.isdir('./pubmlst'):
-		os.makedirs('./pubmlst')
+	pubmlst_dir = os.path.join(outdir, 'pubmlst', '')
+	if not os.path.isdir(pubmlst_dir):
+		os.makedirs(pubmlst_dir)
 
-	out=[]
+	out = []
 
 	for SchemaName, info in xmlData.items():
-
-		STdict={}
-		SequenceDict={}
+		STdict = {}
+		SequenceDict = {}
 
 		for RetrievalDate, URL in info.items():
-			outDit='./pubmlst'+'/'+SchemaName.replace(' ','_')+'_'+RetrievalDate #compatible with windows? See if it already exists, if so, break
-			
+			outDit = os.path.join(pubmlst_dir, str(SchemaName.replace(' ', '_') + '_' + RetrievalDate))  # compatible with windows? See if it already exists, if so, break
+
 			if os.path.isdir(outDit):
-				print "\tschema files already exist for %s" % (SchemaName)
-				toSave=utils.extractVariableFromPickle(outDit+'/'+SchemaName.replace(' ','_')+'_'+RetrievalDate+'.pkl')
-				out.append(toSave)
-				break
-			
-			elif any(SchemaName.replace(' ','_') in x for x in os.listdir('./pubmlst/')):
+				pickle = os.path.join(outDit, str(SchemaName.replace(' ', '_') + '_' + RetrievalDate + '.pkl'))
+				if os.path.isfile(pickle):
+					print "\tschema files already exist for %s" % (SchemaName)
+					toSave = utils.extractVariableFromPickle(pickle)
+					out.append(toSave)
+					break
+				else:
+					print 'MPM: 1'
+
+			elif any(SchemaName.replace(' ', '_') in x for x in os.listdir(pubmlst_dir)):
 				print "Older version of %s's scheme found! Deleting..." % (SchemaName)
-				for directory in glob(str('./pubmlst'+'/'+SchemaName.replace(' ','_')+'_*')):
-					shutil.rmtree(directory)
+				for directory in glob(str(outDit + str(SchemaName.replace(' ', '_') + '_*'))):
+					utils.removeDirectory(directory)
 					os.makedirs(outDit)
-			
 			else:
 				os.makedirs(outDit)
-			
-			contentProfile=urllib2.urlopen(URL[0])
-			profileFile =  csv.reader(contentProfile, delimiter='\t')
-			profileFile.next() #skip header
+
+			contentProfile = urllib2.urlopen(URL[0])
+			profileFile = csv.reader(contentProfile, delimiter='\t')
+			profileFile.next()  # skip header
 			for row in profileFile:
-				ST=row[0]
-				alleles=row[1:-1]
-				STdict[','.join(alleles)]=ST 
+				ST = row[0]
+				alleles = row[1:-1]
+				STdict[','.join(alleles)] = ST
 			for lociName, lociURL in URL[1].items():
 				if lociName not in SequenceDict.keys():
-					SequenceDict[lociName]={}
-				contentLoci=urllib.urlretrieve(lociURL, outDit+'/'+os.path.basename(lociURL))
+					SequenceDict[lociName] = {}
+				urllib.urlretrieve(lociURL, os.path.join(outDit, lociURL.rsplit('/', 1)[1]))
 				sequences, headers=rematch_module.get_sequence_information(outDit+'/'+os.path.basename(lociURL),0)
 				for key in sequences.keys():
 					header=re.sub("\D", "", sequences[key]['header'])
@@ -125,7 +115,7 @@ def downloadPubMLSTxml(originalSpecies, xmlURL='http://pubmlst.org/data/dbases.x
 		for key,value in v.items():
 			print value
 			print key
-	
+
 	if not ToSkip:
 		toSave=[SequenceDict,STdict]
 		utils.saveVariableToPickle(toSave,outDit,SchemaName.replace(' ','_')+'_'+RetrievalDate)
@@ -144,11 +134,11 @@ def main():
 	pyogenes=downloadPubMLSTxml('Streptococcus pyogenes')
 
 	pneumo=downloadPubMLSTxml('Streptococcus pneumoniae')
-	
+
 	aspergillus=downloadPubMLSTxml('Aspergillus fumigatus')
 	'''
 	salmonella=downloadPubMLSTxml('Salmonella enterica')
-	
+
 	yersinia=downloadPubMLSTxml('Yersinia pseudotuberculosis')
 
 	campy=downloadPubMLSTxml('Campylobacter jejuni')
@@ -158,7 +148,6 @@ def main():
 	#print lala
 
 	downloadPubMLSTxml('lala') #TODO
-	
-if __name__ == "__main__":
-    main()
 
+if __name__ == "__main__":
+	main()
