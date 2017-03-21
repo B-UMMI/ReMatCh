@@ -24,7 +24,7 @@ def downloadPubMLSTxml(originalSpecies, outdir):
 		xml = content.read()
 		tree = ET.fromstring(xml)
 	except:
-		print "Ooops!There might be a problem with the PubMLST service, try later or check if the xml is well formated at " + xmlURL
+		print "Ooops! There might be a problem with the PubMLST service, try later or check if the xml is well formated at " + xmlURL
 		raise
 
 	xmlData = {}
@@ -53,7 +53,7 @@ def downloadPubMLSTxml(originalSpecies, outdir):
 	if success == 0:
 		sys.exit("\tError. No schema found for %s" % (originalSpecies))
 	elif success > 1:
-		print "\tWarning. More than one schema foind for %s. Loading both..." % (originalSpecies)
+		print "\tWarning. More than one schema found for %s. Loading both..." % (originalSpecies)
 
 	pubmlst_dir = os.path.join(outdir, 'pubmlst', '')
 	if not os.path.isdir(pubmlst_dir):
