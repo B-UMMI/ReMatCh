@@ -225,6 +225,18 @@ def clean_headers_reference_file(reference_file, outdir, extraSeq):
 	return new_reference_file, genes
 
 
+def write_mlst_reference(species, mlst_sequences, outdir, time_str):
+	print 'Writing MLST alleles as reference_sequences' + '\n'
+	reference_file = os.path.join(outdir, os.path.splitext(species.replace(' ', '_') + '.' + time_str + '.fasta'))
+	with open(reference_file, 'wt') as writer:
+		for header, sequence in mlst_sequences.items():
+			writer.write('>' + header + '\n')
+			fasta_sequence_lines = rematch_module.chunkstring(sequence, 80)
+			for line in fasta_sequence_lines:
+				writer.write(line + '\n')
+	return reference_file
+
+
 def runRematch(args):
 	workdir = os.path.abspath(args.workdir)
 	if not os.path.isdir(workdir):
@@ -241,13 +253,17 @@ def runRematch(args):
 	# Set listIDs
 	listIDs, searched_fastq_files = getListIDs(workdir, args.listIDs.name if args.listIDs is not None else None, args.taxon)
 
-	time_taken_PubMLST, mlst_dicts = checkMLST.downloadPubMLSTxml(args.mlst, args.mlstSchemaNumber, workdir)
+	time_taken_PubMLST, mlst_dicts, mlst_sequences = checkMLST.downloadPubMLSTxml(args.mlst, args.mlstSchemaNumber, workdir)
 
+	if args.refernce is None:
+		reference_file = write_mlst_reference(args.mlst, mlst_sequences, workdir, time_str)
+	else:
+		reference_file = os.path.abspath(args.reference.name)
 	# Run ReMatCh for each sample
 	print '\n' + 'STARTING ReMatCh' + '\n'
 
 	# Clean sequences headers
-	reference_file, gene_list_reference = clean_headers_reference_file(os.path.abspath(args.reference.name), workdir, args.extraSeq)
+	reference_file, gene_list_reference = clean_headers_reference_file(reference_file, workdir, args.extraSeq)
 
 	if len(gene_list_reference) == 0:
 		sys.exit('No sequences left')
@@ -322,10 +338,8 @@ def main():
 	parser = argparse.ArgumentParser(prog='rematch.py', description='Reads mapping against target sequences, checking mapping and consensus sequences production', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 	parser.add_argument('--version', help='Version information', action='version', version=str('%(prog)s v' + version))
 
-	parser_required = parser.add_argument_group('Required options')
-	parser_required.add_argument('-r', '--reference', type=argparse.FileType('r'), metavar='/path/to/reference_sequence.fasta', help='Fasta file containing reference sequences', required=True)
-
 	parser_optional_general = parser.add_argument_group('General facultative options')
+	parser_optional_general.add_argument('-r', '--reference', type=argparse.FileType('r'), metavar='/path/to/reference_sequence.fasta', help='Fasta file containing reference sequences', required=True)
 	parser_optional_general.add_argument('-w', '--workdir', type=str, metavar='/path/to/workdir/directory/', help='Path to the directory where ReMatCh will run and produce the outputs with reads (ended with fastq.gz/fq.gz and, in case of PE data, pair-end direction coded as _R1_001 / _R2_001 or _1 / _2) already present (organized in sample folders) or to be downloaded', required=False, default='.')
 	parser_optional_general.add_argument('-j', '--threads', type=int, metavar='N', help='Number of threads to use', required=False, default=1)
 	parser_optional_general.add_argument('--mlst', type=str, metavar='"Streptococcus agalactiae"', help='Species name (same as in PubMLST) to be used in MLST determination', required=False)
@@ -344,6 +358,7 @@ def main():
 	parser_optional_rematch.add_argument('--debug', action='store_true', help='DeBug Mode: do not remove temporary files')
 
 	parser_optional_mlst = parser.add_argument_group('MLST facultative options')
+	parser_optional_rematch.add_argument('--mlstReference', action='store_true', help='Tells ReMatCh to use the first alleles of each MLST gene fragment in PubMLST as reference sequences (force Bowtie2 to run with very-sensitive-local parameters, and sets --extraSeq to 0)')
 	parser_optional_mlst.add_argument('--mlstSchemaNumber', type=int, metavar='N', help='Number of the species PubMLST schema to be used in case of multiple schemes available (by default will use the first schema)', required=False)
 	parser_optional_mlst.add_argument('--mlstConsensus', choices=['noMatter', 'correct', 'alignment', 'all'], type=str, metavar='noMatter', help='Consensus sequence to be used in MLST determination', required=False, default='all')
 	parser_optional_mlst.add_argument('--mlstRun', choices=['first', 'second', 'all'], type=str, metavar='first', help='ReMatCh run outputs to be used in MLST determination', required=False, default='all')
@@ -360,6 +375,18 @@ def main():
 	parser_optional_download_exclusive.add_argument('-t', '--taxon', type=str, metavar='"Streptococcus agalactiae"', help='Taxon name for which ReMatCh will download fastq files', required=False)
 
 	args = parser.parse_args()
+
+	if args.reference is None and not args.mlstReference:
+		parser.error('At least --reference or --mlstReference should be provided')
+	elif args.reference is not None and args.mlstReference:
+		parser.error('Only --reference or --mlstReference should be provided')
+	else:
+		if args.mlstReference:
+			if args.mlst is None:
+				parser.error('Please provide species name using --mlst')
+			else:
+				args.conservedSeq = False
+				args.extraSeq = 0
 
 	if args.minFrequencyDominantAllele < 0 or args.minFrequencyDominantAllele > 1:
 		parser.error('--minFrequencyDominantAllele should be a value between [0, 1]')

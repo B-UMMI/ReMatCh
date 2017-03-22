@@ -77,7 +77,7 @@ def downloadPubMLSTxml(originalSpecies, schema_number, outdir):
 	for SchemaName, info in xmlData.items():
 		STdict = {}
 		SequenceDict = {}
-		mlst_sequence = {}
+		mlst_sequences = {}
 
 		for RetrievalDate, URL in info.items():
 			schema_date = SchemaName.replace(' ', '_') + '_' + RetrievalDate
@@ -115,10 +115,9 @@ def downloadPubMLSTxml(originalSpecies, schema_number, outdir):
 					header = re.sub("\D", "", sequences[key]['header'])
 					sequence = sequences[key]['sequence'].upper()
 					SequenceDict[lociName][sequence] = header
-					alleleName='_'.join(header.split('_')[:-1])
-					if alleleName not in mlst_sequence.keys():
-						mlst_sequence[alleleName]=sequence
+					if lociName not in mlst_sequences.keys():
+						mlst_sequences[lociName] = sequence
 				os.remove(url_file)
 			mlst_dicts = [SequenceDict, STdict]
 			utils.saveVariableToPickle(mlst_dicts, outDit, schema_date)
-	return mlst_dicts, mlst_sequence
+	return mlst_dicts, mlst_sequences
