@@ -151,7 +151,7 @@ def main():
 
 	parser_required = parser.add_argument_group('Required options')
 	parser_required.add_argument('-i', '--infile', type=argparse.FileType('r'), metavar='/path/to/aligned/input/file.fasta', help='Path to the aligned fasta file', required=True)
-	parser_required.add_argument('-o', '--outfile', type=str, metavar='/path/to/stripped/output/file.fasta', help='Stripped output fasta file', required=True, default='.')
+	parser_required.add_argument('-o', '--outfile', type=str, metavar='/path/to/stripped/output/file.fasta', help='Stripped output fasta file', required=True, default='alignment_stripped.fasta')
 
 	parser_optional_general = parser.add_argument_group('General facultative options')
 	parser_optional_general.add_argument('--notGAPs', action='store_true', help='Not strip positions with GAPs')

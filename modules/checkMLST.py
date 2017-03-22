@@ -5,6 +5,7 @@ import urllib
 import csv
 from glob import glob
 import re
+import functools
 try:
 	import xml.etree.cElementTree as ET
 except ImportError:
@@ -13,12 +14,22 @@ import utils
 import rematch_module
 
 
-def downloadPubMLSTxml(originalSpecies, outdir):
-	xmlURL = 'http://pubmlst.org/data/dbases.xml'
+def determine_schema(species, schema_number):
+	if schema_number is not None:
+		species = species + '#' + str(schema_number)
+	return species.upper()
+
+
+downloadPubMLST = functools.partial(utils.timer, name='Download PubMLST module')
+
+
+@downloadPubMLST
+def downloadPubMLSTxml(originalSpecies, schema_number, outdir):
 	print '\n' + 'Searching MLST database for ' + originalSpecies
 
-	species = originalSpecies.upper()
+	species = determine_schema(originalSpecies, schema_number)
 
+	xmlURL = 'http://pubmlst.org/data/dbases.xml'
 	try:
 		content = urllib2.urlopen(xmlURL)
 		xml = content.read()
@@ -107,29 +118,3 @@ def downloadPubMLSTxml(originalSpecies, outdir):
 			mlst_dicts = [SequenceDict, STdict]
 			utils.saveVariableToPickle(mlst_dicts, outDit, schema_date)
 	return mlst_dicts
-
-
-def main():
-	outdir = '.'
-	'''agalactiae=downloadPubMLSTxml('Streptococcus agalactiae')
-
-	pyogenes=downloadPubMLSTxml('Streptococcus pyogenes')
-
-	pneumo=downloadPubMLSTxml('Streptococcus pneumoniae')
-
-	aspergillus=downloadPubMLSTxml('Aspergillus fumigatus')
-	'''
-	salmonella=downloadPubMLSTxml('Salmonella enterica', outdir)
-
-	yersinia=downloadPubMLSTxml('Yersinia pseudotuberculosis', outdir)
-
-	campy=downloadPubMLSTxml('Campylobacter jejuni', outdir)
-
-	acineto, lala=downloadPubMLSTxml('Acinetobacter baumannii', outdir)
-	#print acineto
-	#print lala
-
-	downloadPubMLSTxml('lala', outdir) #TODO
-
-if __name__ == "__main__":
-	main()

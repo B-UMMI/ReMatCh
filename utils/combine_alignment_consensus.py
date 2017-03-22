@@ -29,6 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
 import argparse
 import time
+import sys
 
 
 version = '0.1'
@@ -87,6 +88,8 @@ def combine_alignment_consensus(args):
 
 	if len(alignment_files) > 0:
 		concatenate_files(alignment_files, outdir)
+	else:
+		sys.exit('No ReMatCh alignment.fasta files were found!')
 
 
 def main():

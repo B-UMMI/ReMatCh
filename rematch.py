@@ -33,6 +33,7 @@ import modules.utils as utils
 import modules.seqFromWebTaxon as seqFromWebTaxon
 import modules.download as download
 import modules.rematch_module as rematch_module
+import modules.checkMLST as checkMLST
 
 
 version = '3.1'
@@ -45,42 +46,43 @@ def searchFastqFiles(directory):
 	listIDs = {}
 	directories = [d for d in os.listdir(directory) if not d.startswith('.') and os.path.isdir(os.path.join(directory, d, ''))]
 	for directory_found in directories:
-		directory_path = os.path.join(directory, directory_found, '')
+		if directory_found != 'pubmlst':
+			directory_path = os.path.join(directory, directory_found, '')
 
-		fastqFound = []
-		files = [f for f in os.listdir(directory_path) if not f.startswith('.') and os.path.isfile(os.path.join(directory_path, f))]
-		for file_found in files:
-			if file_found.endswith(tuple(filesExtensions)):
-				fastqFound.append(file_found)
+			fastqFound = []
+			files = [f for f in os.listdir(directory_path) if not f.startswith('.') and os.path.isfile(os.path.join(directory_path, f))]
+			for file_found in files:
+				if file_found.endswith(tuple(filesExtensions)):
+					fastqFound.append(file_found)
 
-		if len(fastqFound) == 1:
-			listIDs[directory_found] = [os.path.join(directory_path, f) for f in fastqFound]
-		elif len(fastqFound) >= 2:
-			file_pair = []
+			if len(fastqFound) == 1:
+				listIDs[directory_found] = [os.path.join(directory_path, f) for f in fastqFound]
+			elif len(fastqFound) >= 2:
+				file_pair = []
 
-			# Search pairs
-			for PE_separation in pairEnd_filesSeparation:
-				for fastq in fastqFound:
-					if PE_separation[0] in fastq or PE_separation[1] in fastq:
-						file_pair.append(fastq)
-
-				if len(file_pair) == 2:
-					break
-				else:
-					file_pair = []
-
-			# Search single
-			if len(file_pair) == 0:
+				# Search pairs
 				for PE_separation in pairEnd_filesSeparation:
 					for fastq in fastqFound:
-						if PE_separation[0] not in fastq or PE_separation[1] not in fastq:
+						if PE_separation[0] in fastq or PE_separation[1] in fastq:
 							file_pair.append(fastq)
 
-				if len(file_pair) >= 1:
-					file_pair = file_pair[0]
+					if len(file_pair) == 2:
+						break
+					else:
+						file_pair = []
 
-			if len(file_pair) >= 1:
-				listIDs[directory_found] = [os.path.join(directory_path, f) for f in file_pair]
+				# Search single
+				if len(file_pair) == 0:
+					for PE_separation in pairEnd_filesSeparation:
+						for fastq in fastqFound:
+							if PE_separation[0] not in fastq or PE_separation[1] not in fastq:
+								file_pair.append(fastq)
+
+					if len(file_pair) >= 1:
+						file_pair = file_pair[0]
+
+				if len(file_pair) >= 1:
+					listIDs[directory_found] = [os.path.join(directory_path, f) for f in file_pair]
 
 	return listIDs
 
@@ -239,6 +241,8 @@ def runRematch(args):
 	# Set listIDs
 	listIDs, searched_fastq_files = getListIDs(workdir, args.listIDs.name if args.listIDs is not None else None, args.taxon)
 
+	time_taken_PubMLST, mlst_dicts = checkMLST.downloadPubMLSTxml(args.mlst, args.mlstSchemaNumber, workdir)
+
 	# Run ReMatCh for each sample
 	print '\n' + 'STARTING ReMatCh' + '\n'
 
@@ -324,6 +328,7 @@ def main():
 	parser_optional_general = parser.add_argument_group('General facultative options')
 	parser_optional_general.add_argument('-w', '--workdir', type=str, metavar='/path/to/workdir/directory/', help='Path to the directory where ReMatCh will run and produce the outputs with reads (ended with fastq.gz/fq.gz and, in case of PE data, pair-end direction coded as _R1_001 / _R2_001 or _1 / _2) already present (organized in sample folders) or to be downloaded', required=False, default='.')
 	parser_optional_general.add_argument('-j', '--threads', type=int, metavar='N', help='Number of threads to use', required=False, default=1)
+	parser_optional_general.add_argument('--mlst', type=str, metavar='"Streptococcus agalactiae"', help='Species name (same as in PubMLST) to be used in MLST determination', required=False)
 	parser_optional_general.add_argument('--doNotUseProvidedSoftware', action='store_true', help='Tells ReMatCh to not use Bowtie2, Samtools and Bcftools that are provided with it')
 
 	parser_optional_rematch = parser.add_argument_group('ReMatCh module facultative options')
@@ -337,6 +342,11 @@ def main():
 	parser_optional_rematch.add_argument('--numMapLoc', type=int, metavar='N', help='Maximum number of locations to which a read can map (sometimes useful when mapping against similar sequences)', required=False, default=1)
 	parser_optional_rematch.add_argument('--doubleRun', action='store_true', help='Tells ReMatCh to run a second time using as reference the noMatter consensus sequence produced in the first run. This will improve consensus sequence determination for sequences with high percentage of target reference gene sequence covered')
 	parser_optional_rematch.add_argument('--debug', action='store_true', help='DeBug Mode: do not remove temporary files')
+
+	parser_optional_mlst = parser.add_argument_group('MLST facultative options')
+	parser_optional_mlst.add_argument('--mlstSchemaNumber', type=int, metavar='N', help='Number of the species PubMLST schema to be used in case of multiple schemes available (by default will use the first schema)', required=False)
+	parser_optional_mlst.add_argument('--mlstConsensus', choices=['noMatter', 'correct', 'alignment', 'all'], type=str, metavar='noMatter', help='Consensus sequence to be used in MLST determination', required=False, default='all')
+	parser_optional_mlst.add_argument('--mlstRun', choices=['first', 'second', 'all'], type=str, metavar='first', help='ReMatCh run outputs to be used in MLST determination', required=False, default='all')
 
 	parser_optional_download = parser.add_argument_group('Download facultative options')
 	parser_optional_download.add_argument('-a', '--asperaKey', type=argparse.FileType('r'), metavar='/path/to/asperaweb_id_dsa.openssh', help='Tells ReMatCh to download fastq files from ENA using Aspera Connect. With this option, the path to Private-key file asperaweb_id_dsa.openssh must be provided (normaly found in ~/.aspera/connect/etc/asperaweb_id_dsa.openssh).', required=False)
