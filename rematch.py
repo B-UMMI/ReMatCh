@@ -339,7 +339,7 @@ def main():
 	parser.add_argument('--version', help='Version information', action='version', version=str('%(prog)s v' + version))
 
 	parser_optional_general = parser.add_argument_group('General facultative options')
-	parser_optional_general.add_argument('-r', '--reference', type=argparse.FileType('r'), metavar='/path/to/reference_sequence.fasta', help='Fasta file containing reference sequences', required=True)
+	parser_optional_general.add_argument('-r', '--reference', type=argparse.FileType('r'), metavar='/path/to/reference_sequence.fasta', help='Fasta file containing reference sequences', required=False)
 	parser_optional_general.add_argument('-w', '--workdir', type=str, metavar='/path/to/workdir/directory/', help='Path to the directory where ReMatCh will run and produce the outputs with reads (ended with fastq.gz/fq.gz and, in case of PE data, pair-end direction coded as _R1_001 / _R2_001 or _1 / _2) already present (organized in sample folders) or to be downloaded', required=False, default='.')
 	parser_optional_general.add_argument('-j', '--threads', type=int, metavar='N', help='Number of threads to use', required=False, default=1)
 	parser_optional_general.add_argument('--mlst', type=str, metavar='"Streptococcus agalactiae"', help='Species name (same as in PubMLST) to be used in MLST determination', required=False)
