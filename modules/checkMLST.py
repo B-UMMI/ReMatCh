@@ -88,7 +88,14 @@ def downloadPubMLSTxml(originalSpecies, schema_number, outdir):
 				if os.path.isfile(pickle):
 					print "\tschema files already exist for %s" % (SchemaName)
 					mlst_dicts = utils.extractVariableFromPickle(pickle)
-					return mlst_dicts
+					SequenceDict=mlst_dicts[0]
+					for lociName, alleleSequences in SequenceDict.items():
+						for sequence in alleleSequences:
+							if lociName not in mlst_sequences.keys():
+								mlst_sequences[lociName] = sequence
+							else:
+								break
+					return mlst_dicts, mlst_sequences
 
 			elif any(SchemaName.replace(' ', '_') in x for x in os.listdir(pubmlst_dir)):
 				print "Older version of %s's scheme found! Deleting..." % (SchemaName)
@@ -100,11 +107,16 @@ def downloadPubMLSTxml(originalSpecies, schema_number, outdir):
 
 			contentProfile = urllib2.urlopen(URL[0])
 			profileFile = csv.reader(contentProfile, delimiter='\t')
-			profileFile.next()  # skip header
+			header=profileFile.next()  # skip header
+			try:
+				indexCC=header.index('clonal_complex')
+			except:
+				indexCC=len(header)+1
+			lociOrder=header[1:indexCC]
 			for row in profileFile:
 				ST = row[0]
-				alleles = row[1:-1]
-				STdict[','.join(alleles)] = ST
+				alleles=','.join(row[1:indexCC])
+				STdict[alleles] = ST
 			for lociName, lociURL in URL[1].items():
 				if lociName not in SequenceDict.keys():
 					SequenceDict[lociName] = {}
@@ -118,6 +130,6 @@ def downloadPubMLSTxml(originalSpecies, schema_number, outdir):
 					if lociName not in mlst_sequences.keys():
 						mlst_sequences[lociName] = sequence
 				os.remove(url_file)
-			mlst_dicts = [SequenceDict, STdict]
+			mlst_dicts = [SequenceDict, STdict, lociOrder]
 			utils.saveVariableToPickle(mlst_dicts, outDit, schema_date)
 	return mlst_dicts, mlst_sequences
