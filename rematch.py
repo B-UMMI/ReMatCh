@@ -255,7 +255,7 @@ def runRematch(args):
 
 	time_taken_PubMLST, mlst_dicts, mlst_sequences = checkMLST.downloadPubMLSTxml(args.mlst, args.mlstSchemaNumber, workdir)
 
-	if args.refernce is None:
+	if args.reference is None:
 		reference_file = write_mlst_reference(args.mlst, mlst_sequences, workdir, time_str)
 	else:
 		reference_file = os.path.abspath(args.reference.name)
