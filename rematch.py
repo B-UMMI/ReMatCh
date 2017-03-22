@@ -227,7 +227,7 @@ def clean_headers_reference_file(reference_file, outdir, extraSeq):
 
 def write_mlst_reference(species, mlst_sequences, outdir, time_str):
 	print 'Writing MLST alleles as reference_sequences' + '\n'
-	reference_file = os.path.join(outdir, os.path.splitext(species.replace(' ', '_') + '.' + time_str + '.fasta'))
+	reference_file = os.path.join(outdir, str(species.replace(' ', '_') + '.' + time_str + '.fasta'))
 	with open(reference_file, 'wt') as writer:
 		for header, sequence in mlst_sequences.items():
 			writer.write('>' + header + '\n')
