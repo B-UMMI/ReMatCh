@@ -14,6 +14,29 @@ import utils
 import rematch_module
 
 
+def getST(mlst_dicts, dict_sequences):
+	SequenceDict = mlst_dicts[0]
+	STdict = mlst_dicts[1]
+	lociOrder = mlst_dicts[2]
+
+	alleles_profile = ['-'] * len(lociOrder)
+	for x, sequence_data in dict_sequences.items():
+		if SequenceDict[sequence_data['header']] in sequence_data['sequence']:
+			allele_number = SequenceDict[sequence_data['header']][sequence_data['sequence']]
+			alleles_profile[lociOrder.index(sequence_data['header'])] = allele_number
+		else:
+			for sequence_st, allele_number in SequenceDict[sequence_data['header']].items():
+				if sequence_st in sequence_data['sequence']:
+					alleles_profile[lociOrder.index(sequence_data['header'])] = allele_number
+
+	alleles_profile = ','.join(alleles_profile)
+	st = '-'
+	if alleles_profile in STdict:
+		st = STdict[alleles_profile]
+
+	return st, alleles_profile
+
+
 def determine_schema(species, schema_number):
 	if schema_number is not None:
 		species = species + '#' + str(schema_number)
@@ -88,7 +111,7 @@ def downloadPubMLSTxml(originalSpecies, schema_number, outdir):
 				if os.path.isfile(pickle):
 					print "\tschema files already exist for %s" % (SchemaName)
 					mlst_dicts = utils.extractVariableFromPickle(pickle)
-					SequenceDict=mlst_dicts[0]
+					SequenceDict = mlst_dicts[0]
 					for lociName, alleleSequences in SequenceDict.items():
 						for sequence in alleleSequences:
 							if lociName not in mlst_sequences.keys():
@@ -107,15 +130,15 @@ def downloadPubMLSTxml(originalSpecies, schema_number, outdir):
 
 			contentProfile = urllib2.urlopen(URL[0])
 			profileFile = csv.reader(contentProfile, delimiter='\t')
-			header=profileFile.next()  # skip header
+			header = profileFile.next()  # skip header
 			try:
-				indexCC=header.index('clonal_complex')
+				indexCC = header.index('clonal_complex')
 			except:
-				indexCC=len(header)+1
-			lociOrder=header[1:indexCC]
+				indexCC = len(header) + 1
+			lociOrder = header[1:indexCC]
 			for row in profileFile:
 				ST = row[0]
-				alleles=','.join(row[1:indexCC])
+				alleles = ','.join(row[1:indexCC])
 				STdict[alleles] = ST
 			for lociName, lociURL in URL[1].items():
 				if lociName not in SequenceDict.keys():
