@@ -764,7 +764,7 @@ def gather_data_together(sample, data_directory, sequences_information, outdir, 
 					run_successfully, sequence_counter, multiple_alleles_found, count_absent, percentage_lowCoverage, meanCoverage, consensus_sequence, number_diferences = utils.extractVariableFromPickle(file_path)
 
 					for consensus_type in consensus_sequence:
-						consensus_sequences_together[consensus_type] = {sequence_counter: {'header': consensus_sequence[consensus_type]['header'], 'sequence': consensus_sequence[consensus_type]['sequence']}}
+						consensus_sequences_together[consensus_type][sequence_counter] = {'header': consensus_sequence[consensus_type]['header'], 'sequence': consensus_sequence[consensus_type]['sequence']}
 
 					if write_consensus_first_time:
 						for consensus_type in ['correct', 'noMatter', 'alignment']:
