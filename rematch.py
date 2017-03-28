@@ -248,17 +248,15 @@ def write_mlst_report(sample, run_times, consensus_type, st, alleles_profile, lo
 
 def run_get_st(sample, mlst_dicts, consensus_sequences, mlstConsensus, run_times, outdir, time_str):
 	if mlstConsensus == 'all':
-		print '\n'
 		for consensus_type in consensus_sequences:
 			print 'Searching MLST for ' + consensus_type + ' consensus'
 			st, alleles_profile = checkMLST.getST(mlst_dicts, consensus_sequences[consensus_type])
 			write_mlst_report(sample, run_times, consensus_type, st, alleles_profile, mlst_dicts[2], outdir, time_str)
 			print 'ST found: ' + str(st) + ' (' + alleles_profile + ')'
-		print '\n'
 	else:
 		st, alleles_profile = checkMLST.getST(mlst_dicts, consensus_sequences[mlstConsensus])
 		write_mlst_report(sample, run_times, mlstConsensus, st, alleles_profile, mlst_dicts[2], outdir, time_str)
-		print '\n' + 'ST found for ' + mlstConsensus + ' consensus: ' + str(st) + ' (' + alleles_profile + ')' + '\n'
+		print 'ST found for ' + mlstConsensus + ' consensus: ' + str(st) + ' (' + alleles_profile + ')'
 
 
 def runRematch(args):

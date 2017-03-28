@@ -51,7 +51,7 @@ downloadPubMLST = functools.partial(utils.timer, name='Download PubMLST module')
 
 @downloadPubMLST
 def downloadPubMLSTxml(originalSpecies, schema_number, outdir):
-	print '\n' + 'Searching MLST database for ' + originalSpecies
+	print 'Searching MLST database for ' + originalSpecies
 
 	species = determine_schema(originalSpecies, schema_number)
 

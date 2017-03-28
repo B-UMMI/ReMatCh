@@ -37,7 +37,7 @@ def getDownloadInformation(readRunInfo):
 				if len(info_line[i]) > 0:
 					files_path = info_line[i].split(';')
 					if len(files_path) > 2:
-						files_path = files_path[0:2]
+						print 'WARNING: Were found more files than expected!'
 					if downloadInformation[header[0]] is None:
 						downloadInformation[header[0]] = {}
 					downloadInformation[header[0]][header[1]] = files_path
@@ -335,28 +335,37 @@ def get_fastq_files(download_dir, cram_index_run_successfully, threads, download
 
 
 def rename_move_files(list_files, new_name, outdir, download_paired_type):
-	list_new_files = []
+	list_new_files = {}
 	run_successfully = False
 
-	if download_paired_type.lower() == 'paired':
-		for i in range(0, len(list_files)):
-			temp_name = os.path.basename(list_files[i]).rstrip('astq.gz')
-			if len(temp_name) == len(os.path.basename(list_files[i])):
-				temp_name = os.path.basename(list_files[i]).rstrip('q.gz')
+	for i in range(0, len(list_files)):
+		temp_name = os.path.basename(list_files[i]).rstrip('astq.gz')
+		if len(temp_name) == len(os.path.basename(list_files[i])):
+			temp_name = os.path.basename(list_files[i]).rstrip('q.gz')
+		if download_paired_type.lower() == 'paired':
 			if temp_name.endswith(('_R1_001.f', '_1.f')):
-				list_new_files.append(os.path.join(outdir, new_name + '_1.fq.gz'))
+				list_new_files[i] = os.path.join(outdir, new_name + '_1.fq.gz')
 			elif temp_name.endswith(('_R2_001.f', '_2.f')):
-				list_new_files.append(os.path.join(outdir, new_name + '_2.fq.gz'))
-	else:
-		list_new_files.append(os.path.join(outdir, new_name + '.fq.gz'))
+				list_new_files[i] = os.path.join(outdir, new_name + '_2.fq.gz')
+		else:
+			if not temp_name.endswith(('_R1_001.f', '_R2_001.f')):
+				list_new_files[i] = os.path.join(outdir, new_name + '.fq.gz')
+				if temp_name.endswith(('_1.f', '_2.f')):
+					print 'WARNING: possible single-end file conflict with pair-end'
 
-	if len(list_files) == len(list_new_files):
+	if len(list_new_files) == 2 and download_paired_type.lower() == 'paired':
+		run_successfully = True
+	elif len(list_new_files) == 1 and download_paired_type.lower() == 'single':
 		run_successfully = True
 
 	if run_successfully:
 		try:
 			for i in range(0, len(list_files)):
-				os.rename(list_files[i], list_new_files[i])
+				if i not in list_new_files:
+					if os.path.isfile(list_files[i]):
+						os.remove(list_files[i])
+				else:
+					os.rename(list_files[i], list_new_files[i])
 		except Exception as e:
 			print e
 			run_successfully = False
