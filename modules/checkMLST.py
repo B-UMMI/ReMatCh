@@ -23,7 +23,6 @@ def getST(mlst_dicts, dict_sequences):
 	for x, sequence_data in dict_sequences.items():
 		if sequence_data['sequence'] in SequenceDict[sequence_data['header']].keys():
 			allele_number = SequenceDict[sequence_data['header']][sequence_data['sequence']]
-			print sequence_data['header'], allele_number
 			alleles_profile[lociOrder.index(sequence_data['header'])] = allele_number
 		else:
 			for sequence_st, allele_number in SequenceDict[sequence_data['header']].items():
@@ -137,7 +136,14 @@ def downloadPubMLSTxml(originalSpecies, schema_number, outdir):
 			except:
 				indexCC = len(header) + 1
 			lociOrder = header[1:indexCC]
+			print 'A: ', indexCC
+			printed = False
 			for row in profileFile:
+				if not printed:
+					print 'B: ', row
+					print 'C: ', row[1:indexCC]
+					print 'D: ', ','.join(row[1:indexCC])
+					printed = True
 				ST = row[0]
 				alleles = ','.join(row[1:indexCC])
 				STdict[alleles] = ST
