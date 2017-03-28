@@ -298,8 +298,8 @@ def runRematch(args):
 		if run_successfully_fastq is not False:
 			fileSize = sum(os.path.getsize(fastq) for fastq in fastq_files)
 			# Run ReMatCh
-			time_taken_rematch_first, run_successfully_rematch_first, data_by_gene, sample_data_general_first, consensus_files, consensus_sequence = rematch_module.runRematchModule(sample, fastq_files, reference_file, args.threads, sample_outdir, args.extraSeq, args.minCovPresence, args.minCovCall, args.minFrequencyDominantAllele, args.minGeneCoverage, args.conservedSeq, args.debug, args.numMapLoc, args.minGeneIdentity)
-			st, alleles_profile = checkMLST.getST(mlst_dicts, consensus_sequence['noMatter'])
+			time_taken_rematch_first, run_successfully_rematch_first, data_by_gene, sample_data_general_first, consensus_files, consensus_sequences = rematch_module.runRematchModule(sample, fastq_files, reference_file, args.threads, sample_outdir, args.extraSeq, args.minCovPresence, args.minCovCall, args.minFrequencyDominantAllele, args.minGeneCoverage, args.conservedSeq, args.debug, args.numMapLoc, args.minGeneIdentity)
+			st, alleles_profile = checkMLST.getST(mlst_dicts, consensus_sequences['noMatter'])
 			if run_successfully_rematch_first:
 				write_data_by_gene(gene_list_reference, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'first_run', args.minGeneIdentity)
 				if args.doubleRun:

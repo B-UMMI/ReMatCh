@@ -21,8 +21,9 @@ def getST(mlst_dicts, dict_sequences):
 
 	alleles_profile = ['-'] * len(lociOrder)
 	for x, sequence_data in dict_sequences.items():
-		if SequenceDict[sequence_data['header']] in sequence_data['sequence']:
+		if sequence_data['sequence'] in SequenceDict[sequence_data['header']].keys():
 			allele_number = SequenceDict[sequence_data['header']][sequence_data['sequence']]
+			print sequence_data['header'], allele_number
 			alleles_profile[lociOrder.index(sequence_data['header'])] = allele_number
 		else:
 			for sequence_st, allele_number in SequenceDict[sequence_data['header']].items():
