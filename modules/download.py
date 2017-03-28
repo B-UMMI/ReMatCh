@@ -37,7 +37,7 @@ def getDownloadInformation(readRunInfo):
 				if len(info_line[i]) > 0:
 					files_path = info_line[i].split(';')
 					if len(files_path) > 2:
-						print 'WARNING: Were found more files than expected in ' + download_types + ' download links!'
+						print 'WARNING: Were found more files than expected in ' + header[1] + ' download links!'
 					if downloadInformation[header[0]] is None:
 						downloadInformation[header[0]] = {}
 					downloadInformation[header[0]][header[1]] = files_path
