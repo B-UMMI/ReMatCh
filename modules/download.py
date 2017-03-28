@@ -37,7 +37,7 @@ def getDownloadInformation(readRunInfo):
 				if len(info_line[i]) > 0:
 					files_path = info_line[i].split(';')
 					if len(files_path) > 2:
-						print 'WARNING: Were found more files than expected!'
+						print 'WARNING: Were found more files than expected in ' + download_types + ' download links!'
 					if downloadInformation[header[0]] is None:
 						downloadInformation[header[0]] = {}
 					downloadInformation[header[0]][header[1]] = files_path
@@ -351,7 +351,7 @@ def rename_move_files(list_files, new_name, outdir, download_paired_type):
 			if not temp_name.endswith(('_R1_001.f', '_R2_001.f')):
 				list_new_files[i] = os.path.join(outdir, new_name + '.fq.gz')
 				if temp_name.endswith(('_1.f', '_2.f')):
-					print 'WARNING: possible single-end file conflict with pair-end'
+					print 'WARNING: possible single-end file conflict with pair-end (' + list_files[i] + ')!'
 
 	if len(list_new_files) == 2 and download_paired_type.lower() == 'paired':
 		run_successfully = True
