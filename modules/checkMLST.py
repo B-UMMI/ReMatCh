@@ -21,6 +21,9 @@ def getST(mlst_dicts, dict_sequences):
 
 	alleles_profile = ['-'] * len(lociOrder)
 	for x, sequence_data in dict_sequences.items():
+		if sequence_data['header'] not in SequenceDict:
+			print sequence_data['header'] + ' not found between consensus sequences!'
+			break
 		if sequence_data['sequence'] in SequenceDict[sequence_data['header']].keys():
 			allele_number = SequenceDict[sequence_data['header']][sequence_data['sequence']]
 			alleles_profile[lociOrder.index(sequence_data['header'])] = allele_number

@@ -250,9 +250,10 @@ def run_get_st(sample, mlst_dicts, consensus_sequences, mlstConsensus, run_times
 	if mlstConsensus == 'all':
 		print '\n'
 		for consensus_type in consensus_sequences:
+			print 'Searching MLST for ' + consensus_type + ' consensus'
 			st, alleles_profile = checkMLST.getST(mlst_dicts, consensus_sequences[consensus_type])
 			write_mlst_report(sample, run_times, consensus_type, st, alleles_profile, mlst_dicts[2], outdir, time_str)
-			print 'ST found for ' + consensus_type + ' consensus: ' + str(st) + ' (' + alleles_profile + ')'
+			print 'ST found: ' + str(st) + ' (' + alleles_profile + ')'
 		print '\n'
 	else:
 		st, alleles_profile = checkMLST.getST(mlst_dicts, consensus_sequences[mlstConsensus])
@@ -279,14 +280,27 @@ def runRematch(args):
 	time_taken_PubMLST, mlst_dicts, mlst_sequences = checkMLST.downloadPubMLSTxml(args.mlst, args.mlstSchemaNumber, workdir)
 
 	if args.reference is None:
-		reference_file = write_mlst_reference(args.mlst, mlst_sequences, workdir, time_str)
+		if len(mlst_sequences) > 0:
+			reference_file = write_mlst_reference(args.mlst, mlst_sequences, workdir, time_str)
+		else:
+			sys.exit('It was not possible to download MLST sequences from PubMLST!')
 	else:
 		reference_file = os.path.abspath(args.reference.name)
+
 	# Run ReMatCh for each sample
 	print '\n' + 'STARTING ReMatCh' + '\n'
 
 	# Clean sequences headers
 	reference_file, gene_list_reference = clean_headers_reference_file(reference_file, workdir, args.extraSeq)
+
+	if args.mlst is not None:
+		problem_genes = False
+		for header in mlst_sequences:
+			if header not in gene_list_reference:
+				print 'MLST gene ' + header + ' not found between reference sequences'
+				problem_genes = True
+		if problem_genes:
+			sys.exit('Missing MLST genes from reference sequences (at least sequences names do not match)!')
 
 	if len(gene_list_reference) == 0:
 		sys.exit('No sequences left')
@@ -323,7 +337,7 @@ def runRematch(args):
 			# Run ReMatCh
 			time_taken_rematch_first, run_successfully_rematch_first, data_by_gene, sample_data_general_first, consensus_files, consensus_sequences = rematch_module.runRematchModule(sample, fastq_files, reference_file, args.threads, sample_outdir, args.extraSeq, args.minCovPresence, args.minCovCall, args.minFrequencyDominantAllele, args.minGeneCoverage, args.conservedSeq, args.debug, args.numMapLoc, args.minGeneIdentity)
 			if run_successfully_rematch_first:
-				if args.mlst and (args.mlstRun == 'first' or args.mlstRun == 'all'):
+				if args.mlst is not None and (args.mlstRun == 'first' or args.mlstRun == 'all'):
 					run_get_st(sample, mlst_dicts, consensus_sequences, args.mlstConsensus, 'first', workdir, time_str)
 				write_data_by_gene(gene_list_reference, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'first_run', args.minGeneIdentity)
 				if args.doubleRun:
@@ -336,7 +350,7 @@ def runRematch(args):
 						if not args.debug:
 							os.remove(consensus_concatenated_fasta)
 						if run_successfully_rematch_second:
-							if args.mlst and (args.mlstRun == 'second' or args.mlstRun == 'all'):
+							if args.mlst is not None and (args.mlstRun == 'second' or args.mlstRun == 'all'):
 								run_get_st(sample, mlst_dicts, consensus_sequences, args.mlstConsensus, 'second', workdir, time_str)
 							write_data_by_gene(gene_list_reference, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'second_run', args.minGeneIdentity)
 					else:
