@@ -237,6 +237,29 @@ def write_mlst_reference(species, mlst_sequences, outdir, time_str):
 	return reference_file
 
 
+def write_mlst_report(sample, run_times, consensus_type, st, alleles_profile, lociOrder, outdir, time_str):
+	mlst_report = os.path.join(outdir, 'mlst_report.' + time_str + '.tab')
+	mlst_report_exist = os.path.isfile(mlst_report)
+	with open(mlst_report, 'at') as writer:
+		if not mlst_report_exist:
+			writer.write('\t'.join(['#sample', 'ReMatCh_run', 'consensus_type', 'ST'] + lociOrder) + '\n')
+		writer.write('\t'.join([sample, run_times, consensus_type, str(st)] + alleles_profile.split(',')) + '\n')
+
+
+def run_get_st(sample, mlst_dicts, consensus_sequences, mlstConsensus, run_times, outdir, time_str):
+	if mlstConsensus == 'all':
+		print '\n'
+		for consensus_type in consensus_sequences:
+			st, alleles_profile = checkMLST.getST(mlst_dicts, consensus_sequences[consensus_type])
+			write_mlst_report(sample, run_times, consensus_type, st, alleles_profile, mlst_dicts[2], outdir, time_str)
+			print 'ST found for ' + consensus_type + ' consensus: ' + str(st) + ' (' + alleles_profile + ')'
+		print '\n'
+	else:
+		st, alleles_profile = checkMLST.getST(mlst_dicts, consensus_sequences[mlstConsensus])
+		write_mlst_report(sample, run_times, mlstConsensus, st, alleles_profile, mlst_dicts[2], outdir, time_str)
+		print '\n' + 'ST found for ' + mlstConsensus + ' consensus: ' + str(st) + ' (' + alleles_profile + ')' + '\n'
+
+
 def runRematch(args):
 	workdir = os.path.abspath(args.workdir)
 	if not os.path.isdir(workdir):
@@ -299,8 +322,9 @@ def runRematch(args):
 			fileSize = sum(os.path.getsize(fastq) for fastq in fastq_files)
 			# Run ReMatCh
 			time_taken_rematch_first, run_successfully_rematch_first, data_by_gene, sample_data_general_first, consensus_files, consensus_sequences = rematch_module.runRematchModule(sample, fastq_files, reference_file, args.threads, sample_outdir, args.extraSeq, args.minCovPresence, args.minCovCall, args.minFrequencyDominantAllele, args.minGeneCoverage, args.conservedSeq, args.debug, args.numMapLoc, args.minGeneIdentity)
-			st, alleles_profile = checkMLST.getST(mlst_dicts, consensus_sequences['noMatter'])
 			if run_successfully_rematch_first:
+				if args.mlst and (args.mlstRun == 'first' or args.mlstRun == 'all'):
+					run_get_st(sample, mlst_dicts, consensus_sequences, args.mlstConsensus, 'first', workdir, time_str)
 				write_data_by_gene(gene_list_reference, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'first_run', args.minGeneIdentity)
 				if args.doubleRun:
 					rematch_second_outdir = os.path.join(sample_outdir, 'rematch_second_run', '')
@@ -312,6 +336,8 @@ def runRematch(args):
 						if not args.debug:
 							os.remove(consensus_concatenated_fasta)
 						if run_successfully_rematch_second:
+							if args.mlst and (args.mlstRun == 'second' or args.mlstRun == 'all'):
+								run_get_st(sample, mlst_dicts, consensus_sequences, args.mlstConsensus, 'second', workdir, time_str)
 							write_data_by_gene(gene_list_reference, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'second_run', args.minGeneIdentity)
 					else:
 						print 'No sequences left after ReMatCh module first run. Second run will not be performed'

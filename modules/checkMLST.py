@@ -134,16 +134,9 @@ def downloadPubMLSTxml(originalSpecies, schema_number, outdir):
 			try:
 				indexCC = header.index('clonal_complex')
 			except:
-				indexCC = len(header) + 1
+				indexCC = len(header)
 			lociOrder = header[1:indexCC]
-			print 'A: ', indexCC
-			printed = False
 			for row in profileFile:
-				if not printed:
-					print 'B: ', row
-					print 'C: ', row[1:indexCC]
-					print 'D: ', ','.join(row[1:indexCC])
-					printed = True
 				ST = row[0]
 				alleles = ','.join(row[1:indexCC])
 				STdict[alleles] = ST
