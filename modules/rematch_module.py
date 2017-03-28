@@ -720,9 +720,9 @@ def sequence_data(sample, reference_file, bam_file, outdir, threads, length_extr
 	pool.close()
 	pool.join()
 
-	run_successfully, sample_data, consensus_files, consensus_sequence = gather_data_together(sample, sequence_data_outdir, sequences, outdir.rsplit('/', 2)[0], debug_mode_true, length_extra_seq)
+	run_successfully, sample_data, consensus_files, consensus_sequences = gather_data_together(sample, sequence_data_outdir, sequences, outdir.rsplit('/', 2)[0], debug_mode_true, length_extra_seq)
 
-	return run_successfully, sample_data, consensus_files, consensus_sequence
+	return run_successfully, sample_data, consensus_files, consensus_sequences
 
 
 def chunkstring(string, length):
@@ -747,6 +747,7 @@ def gather_data_together(sample, data_directory, sequences_information, outdir, 
 	sample_data = {}
 
 	consensus_files = None
+	consensus_sequences_together = {'correct': {}, 'noMatter': {}, 'alignment': {}}
 
 	write_consensus_first_time = True
 
@@ -761,6 +762,9 @@ def gather_data_together(sample, data_directory, sequences_information, outdir, 
 
 				if run_successfully:
 					run_successfully, sequence_counter, multiple_alleles_found, count_absent, percentage_lowCoverage, meanCoverage, consensus_sequence, number_diferences = utils.extractVariableFromPickle(file_path)
+
+					for consensus_type in consensus_sequence:
+						consensus_sequences_together[consensus_type] = {'header': consensus_sequence[consensus_type]['header'], 'sequence': consensus_sequence[consensus_type]['sequence']}
 
 					if write_consensus_first_time:
 						for consensus_type in ['correct', 'noMatter', 'alignment']:
@@ -783,7 +787,7 @@ def gather_data_together(sample, data_directory, sequences_information, outdir, 
 	if counter != len(sequences_information):
 		run_successfully = False
 
-	return run_successfully, sample_data, consensus_files, consensus_sequence
+	return run_successfully, sample_data, consensus_files, consensus_sequences_together
 
 
 rematch_timer = functools.partial(utils.timer, name='ReMatCh module')
@@ -803,7 +807,7 @@ def runRematchModule(sample, fastq_files, reference_file, threads, outdir, lengt
 		run_successfully, stdout = index_fasta_samtools(reference_file, None, None, True)
 		if run_successfully:
 			print 'Analysing alignment data'
-			run_successfully, sample_data, consensus_files, consensus_sequence = sequence_data(sample, reference_file, bam_file, rematch_folder, threads, length_extra_seq, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, debug_mode_true)
+			run_successfully, sample_data, consensus_files, consensus_sequences = sequence_data(sample, reference_file, bam_file, rematch_folder, threads, length_extra_seq, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, debug_mode_true)
 
 			if run_successfully:
 				print 'Writing report file'
@@ -834,4 +838,4 @@ def runRematchModule(sample, fastq_files, reference_file, threads, outdir, lengt
 	if not debug_mode_true:
 		utils.removeDirectory(rematch_folder)
 
-	return run_successfully, sample_data if 'sample_data' in locals() else None, {'number_absent_genes': number_absent_genes if 'number_absent_genes' in locals() else None, 'number_genes_multiple_alleles': number_genes_multiple_alleles if 'number_genes_multiple_alleles' in locals() else None, 'mean_sample_coverage': round(mean_sample_coverage, 2)} if 'mean_sample_coverage' in locals() else None, consensus_files if 'consensus_files' in locals() else None, consensus_sequence if 'consensus_sequence' in locals() else None
+	return run_successfully, sample_data if 'sample_data' in locals() else None, {'number_absent_genes': number_absent_genes if 'number_absent_genes' in locals() else None, 'number_genes_multiple_alleles': number_genes_multiple_alleles if 'number_genes_multiple_alleles' in locals() else None, 'mean_sample_coverage': round(mean_sample_coverage, 2)} if 'mean_sample_coverage' in locals() else None, consensus_files if 'consensus_files' in locals() else None, consensus_sequence if 'consensus_sequences' in locals() else None
