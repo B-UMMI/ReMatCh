@@ -370,6 +370,7 @@ def rename_move_files(list_files, new_name, outdir, download_paired_type):
 		except Exception as e:
 			print e
 			run_successfully = False
+			list_new_files = None
 
 	return run_successfully, list_new_files
 
