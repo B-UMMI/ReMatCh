@@ -275,7 +275,8 @@ def runRematch(args):
 	# Set listIDs
 	listIDs, searched_fastq_files = getListIDs(workdir, args.listIDs.name if args.listIDs is not None else None, args.taxon)
 
-	time_taken_PubMLST, mlst_dicts, mlst_sequences = checkMLST.downloadPubMLSTxml(args.mlst, args.mlstSchemaNumber, workdir)
+	if args.mlst is not None:
+		time_taken_PubMLST, mlst_dicts, mlst_sequences = checkMLST.downloadPubMLSTxml(args.mlst, args.mlstSchemaNumber, workdir)
 
 	if args.reference is None:
 		if len(mlst_sequences) > 0:
