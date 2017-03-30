@@ -366,7 +366,7 @@ def rename_move_files(list_files, new_name, outdir, download_paired_type):
 						os.remove(list_files[i])
 				else:
 					os.rename(list_files[i], list_new_files[i])
-				list_new_files = list_new_files.values()
+			list_new_files = list_new_files.values()
 		except Exception as e:
 			print e
 			run_successfully = False
