@@ -135,7 +135,7 @@ def downloadPubMLSTxml(originalSpecies, schema_number, outdir):
 			profileFile = csv.reader(contentProfile, delimiter='\t')
 			header = profileFile.next()  # skip header
 			try:
-				indexCC = header.index('clonal_complex')
+				indexCC = header.index('clonal_complex') if 'clonal_complex' in header else header.index('CC')
 			except:
 				indexCC = len(header)
 			lociOrder = header[1:indexCC]
