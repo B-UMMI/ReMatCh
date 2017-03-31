@@ -416,17 +416,22 @@ def main():
 
 	args = parser.parse_args()
 
+	print 'A (args.extraSeq): ', args.extraSeq
 	if args.reference is None and not args.mlstReference:
 		parser.error('At least --reference or --mlstReference should be provided')
 	elif args.reference is not None and args.mlstReference:
 		parser.error('Only --reference or --mlstReference should be provided')
 	else:
+		print 'B (else)'
 		if args.mlstReference:
+			print 'C (if args.mlstReference)'
 			if args.mlst is None:
 				parser.error('Please provide species name using --mlst')
 			else:
+				print 'D (else)'
 				args.conservedSeq = False
 				args.extraSeq = 0
+	print 'A (args.extraSeq): ', args.extraSeq
 
 	if args.minFrequencyDominantAllele < 0 or args.minFrequencyDominantAllele > 1:
 		parser.error('--minFrequencyDominantAllele should be a value between [0, 1]')
