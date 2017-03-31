@@ -189,7 +189,8 @@ def concatenate_extraSeq_2_consensus(consensus_sequence, reference_sequence, ext
 		for values_reference in reference_dict.values():
 			if values_reference['header'] == values_consensus['header']:
 				if extraSeq_length <= len(values_reference['sequence']):
-					consensus_dict[k]['sequence'] = values_reference['sequence'][:extraSeq_length] + consensus_dict[k]['sequence'] + values_reference['sequence'][-extraSeq_length:]
+					right_extra_seq = '' if extraSeq_length == 0 else values_reference['sequence'][-extraSeq_length:]
+					consensus_dict[k]['sequence'] = values_reference['sequence'][:extraSeq_length] + consensus_dict[k]['sequence'] + right_extra_seq
 
 	consensus_concatenated = os.path.join(outdir, 'consensus_concatenated_extraSeq.fasta')
 	with open(consensus_concatenated, 'wt') as writer:
@@ -416,22 +417,17 @@ def main():
 
 	args = parser.parse_args()
 
-	print 'A (args.extraSeq): ', args.extraSeq
 	if args.reference is None and not args.mlstReference:
 		parser.error('At least --reference or --mlstReference should be provided')
 	elif args.reference is not None and args.mlstReference:
 		parser.error('Only --reference or --mlstReference should be provided')
 	else:
-		print 'B (else)'
 		if args.mlstReference:
-			print 'C (if args.mlstReference)'
 			if args.mlst is None:
 				parser.error('Please provide species name using --mlst')
 			else:
-				print 'D (else)'
 				args.conservedSeq = False
 				args.extraSeq = 0
-	print 'A (args.extraSeq): ', args.extraSeq
 
 	if args.minFrequencyDominantAllele < 0 or args.minFrequencyDominantAllele > 1:
 		parser.error('--minFrequencyDominantAllele should be a value between [0, 1]')
