@@ -268,10 +268,17 @@ def runRematch(args):
 		time_taken_PubMLST, mlst_dicts, mlst_sequences = checkMLST.downloadPubMLSTxml(args.mlst, args.mlstSchemaNumber, workdir)
 
 	if args.reference is None:
-		if len(mlst_sequences) > 0:
-			reference_file = checkMLST.write_mlst_reference(args.mlst, mlst_sequences, workdir, time_str)
-		else:
-			sys.exit('It was not possible to download MLST sequences from PubMLST!')
+		reference_file = checkMLST.check_existing_schema(args.mlst, args.mlstSchemaNumber, script_path)
+		args.extraSeq = 200
+		args.conservedSeq = False
+		if reference_file is None:
+			print 'It was not found provided MLST schema for ' + args.mlst
+			print 'Trying to obtain reference MLST sequences from PubMLST'
+			if len(mlst_sequences) > 0:
+				reference_file = checkMLST.write_mlst_reference(args.mlst, mlst_sequences, workdir, time_str)
+				args.extraSeq = 0
+			else:
+				sys.exit('It was not possible to download MLST sequences from PubMLST!')
 	else:
 		reference_file = os.path.abspath(args.reference.name)
 
@@ -413,9 +420,6 @@ def main():
 		if args.mlstReference:
 			if args.mlst is None:
 				parser.error('Please provide species name using --mlst')
-			else:
-				args.conservedSeq = False
-				args.extraSeq = 0
 
 	if args.minFrequencyDominantAllele < 0 or args.minFrequencyDominantAllele > 1:
 		parser.error('--minFrequencyDominantAllele should be a value between [0, 1]')

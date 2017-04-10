@@ -1,6 +1,3 @@
-# mlst sequences
-modules/mlst_schemas/
-
 # mpmachado_stuff - file with different mpmachado stuffs
 mpmachado_stuff.*
 

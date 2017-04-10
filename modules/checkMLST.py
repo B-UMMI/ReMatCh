@@ -14,6 +14,47 @@ import utils
 import rematch_module
 
 
+def determine_species(species):
+	species = species.lower().split(' ')
+
+	if len(species) >= 2:
+		species = species[:2]
+		if species[1] in ('spp', 'spp.', 'complex'):
+			species = species[0]
+
+	return species
+
+
+def check_existing_schema(species, schema_number, script_path):
+	species = determine_species(species)
+
+	if schema_number is None:
+		schema_number = ''
+	else:
+		schema_number = '#' + str(schema_number)
+
+	mlst_schemas_folder = os.path.join(os.path.dirname(script_path), 'modules', 'mlst_schemas', '')
+	reference = []
+	files = [f for f in os.listdir(mlst_schemas_folder) if not f.startswith('.') and os.path.isfile(os.path.join(mlst_schemas_folder, f))]
+	for file_found in files:
+		file_path = os.path.join(mlst_schemas_folder, file_found)
+		if file_found.startswith('_'.join(species) + schema_number) and file_found.endswith('.fasta'):
+			reference = file_path
+
+	if len(reference) > 1:
+		if schema_number == '':
+			schema_number = '#1'
+		for scheme in reference:
+			if os.path.splitext(scheme)[0].endswith(schema_number):
+				reference = [scheme]
+				break
+	if len(reference) == 0:
+		reference = None
+	elif len(reference) == 1:
+		reference = reference[0]
+	return reference
+
+
 def write_mlst_reference(species, mlst_sequences, outdir, time_str):
 	print 'Writing MLST alleles as reference_sequences' + '\n'
 	reference_file = os.path.join(outdir, str(species.replace(' ', '_') + '.' + time_str + '.fasta'))
@@ -52,20 +93,12 @@ def getST(mlst_dicts, dict_sequences):
 	return st, alleles_profile
 
 
-def determine_schema(species, schema_number):
-	if schema_number is not None:
-		species = species + '#' + str(schema_number)
-	return species.upper()
-
-
 downloadPubMLST = functools.partial(utils.timer, name='Download PubMLST module')
 
 
 @downloadPubMLST
 def downloadPubMLSTxml(originalSpecies, schema_number, outdir):
 	print 'Searching MLST database for ' + originalSpecies
-
-	species = determine_schema(originalSpecies, schema_number)
 
 	xmlURL = 'http://pubmlst.org/data/dbases.xml'
 	try:
@@ -78,27 +111,34 @@ def downloadPubMLSTxml(originalSpecies, schema_number, outdir):
 
 	xmlData = {}
 
+	if schema_number is None:
+		schema_number = 1
+
 	success = 0
 	for scheme in tree.findall('species'):
-		if scheme.text.strip().upper() == species or species in scheme.text.strip().upper():
-			success += 1
-			xmlData[scheme.text.strip()] = {}
-			for info in scheme:  # mlst
-				for database in info:  # database
-					for retrievedDate in database.findall('retrieved'):
-						retrieved = retrievedDate.text
-						xmlData[scheme.text.strip()][retrieved] = []
-					for profile in database.findall('profiles'):
-							profileURl = profile.find('url').text
-							xmlData[scheme.text.strip()][retrieved].append(profileURl)
-					for lociScheme in database.findall('loci'):
-						loci = {}
-						for locus in lociScheme:
-							locusID = locus.text
-							for locusInfo in locus:
-								locusUrl = locusInfo.text
-								loci[locusID.strip()] = locusUrl
-							xmlData[scheme.text.strip()][retrieved].append(loci)
+		species_scheme = scheme.text.rsplit('#', 1)
+		number_scheme = species_scheme[1] if len(species_scheme) == 2 else 1
+		species_scheme = species_scheme[0]
+		if determine_species(species_scheme) == determine_species(originalSpecies):
+			if schema_number == number_scheme:
+				success += 1
+				xmlData[scheme.text.strip()] = {}
+				for info in scheme:  # mlst
+					for database in info:  # database
+						for retrievedDate in database.findall('retrieved'):
+							retrieved = retrievedDate.text
+							xmlData[scheme.text.strip()][retrieved] = []
+						for profile in database.findall('profiles'):
+								profileURl = profile.find('url').text
+								xmlData[scheme.text.strip()][retrieved].append(profileURl)
+						for lociScheme in database.findall('loci'):
+							loci = {}
+							for locus in lociScheme:
+								locusID = locus.text
+								for locusInfo in locus:
+									locusUrl = locusInfo.text
+									loci[locusID.strip()] = locusUrl
+								xmlData[scheme.text.strip()][retrieved].append(loci)
 	if success == 0:
 		sys.exit("\tError. No schema found for %s. Please refer to https://pubmlst.org/databases/" % (originalSpecies))
 	elif success > 1:
@@ -118,7 +158,7 @@ def downloadPubMLSTxml(originalSpecies, schema_number, outdir):
 		mlst_sequences = {}
 
 		for RetrievalDate, URL in info.items():
-			schema_date = SchemaName.replace(' ', '_') + '_' + RetrievalDate
+			schema_date = '_'.join(determine_species(SchemaName)) + '_' + RetrievalDate
 			outDit = os.path.join(pubmlst_dir, schema_date)  # compatible with windows? See if it already exists, if so, break
 
 			if os.path.isdir(outDit):
@@ -135,9 +175,9 @@ def downloadPubMLSTxml(originalSpecies, schema_number, outdir):
 								break
 					return mlst_dicts, mlst_sequences
 
-			elif any(SchemaName.replace(' ', '_') in x for x in os.listdir(pubmlst_dir)):
+			elif any('_'.join(determine_species(SchemaName)) in x for x in os.listdir(pubmlst_dir)):
 				print "Older version of %s's scheme found! Deleting..." % (SchemaName)
-				for directory in glob(str(outDit + str(SchemaName.replace(' ', '_') + '_*'))):
+				for directory in glob(str(outDit + str('_'.join(determine_species(SchemaName)) + '_*'))):
 					utils.removeDirectory(directory)
 					os.makedirs(outDit)
 			else:
