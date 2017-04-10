@@ -20,7 +20,7 @@ def determine_species(species):
 	if len(species) >= 2:
 		species = species[:2]
 		if species[1] in ('spp', 'spp.', 'complex'):
-			species = species[0]
+			species = [species[0]]
 
 	return species
 
