@@ -226,18 +226,6 @@ def clean_headers_reference_file(reference_file, outdir, extraSeq):
 	return new_reference_file, genes
 
 
-def write_mlst_reference(species, mlst_sequences, outdir, time_str):
-	print 'Writing MLST alleles as reference_sequences' + '\n'
-	reference_file = os.path.join(outdir, str(species.replace(' ', '_') + '.' + time_str + '.fasta'))
-	with open(reference_file, 'wt') as writer:
-		for header, sequence in mlst_sequences.items():
-			writer.write('>' + header + '\n')
-			fasta_sequence_lines = rematch_module.chunkstring(sequence, 80)
-			for line in fasta_sequence_lines:
-				writer.write(line + '\n')
-	return reference_file
-
-
 def write_mlst_report(sample, run_times, consensus_type, st, alleles_profile, lociOrder, outdir, time_str):
 	mlst_report = os.path.join(outdir, 'mlst_report.' + time_str + '.tab')
 	mlst_report_exist = os.path.isfile(mlst_report)
@@ -271,7 +259,7 @@ def runRematch(args):
 	logfile, time_str = utils.start_logger(workdir)
 
 	# Get general information
-	utils.general_information(logfile, version, workdir, time_str, args.doNotUseProvidedSoftware, asperaKey, args.downloadCramBam)
+	script_path = utils.general_information(logfile, version, workdir, time_str, args.doNotUseProvidedSoftware, asperaKey, args.downloadCramBam)
 
 	# Set listIDs
 	listIDs, searched_fastq_files = getListIDs(workdir, args.listIDs.name if args.listIDs is not None else None, args.taxon)
@@ -281,7 +269,7 @@ def runRematch(args):
 
 	if args.reference is None:
 		if len(mlst_sequences) > 0:
-			reference_file = write_mlst_reference(args.mlst, mlst_sequences, workdir, time_str)
+			reference_file = checkMLST.write_mlst_reference(args.mlst, mlst_sequences, workdir, time_str)
 		else:
 			sys.exit('It was not possible to download MLST sequences from PubMLST!')
 	else:

@@ -339,9 +339,9 @@ def rename_move_files(list_files, new_name, outdir, download_paired_type):
 	run_successfully = False
 
 	for i in range(0, len(list_files)):
-		temp_name = os.path.basename(list_files[i]).rstrip('astq.gz')
+		temp_name = utils.rchop(os.path.basename(list_files[i]), 'astq.gz')
 		if len(temp_name) == len(os.path.basename(list_files[i])):
-			temp_name = os.path.basename(list_files[i]).rstrip('q.gz')
+			temp_name = utils.rchop(os.path.basename(list_files[i]), 'q.gz')
 		if download_paired_type.lower() == 'paired':
 			if temp_name.endswith(('_R1_001.f', '_1.f')):
 				list_new_files[i] = os.path.join(outdir, new_name + '_1.fq.gz')

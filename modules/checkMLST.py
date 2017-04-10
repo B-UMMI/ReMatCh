@@ -14,6 +14,18 @@ import utils
 import rematch_module
 
 
+def write_mlst_reference(species, mlst_sequences, outdir, time_str):
+	print 'Writing MLST alleles as reference_sequences' + '\n'
+	reference_file = os.path.join(outdir, str(species.replace(' ', '_') + '.' + time_str + '.fasta'))
+	with open(reference_file, 'wt') as writer:
+		for header, sequence in mlst_sequences.items():
+			writer.write('>' + header + '\n')
+			fasta_sequence_lines = rematch_module.chunkstring(sequence, 80)
+			for line in fasta_sequence_lines:
+				writer.write(line + '\n')
+	return reference_file
+
+
 def getST(mlst_dicts, dict_sequences):
 	SequenceDict = mlst_dicts[0]
 	STdict = mlst_dicts[1]

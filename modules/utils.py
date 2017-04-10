@@ -160,6 +160,8 @@ def general_information(logfile, version, outdir, time_str, doNotUseProvidedSoft
 	# Check programms
 	requiredPrograms(asperaKey, downloadCramBam)
 
+	return script_path
+
 
 def scriptVersionGit(version, directory, script_path):
 	print 'Version ' + version
@@ -272,3 +274,9 @@ def runCommandPopenCommunicate(command, shell_True, timeout_sec_None, print_coma
 			print 'STDERR'
 			print stderr.decode("utf-8")
 	return run_successfully, stdout, stderr
+
+
+def rchop(string, ending):
+	if string.endswith(ending):
+		string = string[:-len(ending)]
+	return string
