@@ -38,13 +38,15 @@ Installation
 Usage
 -----
     usage: rematch.py [-h] [--version]
-                      -r /path/to/reference_sequence.fasta
+                      (-r /path/to/reference_sequence.fasta | --mlstReference)
                       [-w /path/to/workdir/directory/] [-j N]
-                      [--doNotUseProvidedSoftware]
-                      [--conservedSeq] [--extraSeq N] [--minCovPresence N]
-                      [--minCovCall N] [--minFrequencyDominantAllele 0.6]
-                      [--minGeneCoverage N] [--minGeneIdentity N] [--doubleRun]
-                      [--debug]
+                      [--mlst "Streptococcus agalactiae"]
+                      [--doNotUseProvidedSoftware] [--conservedSeq] [--extraSeq N]
+                      [--minCovPresence N] [--minCovCall N]
+                      [--minFrequencyDominantAllele 0.6] [--minGeneCoverage N]
+                      [--minGeneIdentity N] [--numMapLoc N] [--doubleRun]
+                      [--debug] [--mlstSchemaNumber N]
+                      [--mlstConsensus noMatter] [--mlstRun first]
                       [-a /path/to/asperaweb_id_dsa.openssh] [-k]
                       [--downloadLibrariesType PAIRED]
                       [--downloadInstrumentPlatform ILLUMINA] [--downloadCramBam]
@@ -56,13 +58,17 @@ Usage
     optional arguments:
       -h, --help            show this help message and exit
       --version             Version information
+      -l /path/to/list_IDs.txt, --listIDs /path/to/list_IDs.txt
+                      Path to list containing the IDs to be downloaded (one
+                      per line) (default: None)
+      -t "Streptococcus agalactiae", --taxon "Streptococcus agalactiae"
+                      Taxon name for which ReMatCh will download fastq files
+                      (default: None)
 
-    Required options:
+    General facultative options:
       -r /path/to/reference_sequence.fasta, --reference /path/to/reference_sequence.fasta
                             Fasta file containing reference sequences (default:
                             None)
-
-    General facultative options:
       -w /path/to/workdir/directory/, --workdir /path/to/workdir/directory/
                             Path to the directory where ReMatCh will run and
                             produce the outputs with reads (ended with
@@ -71,6 +77,9 @@ Usage
                             already present (organized in sample folders) or
                             to be downloaded (default: .)
       -j N, --threads N     Number of threads to use (default: 1)
+      --mlst "Streptococcus agalactiae"
+                            Species name (same as in PubMLST) to be used in MLST
+                            determination (default: None)
       --doNotUseProvidedSoftware
                             Tells ReMatCh to not use Bowtie2, Samtools and
                             Bcftools that are provided with it (default: False)
@@ -99,12 +108,32 @@ Usage
                             covered by --minCovCall to consider a gene to be present
                             (value between [0, 100]). One INDEL will be considered
                             as one difference (default: 70)
+      --numMapLoc N         Maximum number of locations to which a read can map
+                            (sometimes useful when mapping against similar
+                            sequences) (default: 1)
       --doubleRun           Tells ReMatCh to run a second time using as reference the
                             noMatter consensus sequence produced in the first run.
                             This will improve consensus sequence determination for
                             sequences with high percentage of target reference gene
                             sequence covered (default: False)
       --debug               DeBug Mode: do not remove temporary files (default: False)
+      --mlstReference       If the curated scheme for MLST alleles is available, tells
+                            ReMatCh to use these as reference (force Bowtie2 to run
+                            with very-sensitive-local parameters, and sets --extraSeq
+                            to 200), otherwise ReMatCh uses the first alleles of each
+                            MLST gene fragment in PubMLST as reference sequences (force
+                            Bowtie2 to run with very-sensitive-local parameters, and
+                            sets --extraSeq to 0)
+
+    MLST facultative options:
+      --mlstSchemaNumber N  Number of the species PubMLST schema to be used in
+                            case of multiple schemes available (by default will
+                            use the first schema) (default: None)
+      --mlstConsensus noMatter
+                            Consensus sequence to be used in MLST determination
+                            (default: noMatter)
+      --mlstRun first       ReMatCh run outputs to be used in MLST determination
+                            (default: all)
 
     Download facultative options:
       -a /path/to/asperaweb_id_dsa.openssh, --asperaKey /path/to/asperaweb_id_dsa.openssh
@@ -164,6 +193,12 @@ The ENA Run Accession numbers for the given taxon will be stored in IDs_list.seq
 The column content will be: 1) Run Accession numbers, 2) Sequencing instrument models, 3) (secondary) Study Accession numbers, 4) library types, 5) library layouts.  
 The first line of *IDs_list.seqFromWebTaxon.tab* will contain the date of accession.  
 
+**Running ReMatCh for MultiLocus Sequence Typing**
+To run ReMatCh in a set of samples for MLST, either by providing the list of IDs/taxon name for download or the directory containing the sample forlders, the option `--mlst` needs to be provided with species name (same as in PubMLST) to be used in MLST determination. If more than one scheme is available for the species, the desired schema number should be passed to ReMatCh with the `--mlstSchemaNumber` option.
+A fasta file containing the MLST reference sequences (`-r`) is required, with the size of the flanking regions  enough to allow the alignment of one read (set with the opion `--extraSeq`). In our experience, the addition of 200nt upstream and downstream of the target region when using Illumina Miseq data (150nt reads), will have the desired effect, and these flanking regions will be ignored in variant calling, unless there is an INDEL affecting the target sequence. Alternatively the `--mlstReference` option can be used, telling ReMatCH to use the curated scheme for the MLST scheme, if available, as reference sequences with 200nt flanking the target regions, or the first alleles of each MLST gene fragment in PubMLST as reference sequences.
+As default, ReMatCh uses the consensus sequence "noMatter" in MLST determination, but this can be changed with the `--mlstConsensus` option. IF the option `--doubleRun` is used, ReMatCh can determine the MLST for the second run only, or for both runs, with the `--mlstRun` option. By default the MLST will be determined in both runs.
+The MLST results will be in the *mlst_report.*.tab* in the `--workdir`.
+
 
 
 Outputs
@@ -205,6 +240,10 @@ In case of multiple alleles occurrence, if the frequency of the dominant allele 
 
 **cpu_information.*.cpu.txt** and **cpu_information.*.slurm.txt**  
 Store CPUs and SLURM information at the time of run.  
+
+**mlst_report.*.tab**
+This file contains a report with the MLST information (columns) for the different samples (in lines).
+For each sample, the file will have information on the run the MLST was determined (first or second), the consensus sequenced used (noMatter, correct or alignment), the ST obtained ( or '-' if no ST was obtained) and the allele number (or '-' if not an exact match) for each loci in the scheme.
 
 **Samples folders**  
 For each sample, three fasta files will be produced:  

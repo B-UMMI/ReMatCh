@@ -396,9 +396,9 @@ def main():
 	parser_optional_rematch.add_argument('--debug', action='store_true', help='DeBug Mode: do not remove temporary files')
 
 	parser_optional_mlst = parser.add_argument_group('MLST facultative options')
-	parser_optional_rematch.add_argument('--mlstReference', action='store_true', help='Tells ReMatCh to use the first alleles of each MLST gene fragment in PubMLST as reference sequences (force Bowtie2 to run with very-sensitive-local parameters, and sets --extraSeq to 0)')
+	parser_optional_rematch.add_argument('--mlstReference', action='store_true', help='If the curated scheme for MLST alleles is available, tells ReMatCh to use these as reference (force Bowtie2 to run with very-sensitive-local parameters, and sets --extraSeq to 200), otherwise ReMatCh uses the first alleles of each MLST gene fragment in PubMLST as reference sequences (force Bowtie2 to run with very-sensitive-local parameters, and sets --extraSeq to 0)')
 	parser_optional_mlst.add_argument('--mlstSchemaNumber', type=int, metavar='N', help='Number of the species PubMLST schema to be used in case of multiple schemes available (by default will use the first schema)', required=False)
-	parser_optional_mlst.add_argument('--mlstConsensus', choices=['noMatter', 'correct', 'alignment', 'all'], type=str, metavar='noMatter', help='Consensus sequence to be used in MLST determination', required=False, default='all')
+	parser_optional_mlst.add_argument('--mlstConsensus', choices=['noMatter', 'correct', 'alignment', 'all'], type=str, metavar='noMatter', help='Consensus sequence to be used in MLST determination', required=False, default='noMatter')
 	parser_optional_mlst.add_argument('--mlstRun', choices=['first', 'second', 'all'], type=str, metavar='first', help='ReMatCh run outputs to be used in MLST determination', required=False, default='all')
 
 	parser_optional_download = parser.add_argument_group('Download facultative options')
