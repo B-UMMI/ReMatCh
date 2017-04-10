@@ -120,6 +120,7 @@ def downloadPubMLSTxml(originalSpecies, schema_number, outdir):
 		number_scheme = species_scheme[1] if len(species_scheme) == 2 else 1
 		species_scheme = species_scheme[0]
 		print 'A: ', species_scheme, number_scheme, schema_number
+		print 'D: ', determine_species(species_scheme), determine_species(originalSpecies)
 		if determine_species(species_scheme) == determine_species(originalSpecies):
 			print 'B: ', 'if determine_species(species_scheme) == determine_species(originalSpecies):'
 			if schema_number == number_scheme:
