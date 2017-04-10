@@ -119,8 +119,11 @@ def downloadPubMLSTxml(originalSpecies, schema_number, outdir):
 		species_scheme = scheme.text.rsplit('#', 1)
 		number_scheme = species_scheme[1] if len(species_scheme) == 2 else 1
 		species_scheme = species_scheme[0]
+		print 'A: ', species_scheme, number_scheme, schema_number
 		if determine_species(species_scheme) == determine_species(originalSpecies):
+			print 'B: ', 'if determine_species(species_scheme) == determine_species(originalSpecies):'
 			if schema_number == number_scheme:
+				print 'C: ', 'if schema_number == number_scheme:'
 				success += 1
 				xmlData[scheme.text.strip()] = {}
 				for info in scheme:  # mlst
@@ -157,8 +160,10 @@ def downloadPubMLSTxml(originalSpecies, schema_number, outdir):
 		SequenceDict = {}
 		mlst_sequences = {}
 
+		species_name = '_'.join(determine_species(SchemaName)).replace('/', '_')
+
 		for RetrievalDate, URL in info.items():
-			schema_date = '_'.join(determine_species(SchemaName)) + '_' + RetrievalDate
+			schema_date = species_name + '_' + RetrievalDate
 			outDit = os.path.join(pubmlst_dir, schema_date)  # compatible with windows? See if it already exists, if so, break
 
 			if os.path.isdir(outDit):
@@ -175,9 +180,9 @@ def downloadPubMLSTxml(originalSpecies, schema_number, outdir):
 								break
 					return mlst_dicts, mlst_sequences
 
-			elif any('_'.join(determine_species(SchemaName)) in x for x in os.listdir(pubmlst_dir)):
+			elif any(species_name in x for x in os.listdir(pubmlst_dir)):
 				print "Older version of %s's scheme found! Deleting..." % (SchemaName)
-				for directory in glob(str(outDit + str('_'.join(determine_species(SchemaName)) + '_*'))):
+				for directory in glob(str(outDit + str(species_name + '_*'))):
 					utils.removeDirectory(directory)
 					os.makedirs(outDit)
 			else:

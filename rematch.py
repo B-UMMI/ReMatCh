@@ -272,13 +272,15 @@ def runRematch(args):
 		args.extraSeq = 200
 		args.conservedSeq = False
 		if reference_file is None:
-			print 'It was not found provided MLST schema for ' + args.mlst
+			print 'It was not found provided MLST scheme sequences for ' + args.mlst
 			print 'Trying to obtain reference MLST sequences from PubMLST'
 			if len(mlst_sequences) > 0:
 				reference_file = checkMLST.write_mlst_reference(args.mlst, mlst_sequences, workdir, time_str)
 				args.extraSeq = 0
 			else:
 				sys.exit('It was not possible to download MLST sequences from PubMLST!')
+		else:
+			print 'Using provided scheme as referece: ' + reference_file
 	else:
 		reference_file = os.path.abspath(args.reference.name)
 
