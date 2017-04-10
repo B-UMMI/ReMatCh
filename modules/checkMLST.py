@@ -57,7 +57,7 @@ def check_existing_schema(species, schema_number, script_path):
 
 def write_mlst_reference(species, mlst_sequences, outdir, time_str):
 	print 'Writing MLST alleles as reference_sequences' + '\n'
-	reference_file = os.path.join(outdir, str(species.replace(' ', '_') + '.' + time_str + '.fasta'))
+	reference_file = os.path.join(outdir, str(species.replace('/', '_').replace(' ', '_') + '.' + time_str + '.fasta'))
 	with open(reference_file, 'wt') as writer:
 		for header, sequence in mlst_sequences.items():
 			writer.write('>' + header + '\n')
