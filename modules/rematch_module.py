@@ -111,11 +111,11 @@ def soft_clip_2_insertion(cigar):
 				numbers_s = ''
 
 	read_cigars = read_cigars.split('_')
-	if len(numbers_s) > 0:
-		if read_cigars[len(read_cigars) - 2] == 'I':
-			read_cigars[len(read_cigars) - 3] = str(int(read_cigars[len(read_cigars) - 3]) + int(numbers_s))
-		else:
-			read_cigars.extend([numbers_s, 'I'])
+	# if len(numbers_s) > 0:
+	# 	if read_cigars[len(read_cigars) - 2] == 'I':
+	# 		read_cigars[len(read_cigars) - 3] = str(int(read_cigars[len(read_cigars) - 3]) + int(numbers_s))
+	# 	else:
+	# 		read_cigars.extend([numbers_s, 'I'])
 	read_cigars = ''.join(read_cigars)
 
 	return read_cigars
@@ -164,12 +164,14 @@ def remove_soft_clipping_from_sam(sam_file, outdir, threads):
 	new_sam_file = os.path.join(outdir, 'alignment_without_soft_clipping.sam')
 	with open(new_sam_file, 'wt') as writer:
 		for pickleFile in pickle_files:
-			lines_without_soft_clipping = None
-			with open(pickleFile, 'rb') as reader:
-				lines_without_soft_clipping = pickle.load(reader)
-			if lines_without_soft_clipping is not None:
-				for line in lines_without_soft_clipping:
-					writer.write(line + '\n')
+			if os.path.isfile(pickleFile):
+				lines_without_soft_clipping = None
+				with open(pickleFile, 'rb') as reader:
+					lines_without_soft_clipping = pickle.load(reader)
+				if lines_without_soft_clipping is not None:
+					for line in lines_without_soft_clipping:
+						writer.write(line + '\n')
+				os.remove(pickleFile)
 
 	return new_sam_file
 
