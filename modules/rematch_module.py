@@ -87,6 +87,53 @@ def remove_soft_clipping(cigar):
 	return read_cigars
 
 
+def split_cigar(cigar):
+	cigars = ['M', 'I', 'D', 'N', 'S', 'H', 'P', '=', 'X']
+
+	splited_cigars = []
+	numbers = ''
+	for char in cigar:
+		if char not in cigars:
+			numbers += char
+		else:
+			splited_cigars.append((int(numbers), char))
+			numbers = ''
+
+	return splited_cigars
+
+
+def recode_cigar_based_on_base_quality(cigar, bases_quality):
+	min_base_quality = 30
+	cigar = split_cigar(cigar)
+	soft_left = []
+	soft_right = []
+	read_length_without_right_s = sum([cigar_part[0] for cigar_part in cigar]) - (cigar[len(cigar) - 1][0] if cigar[len(cigar) - 1][1] == 'S' else 0)
+	for x, base in enumerate(bases_quality):
+		if ord(base) - 33 < min_base_quality:
+			if x <= cigar[0][0] - 1:
+				if cigar[0][1] == 'S':
+					soft_left.append(x)
+			elif x > read_length_without_right_s - 1:
+				if cigar[len(cigar) - 1][1] == 'S':
+					soft_right.append(x)
+
+	if len(soft_left) > 0:
+		soft_left = max(soft_left)
+		cigar = [(soft_left, 'S')] + ([(cigar[0][0] - 1 - soft_left, 'I')] + cigar if cigar[0][0] - 1 - soft_left > 0 else cigar)
+	else:
+		if cigar[0][1] == 'S':
+			cigar[0][1] = 'I'
+
+	if len(soft_right) > 0:
+		soft_right = min(soft_right)
+		cigar = cigar + [(soft_right - read_length_without_right_s, 'I'), (len(bases_quality) - soft_right, 'S')]
+	else:
+		if cigar[len(cigar) - 1][1] == 'S':
+			cigar[len(cigar) - 1][1] = 'I'
+
+	return ''.join([str(cigar_part[0]) + cigar_part[1] for cigar_part in cigar])
+
+
 def soft_clip_2_insertion(cigar):
 	cigars = ['M', 'I', 'D', 'N', 'S', 'H', 'P', '=', 'X']
 
@@ -142,7 +189,8 @@ def parallelized_remove_soft_clipping(line_collection, pickleFile):
 				line = line.split('\t')
 				# line[5] = remove_soft_clipping(line[5])
 				if verify_is_forward(int(line[1])):
-					line[5] = soft_clip_2_insertion(line[5])
+					# line[5] = soft_clip_2_insertion(line[5])
+					line[5] = recode_cigar_based_on_base_quality(line[5], line[10])
 				lines_without_soft_clipping.append('\t'.join(line))
 	with open(pickleFile, 'wb') as writer:
 		pickle.dump(lines_without_soft_clipping, writer)
