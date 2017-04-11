@@ -87,6 +87,40 @@ def remove_soft_clipping(cigar):
 	return read_cigars
 
 
+def soft_clip_2_insertion(cigar):
+	cigars = ['M', 'I', 'D', 'N', 'S', 'H', 'P', '=', 'X']
+
+	read_cigars = ''
+	numbers = ''
+	numbers_s = ''
+	for char in cigar:
+		if char not in cigars:
+			numbers += char
+		else:
+			if char == 'S':
+				numbers_s = numbers
+				numbers = ''
+			else:
+				if len(numbers_s) > 0:
+					if char == 'I':
+						numbers = str(int(numbers) + int(numbers_s))
+					else:
+						read_cigars += numbers_s + '_' + 'I' + '_'
+				read_cigars += numbers + '_' + char + '_'
+				numbers = ''
+				numbers_s = ''
+
+	read_cigars = read_cigars.split('_')
+	if len(numbers_s) > 0:
+		if read_cigars[len(read_cigars) - 2] == 'I':
+			read_cigars[len(read_cigars) - 3] = str(int(read_cigars[len(read_cigars) - 3]) + int(numbers_s))
+		else:
+			read_cigars.extend([numbers_s, 'I'])
+	read_cigars = ''.join(read_cigars)
+
+	return read_cigars
+
+
 @utils.trace_unhandled_exceptions
 def parallelized_remove_soft_clipping(line_collection, pickleFile):
 	lines_without_soft_clipping = []
@@ -97,7 +131,8 @@ def parallelized_remove_soft_clipping(line_collection, pickleFile):
 				lines_without_soft_clipping.append(line)
 			else:
 				line = line.split('\t')
-				line[5] = remove_soft_clipping(line[5])
+				# line[5] = remove_soft_clipping(line[5])
+				line[5] = soft_clip_2_insertion(line[5])
 				lines_without_soft_clipping.append('\t'.join(line))
 	with open(pickleFile, 'wb') as writer:
 		pickle.dump(lines_without_soft_clipping, writer)
