@@ -111,19 +111,23 @@ def soft_clip_2_insertion(cigar):
 				numbers_s = ''
 
 	read_cigars = read_cigars.split('_')
-	# if len(numbers_s) > 0:
-	# 	if read_cigars[len(read_cigars) - 2] == 'I':
-	# 		read_cigars[len(read_cigars) - 3] = str(int(read_cigars[len(read_cigars) - 3]) + int(numbers_s))
-	# 	else:
-	# 		read_cigars.extend([numbers_s, 'I'])
 	if len(numbers_s) > 0:
-		if read_cigars[len(read_cigars) - 2] == 'S':
+		if read_cigars[len(read_cigars) - 2] == 'I':
 			read_cigars[len(read_cigars) - 3] = str(int(read_cigars[len(read_cigars) - 3]) + int(numbers_s))
 		else:
-			read_cigars.extend([numbers_s, 'S'])
+			read_cigars.extend([numbers_s, 'I'])
 	read_cigars = ''.join(read_cigars)
 
 	return read_cigars
+
+
+def verify_is_forward(number):
+	# 64 = 1000000
+	forward = False
+	bit = format(number, 'b').zfill(7)
+	if bit[-7] == '1':
+		forward = True
+	return forward
 
 
 @utils.trace_unhandled_exceptions
@@ -137,7 +141,8 @@ def parallelized_remove_soft_clipping(line_collection, pickleFile):
 			else:
 				line = line.split('\t')
 				# line[5] = remove_soft_clipping(line[5])
-				line[5] = soft_clip_2_insertion(line[5])
+				if verify_is_forward(int(line[1])):
+					line[5] = soft_clip_2_insertion(line[5])
 				lines_without_soft_clipping.append('\t'.join(line))
 	with open(pickleFile, 'wb') as writer:
 		pickle.dump(lines_without_soft_clipping, writer)
@@ -227,7 +232,8 @@ def mapping_reads(fastq_files, reference_file, threads, outdir, conserved_True, 
 def create_vcf(bam_file, sequence_to_analyse, outdir, counter, reference_file):
 	gene_vcf = os.path.join(outdir, 'samtools_mpileup.sequence_' + str(counter) + '.vcf')
 
-	command = ['samtools', 'mpileup', '--count-orphans', '--no-BAQ', '--min-BQ', '0', '--min-MQ', str(7), '--fasta-ref', reference_file, '--region', sequence_to_analyse, '--output', gene_vcf, '--VCF', '--uncompressed', '--output-tags', 'INFO/AD,AD,DP', bam_file]
+	# command = ['samtools', 'mpileup', '--count-orphans', '--no-BAQ', '--min-BQ', '0', '--min-MQ', str(7), '--fasta-ref', reference_file, '--region', sequence_to_analyse, '--output', gene_vcf, '--VCF', '--uncompressed', '--output-tags', 'INFO/AD,AD,DP', bam_file]
+	command = ['samtools', 'mpileup', '--count-orphans', '--no-BAQ', '--min-BQ', '0', '--min-MQ', str(20), '--fasta-ref', reference_file, '--region', sequence_to_analyse, '--output', gene_vcf, '--VCF', '--uncompressed', '--output-tags', 'INFO/AD,AD,DP', bam_file]
 
 	run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, False, None, False)
 	if not run_successfully:
