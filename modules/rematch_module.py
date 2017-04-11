@@ -120,7 +120,7 @@ def recode_cigar_based_on_base_quality(cigar, bases_quality):
 	debug = False
 	initial_length = sum([cigar_part[0] for cigar_part in cigar])
 	if cigar[len(cigar) - 1][1] == 'S' or cigar[0][1] == 'S':
-		sys.stderr.write(cigar + '\n')
+		sys.stderr.write(str(cigar) + '\n')
 		debug = True
 
 	if len(soft_left) > 0:
@@ -138,7 +138,7 @@ def recode_cigar_based_on_base_quality(cigar, bases_quality):
 			cigar[len(cigar) - 1][1] = 'I'
 
 	if debug:
-		sys.stderr.write(cigar + '\n')
+		sys.stderr.write(str(cigar) + '\n')
 
 	if sum([cigar_part[0] for cigar_part in cigar]) != initial_length:
 		sys.exit('Diferent length')
