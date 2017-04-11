@@ -117,6 +117,12 @@ def recode_cigar_based_on_base_quality(cigar, bases_quality):
 				if cigar[len(cigar) - 1][1] == 'S':
 					soft_right.append(x)
 
+	debug = False
+	initial_length = sum([cigar_part[0] for cigar_part in cigar])
+	if cigar[len(cigar) - 1][1] == 'S' or cigar[0][1] == 'S':
+		sys.stderr.write(cigar + '\n')
+		debug = True
+
 	if len(soft_left) > 0:
 		soft_left = max(soft_left)
 		cigar = [[soft_left, 'S']] + ([[cigar[0][0] - 1 - soft_left, 'I']] + cigar if cigar[0][0] - 1 - soft_left > 0 else cigar)
@@ -130,6 +136,12 @@ def recode_cigar_based_on_base_quality(cigar, bases_quality):
 	else:
 		if cigar[len(cigar) - 1][1] == 'S':
 			cigar[len(cigar) - 1][1] = 'I'
+
+	if debug:
+		sys.stderr.write(cigar + '\n')
+
+	if sum([cigar_part[0] for cigar_part in cigar]) != initial_length:
+		sys.exit('Diferent length')
 
 	return ''.join([str(cigar_part[0]) + cigar_part[1] for cigar_part in cigar])
 
