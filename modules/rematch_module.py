@@ -3,6 +3,7 @@ import multiprocessing
 import utils
 import functools
 import sys
+import pickle
 
 
 def index_fasta_samtools(fasta, region_None, region_outfile_none, print_comand_True):
@@ -58,6 +59,86 @@ def mappingBowtie2(fastq_files, referenceFile, threads, outdir, conserved_True, 
 	return run_successfully, sam_file
 
 
+def remove_soft_clipping(cigar):
+	cigars = ['M', 'I', 'D', 'N', 'S', 'H', 'P', '=', 'X']
+
+	read_cigars = ''
+	numbers = ''
+	numbers_s = ''
+	for char in cigar:
+		if char not in cigars:
+			numbers += char
+		else:
+			if char == 'S':
+				numbers_s = numbers
+				numbers = ''
+			else:
+				if len(numbers_s) > 0:
+					numbers = str(int(numbers) + int(numbers_s))
+				read_cigars += numbers + '_' + char + '_'
+				numbers = ''
+				numbers_s = ''
+
+	read_cigars = read_cigars.split('_')
+	if len(numbers_s) > 0:
+		read_cigars[len(read_cigars) - 3] = str(int(read_cigars[len(read_cigars) - 3]) + int(numbers_s))
+	read_cigars = ''.join(read_cigars)
+
+	return read_cigars
+
+
+@utils.trace_unhandled_exceptions
+def parallelized_remove_soft_clipping(line_collection, pickleFile):
+	lines_without_soft_clipping = []
+	for line in line_collection:
+		line = line.splitlines()[0]
+		if len(line) > 0:
+			if line.startswith('@'):
+				lines_without_soft_clipping.append(line)
+			else:
+				line = line.split('\t')
+				line[5] = remove_soft_clipping(line[5])
+				lines_without_soft_clipping.append('\t'.join(line))
+	with open(pickleFile, 'wb') as writer:
+		pickle.dump(lines_without_soft_clipping, writer)
+
+
+def remove_soft_clipping_from_sam(sam_file, outdir, threads):
+	pickle_files = []
+	with open(sam_file, 'rtU') as reader:
+		pool = multiprocessing.Pool(processes=threads)
+		line_collection = []
+		x = 0
+		for x, line in enumerate(reader):
+			line_collection.append(line)
+			if x % 10000 == 0:
+				pickleFile = os.path.join(outdir, 'remove_soft_clipping.' + str(x) + '.pkl')
+				pickle_files.append(pickleFile)
+				pool.apply_async(parallelized_remove_soft_clipping, args=(line_collection, pickleFile,))
+				line_collection = []
+		if len(line_collection) > 0:
+			pickle = os.path.join(outdir, 'remove_soft_clipping.' + str(x) + '.pkl')
+			pickle_files.append(pickle)
+			pool.apply_async(parallelized_remove_soft_clipping, args=(line_collection, pickle,))
+			line_collection = []
+		pool.close()
+		pool.join()
+
+	os.remove(sam_file)
+
+	new_sam_file = os.path.join(outdir, 'alignment_without_soft_clipping.sam')
+	with open(new_sam_file, 'wt') as writer:
+		for pickleFile in pickle_files:
+			lines_without_soft_clipping = None
+			with open(pickleFile, 'rb') as reader:
+				lines_without_soft_clipping = pickle.load(reader)
+			if lines_without_soft_clipping is not None:
+				for line in lines_without_soft_clipping:
+					writer.write(line + '\n')
+
+	return new_sam_file
+
+
 # Sort alignment file
 def sortAlignment(alignment_file, output_file, sortByName_True, threads):
 	outFormat_string = os.path.splitext(output_file)[1][1:].lower()
@@ -87,6 +168,9 @@ def mapping_reads(fastq_files, reference_file, threads, outdir, conserved_True, 
 	run_successfully, sam_file = mappingBowtie2(fastq_files, reference_link, threads, outdir, conserved_True, numMapLoc)
 
 	if run_successfully:
+		# Remove soft clipping
+		sam_file = remove_soft_clipping_from_sam(sam_file, outdir, threads)
+
 		# Convert sam to bam and sort bam
 		run_successfully, bam_file = sortAlignment(sam_file, str(os.path.splitext(sam_file)[0] + '.bam'), False, threads)
 
