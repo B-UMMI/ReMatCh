@@ -96,7 +96,7 @@ def split_cigar(cigar):
 		if char not in cigars:
 			numbers += char
 		else:
-			splited_cigars.append((int(numbers), char))
+			splited_cigars.append([int(numbers), char])
 			numbers = ''
 
 	return splited_cigars
@@ -119,14 +119,14 @@ def recode_cigar_based_on_base_quality(cigar, bases_quality):
 
 	if len(soft_left) > 0:
 		soft_left = max(soft_left)
-		cigar = [(soft_left, 'S')] + ([(cigar[0][0] - 1 - soft_left, 'I')] + cigar if cigar[0][0] - 1 - soft_left > 0 else cigar)
+		cigar = [[soft_left, 'S']] + ([[cigar[0][0] - 1 - soft_left, 'I']] + cigar if cigar[0][0] - 1 - soft_left > 0 else cigar)
 	else:
 		if cigar[0][1] == 'S':
 			cigar[0][1] = 'I'
 
 	if len(soft_right) > 0:
 		soft_right = min(soft_right)
-		cigar = cigar + [(soft_right - read_length_without_right_s, 'I'), (len(bases_quality) - soft_right, 'S')]
+		cigar = cigar + [[soft_right - read_length_without_right_s, 'I'], [len(bases_quality) - soft_right, 'S']]
 	else:
 		if cigar[len(cigar) - 1][1] == 'S':
 			cigar[len(cigar) - 1][1] = 'I'
