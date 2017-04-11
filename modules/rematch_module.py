@@ -116,6 +116,11 @@ def soft_clip_2_insertion(cigar):
 	# 		read_cigars[len(read_cigars) - 3] = str(int(read_cigars[len(read_cigars) - 3]) + int(numbers_s))
 	# 	else:
 	# 		read_cigars.extend([numbers_s, 'I'])
+	if len(numbers_s) > 0:
+		if read_cigars[len(read_cigars) - 2] == 'S':
+			read_cigars[len(read_cigars) - 3] = str(int(read_cigars[len(read_cigars) - 3]) + int(numbers_s))
+		else:
+			read_cigars.extend([numbers_s, 'S'])
 	read_cigars = ''.join(read_cigars)
 
 	return read_cigars
