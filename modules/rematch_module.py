@@ -117,9 +117,9 @@ def remove_soft_clipping_from_sam(sam_file, outdir, threads):
 				pool.apply_async(parallelized_remove_soft_clipping, args=(line_collection, pickleFile,))
 				line_collection = []
 		if len(line_collection) > 0:
-			pickle = os.path.join(outdir, 'remove_soft_clipping.' + str(x) + '.pkl')
-			pickle_files.append(pickle)
-			pool.apply_async(parallelized_remove_soft_clipping, args=(line_collection, pickle,))
+			pickleFile = os.path.join(outdir, 'remove_soft_clipping.' + str(x) + '.pkl')
+			pickle_files.append(pickleFile)
+			pool.apply_async(parallelized_remove_soft_clipping, args=(line_collection, pickleFile,))
 			line_collection = []
 		pool.close()
 		pool.join()
