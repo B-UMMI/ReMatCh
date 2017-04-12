@@ -141,6 +141,7 @@ def recode_cigar_based_on_base_quality(cigar, bases_quality):
 			cigar[len(cigar) - 1][1] = 'I'
 
 	if debug:
+		sys.stderr.write(str(bases_quality) + '\n')
 		sys.stderr.write(str(cigar) + '\n')
 
 	if sum([cigar_part[0] for cigar_part in cigar]) != initial_length:
