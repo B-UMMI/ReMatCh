@@ -410,7 +410,7 @@ def main():
 
 	parser_optional_softClip = parser.add_argument_group('Soft clip facultative options')
 	parser_optional_softClip.add_argument('--softClip_baseQuality', type=int, metavar='N', help='Base quality phred score in reads soft clipped regions', required=False, default=7)
-	parser_optional_download.add_argument('--softClip_recodeRun', type=str, metavar='both', help='ReMatCh run to recode soft clipped regions', choices=['first', 'second', 'both', 'none'], required=False, default='both')
+	parser_optional_download.add_argument('--softClip_recodeRun', type=str, metavar='none', help='ReMatCh run to recode soft clipped regions', choices=['first', 'second', 'both', 'none'], required=False, default='none')
 
 	parser_optional_download_exclusive = parser.add_mutually_exclusive_group()
 	parser_optional_download_exclusive.add_argument('-l', '--listIDs', type=argparse.FileType('r'), metavar='/path/to/list_IDs.txt', help='Path to list containing the IDs to be downloaded (one per line)', required=False)
