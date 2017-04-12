@@ -9,7 +9,7 @@ and consensus sequences production
 
 Copyright (C) 2017 Miguel Machado <mpmachado@medicina.ulisboa.pt>
 
-Last modified: April 10, 2017
+Last modified: April 12, 2017
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -398,19 +398,19 @@ def main():
 	parser_optional_mlst = parser.add_argument_group('MLST facultative options')
 	parser_optional_rematch.add_argument('--mlstReference', action='store_true', help='If the curated scheme for MLST alleles is available, tells ReMatCh to use these as reference (force Bowtie2 to run with very-sensitive-local parameters, and sets --extraSeq to 200), otherwise ReMatCh uses the first alleles of each MLST gene fragment in PubMLST as reference sequences (force Bowtie2 to run with very-sensitive-local parameters, and sets --extraSeq to 0)')
 	parser_optional_mlst.add_argument('--mlstSchemaNumber', type=int, metavar='N', help='Number of the species PubMLST schema to be used in case of multiple schemes available (by default will use the first schema)', required=False)
-	parser_optional_mlst.add_argument('--mlstConsensus', choices=['noMatter', 'correct', 'alignment', 'all'], type=str, metavar='noMatter', help='Consensus sequence to be used in MLST determination', required=False, default='noMatter')
-	parser_optional_mlst.add_argument('--mlstRun', choices=['first', 'second', 'all'], type=str, metavar='first', help='ReMatCh run outputs to be used in MLST determination', required=False, default='all')
+	parser_optional_mlst.add_argument('--mlstConsensus', choices=['noMatter', 'correct', 'alignment', 'all'], type=str, metavar='noMatter', help='Consensus sequence to be used in MLST determination (available options: %(choices)s)', required=False, default='noMatter')
+	parser_optional_mlst.add_argument('--mlstRun (available options: %(choices)s)', choices=['first', 'second', 'all'], type=str, metavar='first', help='ReMatCh run outputs to be used in MLST determination', required=False, default='all')
 
 	parser_optional_download = parser.add_argument_group('Download facultative options')
 	parser_optional_download.add_argument('-a', '--asperaKey', type=argparse.FileType('r'), metavar='/path/to/asperaweb_id_dsa.openssh', help='Tells ReMatCh to download fastq files from ENA using Aspera Connect. With this option, the path to Private-key file asperaweb_id_dsa.openssh must be provided (normaly found in ~/.aspera/connect/etc/asperaweb_id_dsa.openssh).', required=False)
 	parser_optional_download.add_argument('-k', '--keepDownloadedFastq', action='store_true', help='Tells ReMatCh to keep the fastq files downloaded')
-	parser_optional_download.add_argument('--downloadLibrariesType', type=str, metavar='PAIRED', help='Tells ReMatCh to download files with specific library layout', choices=['PAIRED', 'SINGLE', 'BOTH'], required=False, default='BOTH')
-	parser_optional_download.add_argument('--downloadInstrumentPlatform', type=str, metavar='ILLUMINA', help='Tells ReMatCh to download files with specific library layout', choices=['ILLUMINA', 'ALL'], required=False, default='ILLUMINA')
+	parser_optional_download.add_argument('--downloadLibrariesType', type=str, metavar='PAIRED', help='Tells ReMatCh to download files with specific library layout (available options: %(choices)s)', choices=['PAIRED', 'SINGLE', 'BOTH'], required=False, default='BOTH')
+	parser_optional_download.add_argument('--downloadInstrumentPlatform', type=str, metavar='ILLUMINA', help='Tells ReMatCh to download files with specific library layout (available options: %(choices)s)', choices=['ILLUMINA', 'ALL'], required=False, default='ILLUMINA')
 	parser_optional_download.add_argument('--downloadCramBam', action='store_true', help='Tells ReMatCh to also download cram/bam files and convert them to fastq files')
 
 	parser_optional_softClip = parser.add_argument_group('Soft clip facultative options')
 	parser_optional_softClip.add_argument('--softClip_baseQuality', type=int, metavar='N', help='Base quality phred score in reads soft clipped regions', required=False, default=7)
-	parser_optional_download.add_argument('--softClip_recodeRun', type=str, metavar='none', help='ReMatCh run to recode soft clipped regions', choices=['first', 'second', 'both', 'none'], required=False, default='none')
+	parser_optional_download.add_argument('--softClip_recodeRun', type=str, metavar='none', help='ReMatCh run to recode soft clipped regions (available options: %(choices)s)', choices=['first', 'second', 'both', 'none'], required=False, default='none')
 
 	parser_optional_download_exclusive = parser.add_mutually_exclusive_group()
 	parser_optional_download_exclusive.add_argument('-l', '--listIDs', type=argparse.FileType('r'), metavar='/path/to/list_IDs.txt', help='Path to list containing the IDs to be downloaded (one per line)', required=False)
