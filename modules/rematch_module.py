@@ -132,7 +132,10 @@ def recode_cigar_based_on_base_quality(cigar, bases_quality):
 
 	if len(soft_right) > 0:
 		soft_right = min(soft_right)
-		cigar = cigar[:-1] + [[soft_right - read_length_without_right_s, 'I'], [len(bases_quality) - soft_right, 'S']]
+		cigar = cigar[:-1]
+		if soft_right - read_length_without_right_s > 0:
+			cigar.append([soft_right - read_length_without_right_s + 1, 'I'])
+		cigar.append([len(bases_quality) - soft_right, 'S'])
 	else:
 		if cigar[len(cigar) - 1][1] == 'S':
 			cigar[len(cigar) - 1][1] = 'I'
@@ -180,13 +183,22 @@ def soft_clip_2_insertion(cigar):
 	return read_cigars
 
 
-def verify_is_forward(number):
+def verify_is_forward_read(number):
 	# 64 = 1000000
-	forward = False
+	forward_read = False
 	bit = format(number, 'b').zfill(7)
 	if bit[-7] == '1':
-		forward = True
-	return forward
+		forward_read = True
+	return forward_read
+
+
+def verify_mapped_direct_strand(number):
+	# 16 = 10000 -> mapped in reverse strand
+	direct_strand = False
+	bit = format(number, 'b').zfill(5)
+	if bit[-5] == '0':
+		direct_strand = True
+	return direct_strand
 
 
 @utils.trace_unhandled_exceptions
@@ -200,7 +212,8 @@ def parallelized_remove_soft_clipping(line_collection, pickleFile):
 			else:
 				line = line.split('\t')
 				# line[5] = remove_soft_clipping(line[5])
-				if verify_is_forward(int(line[1])):
+				# if verify_is_forward_read(int(line[1])):
+				if verify_mapped_direct_strand(int(line[1])):
 					# line[5] = soft_clip_2_insertion(line[5])
 					line[5] = recode_cigar_based_on_base_quality(line[5], line[10])
 				lines_without_soft_clipping.append('\t'.join(line))
