@@ -103,7 +103,7 @@ def split_cigar(cigar):
 
 
 def recode_cigar_based_on_base_quality(cigar, bases_quality):
-	min_base_quality = 30
+	min_base_quality = 7
 	cigar = split_cigar(cigar)
 	soft_left = []
 	soft_right = []
@@ -117,12 +117,6 @@ def recode_cigar_based_on_base_quality(cigar, bases_quality):
 			elif x > read_length_without_right_s - 1:
 				if cigar[len(cigar) - 1][1] == 'S':
 					soft_right.append(x)
-
-	debug = False
-	initial_length = sum([cigar_part[0] for cigar_part in cigar])
-	if cigar[len(cigar) - 1][1] == 'S' or cigar[0][1] == 'S':
-		sys.stderr.write(str(cigar) + '\n')
-		debug = True
 
 	if len(soft_left) > 0:
 		soft_left = max(soft_left)
@@ -140,13 +134,6 @@ def recode_cigar_based_on_base_quality(cigar, bases_quality):
 	else:
 		if cigar[len(cigar) - 1][1] == 'S':
 			cigar[len(cigar) - 1][1] = 'I'
-
-	if debug:
-		sys.stderr.write(str(cigar) + '\n')
-
-	if sum([cigar_part[0] for cigar_part in cigar]) != initial_length:
-		sys.stderr.write(str(bases_quality) + '\n')
-		sys.exit('Diferent length')
 
 	return ''.join([str(cigar_part[0]) + cigar_part[1] for cigar_part in cigar])
 
@@ -241,7 +228,7 @@ def recode_soft_clipping_from_sam(sam_file, outdir, threads):
 		pool.close()
 		pool.join()
 
-	# os.remove(sam_file)
+	os.remove(sam_file)
 
 	new_sam_file = os.path.join(outdir, 'alignment_without_soft_clipping.sam')
 	with open(new_sam_file, 'wt') as writer:
