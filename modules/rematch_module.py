@@ -141,10 +141,10 @@ def recode_cigar_based_on_base_quality(cigar, bases_quality):
 			cigar[len(cigar) - 1][1] = 'I'
 
 	if debug:
-		sys.stderr.write(str(bases_quality) + '\n')
 		sys.stderr.write(str(cigar) + '\n')
 
 	if sum([cigar_part[0] for cigar_part in cigar]) != initial_length:
+		sys.stderr.write(str(bases_quality) + '\n')
 		sys.exit('Diferent length')
 
 	return ''.join([str(cigar_part[0]) + cigar_part[1] for cigar_part in cigar])
@@ -203,7 +203,7 @@ def verify_mapped_direct_strand(number):
 
 
 @utils.trace_unhandled_exceptions
-def parallelized_remove_soft_clipping(line_collection, pickleFile):
+def parallelized_recode_soft_clipping(line_collection, pickleFile):
 	lines_without_soft_clipping = []
 	for line in line_collection:
 		line = line.splitlines()[0]
@@ -212,17 +212,14 @@ def parallelized_remove_soft_clipping(line_collection, pickleFile):
 				lines_without_soft_clipping.append(line)
 			else:
 				line = line.split('\t')
-				# line[5] = remove_soft_clipping(line[5])
-				# if verify_is_forward_read(int(line[1])):
 				if verify_mapped_direct_strand(int(line[1])):
-					# line[5] = soft_clip_2_insertion(line[5])
 					line[5] = recode_cigar_based_on_base_quality(line[5], line[10])
 				lines_without_soft_clipping.append('\t'.join(line))
 	with open(pickleFile, 'wb') as writer:
 		pickle.dump(lines_without_soft_clipping, writer)
 
 
-def remove_soft_clipping_from_sam(sam_file, outdir, threads):
+def recode_soft_clipping_from_sam(sam_file, outdir, threads):
 	pickle_files = []
 	with open(sam_file, 'rtU') as reader:
 		pool = multiprocessing.Pool(processes=threads)
@@ -233,17 +230,17 @@ def remove_soft_clipping_from_sam(sam_file, outdir, threads):
 			if x % 10000 == 0:
 				pickleFile = os.path.join(outdir, 'remove_soft_clipping.' + str(x) + '.pkl')
 				pickle_files.append(pickleFile)
-				pool.apply_async(parallelized_remove_soft_clipping, args=(line_collection, pickleFile,))
+				pool.apply_async(parallelized_recode_soft_clipping, args=(line_collection, pickleFile,))
 				line_collection = []
 		if len(line_collection) > 0:
 			pickleFile = os.path.join(outdir, 'remove_soft_clipping.' + str(x) + '.pkl')
 			pickle_files.append(pickleFile)
-			pool.apply_async(parallelized_remove_soft_clipping, args=(line_collection, pickleFile,))
+			pool.apply_async(parallelized_recode_soft_clipping, args=(line_collection, pickleFile,))
 			line_collection = []
 		pool.close()
 		pool.join()
 
-	os.remove(sam_file)
+	# os.remove(sam_file)
 
 	new_sam_file = os.path.join(outdir, 'alignment_without_soft_clipping.sam')
 	with open(new_sam_file, 'wt') as writer:
@@ -290,7 +287,7 @@ def mapping_reads(fastq_files, reference_file, threads, outdir, conserved_True, 
 
 	if run_successfully:
 		# Remove soft clipping
-		sam_file = remove_soft_clipping_from_sam(sam_file, outdir, threads)
+		sam_file = recode_soft_clipping_from_sam(sam_file, outdir, threads)
 
 		# Convert sam to bam and sort bam
 		run_successfully, bam_file = sortAlignment(sam_file, str(os.path.splitext(sam_file)[0] + '.bam'), False, threads)
@@ -306,8 +303,7 @@ def mapping_reads(fastq_files, reference_file, threads, outdir, conserved_True, 
 def create_vcf(bam_file, sequence_to_analyse, outdir, counter, reference_file):
 	gene_vcf = os.path.join(outdir, 'samtools_mpileup.sequence_' + str(counter) + '.vcf')
 
-	# command = ['samtools', 'mpileup', '--count-orphans', '--no-BAQ', '--min-BQ', '0', '--min-MQ', str(7), '--fasta-ref', reference_file, '--region', sequence_to_analyse, '--output', gene_vcf, '--VCF', '--uncompressed', '--output-tags', 'INFO/AD,AD,DP', bam_file]
-	command = ['samtools', 'mpileup', '--count-orphans', '--no-BAQ', '--min-BQ', '0', '--min-MQ', str(20), '--fasta-ref', reference_file, '--region', sequence_to_analyse, '--output', gene_vcf, '--VCF', '--uncompressed', '--output-tags', 'INFO/AD,AD,DP', bam_file]
+	command = ['samtools', 'mpileup', '--count-orphans', '--no-BAQ', '--min-BQ', '0', '--min-MQ', str(7), '--fasta-ref', reference_file, '--region', sequence_to_analyse, '--output', gene_vcf, '--VCF', '--uncompressed', '--output-tags', 'INFO/AD,AD,DP', bam_file]
 
 	run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, False, None, False)
 	if not run_successfully:
