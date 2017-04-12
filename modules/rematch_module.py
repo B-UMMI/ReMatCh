@@ -107,7 +107,8 @@ def recode_cigar_based_on_base_quality(cigar, bases_quality):
 	cigar = split_cigar(cigar)
 	soft_left = []
 	soft_right = []
-	read_length_without_right_s = sum([cigar_part[0] for cigar_part in cigar]) - (cigar[len(cigar) - 1][0] if cigar[len(cigar) - 1][1] == 'S' else 0)
+	cigar_flags_for_reads_length = ('M', 'I', 'S', '=', 'X')
+	read_length_without_right_s = sum([cigar_part[0] for cigar_part in cigar if cigar_part[1] in cigar_flags_for_reads_length]) - (cigar[len(cigar) - 1][0] if cigar[len(cigar) - 1][1] == 'S' else 0)
 	for x, base in enumerate(bases_quality):
 		if ord(base) - 33 < min_base_quality:
 			if x <= cigar[0][0] - 1:
