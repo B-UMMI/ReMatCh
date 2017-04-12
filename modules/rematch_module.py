@@ -274,7 +274,7 @@ def mapping_reads(fastq_files, reference_file, threads, outdir, conserved_True, 
 
 	if run_successfully:
 		# Remove soft clipping
-		if rematch_run == softClip_baseQuality or softClip_baseQuality == 'all':
+		if rematch_run == softClip_baseQuality or softClip_baseQuality == 'both':
 			sam_file = recode_soft_clipping_from_sam(sam_file, outdir, threads, softClip_baseQuality)
 
 		# Convert sam to bam and sort bam
