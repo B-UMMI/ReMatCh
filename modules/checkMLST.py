@@ -179,8 +179,8 @@ def downloadPubMLSTxml(originalSpecies, schema_number, outdir):
 
 			elif any(species_name in x for x in os.listdir(pubmlst_dir)):
 				print "Older version of %s's scheme found! Deleting..." % (SchemaName)
-				print outDit
-				for directory in glob(str(outDit + str(species_name + '_*'))):
+				print pubmlst_dir
+				for directory in glob(str(pubmlst_dir + str(species_name + '_*'))):
 					print directory
 					utils.removeDirectory(directory)
 					os.makedirs(outDit)
