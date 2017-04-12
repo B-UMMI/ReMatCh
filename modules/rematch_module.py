@@ -134,7 +134,7 @@ def recode_cigar_based_on_base_quality(cigar, bases_quality):
 		soft_right = min(soft_right)
 		cigar = cigar[:-1]
 		if soft_right - read_length_without_right_s > 0:
-			cigar.append([soft_right - read_length_without_right_s + 1, 'I'])
+			cigar.append([soft_right - read_length_without_right_s, 'I'])
 		cigar.append([len(bases_quality) - soft_right, 'S'])
 	else:
 		if cigar[len(cigar) - 1][1] == 'S':
