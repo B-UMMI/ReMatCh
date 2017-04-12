@@ -332,7 +332,7 @@ def runRematch(args):
 		if run_successfully_fastq is not False:
 			fileSize = sum(os.path.getsize(fastq) for fastq in fastq_files)
 			# Run ReMatCh
-			time_taken_rematch_first, run_successfully_rematch_first, data_by_gene, sample_data_general_first, consensus_files, consensus_sequences = rematch_module.runRematchModule(sample, fastq_files, reference_file, args.threads, sample_outdir, args.extraSeq, args.minCovPresence, args.minCovCall, args.minFrequencyDominantAllele, args.minGeneCoverage, args.conservedSeq, args.debug, args.numMapLoc, args.minGeneIdentity)
+			time_taken_rematch_first, run_successfully_rematch_first, data_by_gene, sample_data_general_first, consensus_files, consensus_sequences = rematch_module.runRematchModule(sample, fastq_files, reference_file, args.threads, sample_outdir, args.extraSeq, args.minCovPresence, args.minCovCall, args.minFrequencyDominantAllele, args.minGeneCoverage, args.conservedSeq, args.debug, args.numMapLoc, args.minGeneIdentity, 'first', args.softClip_baseQuality, args.softClip_recodeRun)
 			if run_successfully_rematch_first:
 				if args.mlst is not None and (args.mlstRun == 'first' or args.mlstRun == 'all'):
 					run_get_st(sample, mlst_dicts, consensus_sequences, args.mlstConsensus, 'first', workdir, time_str)
@@ -343,7 +343,7 @@ def runRematch(args):
 						os.mkdir(rematch_second_outdir)
 					consensus_concatenated_fasta, consensus_concatenated_gene_list = concatenate_extraSeq_2_consensus(consensus_files['noMatter'], reference_file, args.extraSeq, rematch_second_outdir)
 					if len(consensus_concatenated_gene_list) > 0:
-						time_taken_rematch_second, run_successfully_rematch_second, data_by_gene, sample_data_general_second, consensus_files, consensus_sequences = rematch_module.runRematchModule(sample, fastq_files, consensus_concatenated_fasta, args.threads, rematch_second_outdir, args.extraSeq, args.minCovPresence, args.minCovCall, args.minFrequencyDominantAllele, args.minGeneCoverage, args.conservedSeq, args.debug, args.numMapLoc, args.minGeneIdentity)
+						time_taken_rematch_second, run_successfully_rematch_second, data_by_gene, sample_data_general_second, consensus_files, consensus_sequences = rematch_module.runRematchModule(sample, fastq_files, consensus_concatenated_fasta, args.threads, rematch_second_outdir, args.extraSeq, args.minCovPresence, args.minCovCall, args.minFrequencyDominantAllele, args.minGeneCoverage, args.conservedSeq, args.debug, args.numMapLoc, args.minGeneIdentity, 'second', args.softClip_baseQuality, args.softClip_recodeRun)
 						if not args.debug:
 							os.remove(consensus_concatenated_fasta)
 						if run_successfully_rematch_second:
@@ -407,6 +407,10 @@ def main():
 	parser_optional_download.add_argument('--downloadLibrariesType', type=str, metavar='PAIRED', help='Tells ReMatCh to download files with specific library layout', choices=['PAIRED', 'SINGLE', 'BOTH'], required=False, default='BOTH')
 	parser_optional_download.add_argument('--downloadInstrumentPlatform', type=str, metavar='ILLUMINA', help='Tells ReMatCh to download files with specific library layout', choices=['ILLUMINA', 'ALL'], required=False, default='ILLUMINA')
 	parser_optional_download.add_argument('--downloadCramBam', action='store_true', help='Tells ReMatCh to also download cram/bam files and convert them to fastq files')
+
+	parser_optional_softClip = parser.add_argument_group('Soft clip facultative options')
+	parser_optional_softClip.add_argument('--softClip_baseQuality', type=int, metavar='N', help='Base quality phred score in reads soft clipped regions', required=False, default=7)
+	parser_optional_download.add_argument('--softClip_recodeRun', type=str, metavar='both', help='ReMatCh run to recode soft clipped regions', choices=['first', 'second', 'both', 'none'], required=False, default='both')
 
 	parser_optional_download_exclusive = parser.add_mutually_exclusive_group()
 	parser_optional_download_exclusive.add_argument('-l', '--listIDs', type=argparse.FileType('r'), metavar='/path/to/list_IDs.txt', help='Path to list containing the IDs to be downloaded (one per line)', required=False)
