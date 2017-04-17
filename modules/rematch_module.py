@@ -622,7 +622,7 @@ def get_true_variants(variants, minimum_depth_presence, minimum_depth_call, mini
 	for position in absent_positions:
 		if position == 1:
 			variants_correct[position] = {'REF': absent_positions[position]['REF'], 'ALT': 'N'}
-			if position not in variants:
+			if position + 1 not in variants:
 				variants_noMatter[position] = {'REF': absent_positions[position]['REF'], 'ALT': 'N'}
 		else:
 			if position - 1 not in variants_correct:
@@ -630,7 +630,7 @@ def get_true_variants(variants, minimum_depth_presence, minimum_depth_call, mini
 			else:
 				variants_correct[position - 1] = {'REF': variants_correct[position - 1]['REF'] + absent_positions[position]['REF'][len(variants_correct[position - 1]['REF']) - 1:], 'ALT': variants_correct[position - 1]['ALT'] + absent_positions[position]['ALT'][len(variants_correct[position - 1]['ALT']) - 1 if len(variants_correct[position - 1]['ALT']) > 0 else 0:]}
 
-			if position not in variants:
+			if position + 1 not in variants:
 				print 'D: ', position
 				if position - 1 not in variants_noMatter:
 					print 'E:'
@@ -640,7 +640,7 @@ def get_true_variants(variants, minimum_depth_presence, minimum_depth_call, mini
 					variants_noMatter[position - 1] = {'REF': variants_noMatter[position - 1]['REF'] + absent_positions[position]['REF'][len(variants_noMatter[position - 1]['REF']) - 1:], 'ALT': variants_noMatter[position - 1]['ALT'] + absent_positions[position]['ALT'][len(variants_noMatter[position - 1]['ALT']) - 1 if len(variants_noMatter[position - 1]['ALT']) > 0 else 0:]}
 				print 'G: ', variants_noMatter[position - 1]
 			else:
-				print 'H: ', variants[position]
+				print 'H: ', position, variants[position]
 
 	return variants_correct, variants_noMatter, variants_alignment, multiple_alleles_found
 
