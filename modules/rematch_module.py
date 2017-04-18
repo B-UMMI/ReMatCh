@@ -152,7 +152,7 @@ def recode_cigar_based_on_base_quality(cigar, bases_quality, softClip_baseQualit
 		if not direct_strand_true:
 			mapping_position = mapping_position + right_changed[1]
 
-	return ''.join([str(cigar_part[0]) + cigar_part[1] for cigar_part in cigar]), mapping_position
+	return ''.join([str(cigar_part[0]) + cigar_part[1] for cigar_part in cigar]), str(mapping_position)
 
 
 def soft_clip_2_insertion(cigar):
