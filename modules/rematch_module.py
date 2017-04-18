@@ -235,7 +235,7 @@ def parallelized_recode_soft_clipping(line_collection, pickleFile, softClip_base
 		pickle.dump(lines_sam, writer)
 
 
-def recode_soft_clipping_from_sam(sam_file, outdir, threads, softClip_baseQuality, reference_length, reference_dict):
+def recode_soft_clipping_from_sam(sam_file, outdir, threads, softClip_baseQuality, reference_dict):
 	pickle_files = []
 	sequences_length = {}
 	for x, seq_info in reference_dict.items():
