@@ -199,8 +199,8 @@ def parallelized_recode_soft_clipping(line_collection, pickleFile, softClip_base
 				lines_without_soft_clipping.append(line)
 			else:
 				line = line.split('\t')
-				if verify_mapped_direct_strand(int(line[1])):
-					line[5] = recode_cigar_based_on_base_quality(line[5], line[10], softClip_baseQuality)
+				# if verify_mapped_direct_strand(int(line[1])):
+				line[5] = recode_cigar_based_on_base_quality(line[5], line[10], softClip_baseQuality)
 				lines_without_soft_clipping.append('\t'.join(line))
 	with open(pickleFile, 'wb') as writer:
 		pickle.dump(lines_without_soft_clipping, writer)
