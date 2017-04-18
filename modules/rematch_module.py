@@ -103,7 +103,7 @@ def split_cigar(cigar):
 
 
 def recode_cigar_based_on_base_quality(cigar, bases_quality, softClip_baseQuality, mapping_position, direct_strand_true):
-	new_S_cigar = 'M'
+	new_S_cigar = 'X'
 	cigar = split_cigar(cigar)
 	soft_left = []
 	soft_right = []
