@@ -628,8 +628,12 @@ def get_true_variants(variants, minimum_depth_presence, minimum_depth_call, mini
 				variants_correct[position - 1] = {'REF': variants_correct[position - 1]['REF'] + absent_positions[position]['REF'][len(variants_correct[position - 1]['REF']) - 1:], 'ALT': variants_correct[position - 1]['ALT'] + absent_positions[position]['ALT'][len(variants_correct[position - 1]['ALT']) - 1 if len(variants_correct[position - 1]['ALT']) > 0 else 0:]}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 			if position + 1 not in variants:
 				print 'D: ', position
+=======
+			if position not in variants:
+>>>>>>> parent of 83579d5... Debugging
 =======
 			if position not in variants:
 >>>>>>> parent of 83579d5... Debugging
@@ -638,9 +642,12 @@ def get_true_variants(variants, minimum_depth_presence, minimum_depth_call, mini
 				else:
 					variants_noMatter[position - 1] = {'REF': variants_noMatter[position - 1]['REF'] + absent_positions[position]['REF'][len(variants_noMatter[position - 1]['REF']) - 1:], 'ALT': variants_noMatter[position - 1]['ALT'] + absent_positions[position]['ALT'][len(variants_noMatter[position - 1]['ALT']) - 1 if len(variants_noMatter[position - 1]['ALT']) > 0 else 0:]}
 <<<<<<< HEAD
+<<<<<<< HEAD
 				print 'G: ', variants_noMatter[position - 1]
 			else:
 				print 'H: ', position, variants[position]
+=======
+>>>>>>> parent of 83579d5... Debugging
 =======
 >>>>>>> parent of 83579d5... Debugging
 
