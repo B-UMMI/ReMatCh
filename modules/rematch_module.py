@@ -609,17 +609,20 @@ def get_true_variants(variants, minimum_depth_presence, minimum_depth_call, mini
 		else:
 			variants_alignment[counter] = {'REF': sequence[counter - 1], 'ALT': 'N'}
 
+			print 'A: ', counter, last_absent_position, counter - len(last_absent_position)
+			print 'B: ', absent_positions
 			if counter - len(last_absent_position) in absent_positions:
 				absent_positions[counter - len(last_absent_position)]['REF'] += sequence[counter - 1]
 			else:
 				absent_positions[counter] = {'REF': sequence[counter - 1], 'ALT': ''}
 			last_absent_position += sequence[counter - 1]
+			print 'C: ', last_absent_position, absent_positions
 			counter += 1
 
 	for position in absent_positions:
 		if position == 1:
 			variants_correct[position] = {'REF': absent_positions[position]['REF'], 'ALT': 'N'}
-			if position + 1 not in variants:
+			if position not in variants:
 				variants_noMatter[position] = {'REF': absent_positions[position]['REF'], 'ALT': 'N'}
 		else:
 			if position - 1 not in variants_correct:
@@ -627,29 +630,17 @@ def get_true_variants(variants, minimum_depth_presence, minimum_depth_call, mini
 			else:
 				variants_correct[position - 1] = {'REF': variants_correct[position - 1]['REF'] + absent_positions[position]['REF'][len(variants_correct[position - 1]['REF']) - 1:], 'ALT': variants_correct[position - 1]['ALT'] + absent_positions[position]['ALT'][len(variants_correct[position - 1]['ALT']) - 1 if len(variants_correct[position - 1]['ALT']) > 0 else 0:]}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-			if position + 1 not in variants:
+			if position not in variants:
 				print 'D: ', position
-=======
-			if position not in variants:
->>>>>>> parent of 83579d5... Debugging
-=======
-			if position not in variants:
->>>>>>> parent of 83579d5... Debugging
 				if position - 1 not in variants_noMatter:
+					print 'E:'
 					variants_noMatter[position - 1] = {'REF': sequence[position - 2] + absent_positions[position]['REF'], 'ALT': sequence[position - 2] + absent_positions[position]['ALT']}
 				else:
+					print 'F:'
 					variants_noMatter[position - 1] = {'REF': variants_noMatter[position - 1]['REF'] + absent_positions[position]['REF'][len(variants_noMatter[position - 1]['REF']) - 1:], 'ALT': variants_noMatter[position - 1]['ALT'] + absent_positions[position]['ALT'][len(variants_noMatter[position - 1]['ALT']) - 1 if len(variants_noMatter[position - 1]['ALT']) > 0 else 0:]}
-<<<<<<< HEAD
-<<<<<<< HEAD
 				print 'G: ', variants_noMatter[position - 1]
 			else:
-				print 'H: ', position, variants[position]
-=======
->>>>>>> parent of 83579d5... Debugging
-=======
->>>>>>> parent of 83579d5... Debugging
+				print 'H: ', variants[position]
 
 	return variants_correct, variants_noMatter, variants_alignment, multiple_alleles_found
 
