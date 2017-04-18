@@ -191,6 +191,7 @@ def concatenate_extraSeq_2_consensus(consensus_sequence, reference_sequence, ext
 				if extraSeq_length <= len(values_reference['sequence']):
 					right_extra_seq = '' if extraSeq_length == 0 else values_reference['sequence'][-extraSeq_length:]
 					consensus_dict[k]['sequence'] = values_reference['sequence'][:extraSeq_length] + consensus_dict[k]['sequence'] + right_extra_seq
+					consensus_dict[k]['length'] += extraSeq_length + len(right_extra_seq)
 
 	consensus_concatenated = os.path.join(outdir, 'consensus_concatenated_extraSeq.fasta')
 	with open(consensus_concatenated, 'wt') as writer:
@@ -200,7 +201,7 @@ def concatenate_extraSeq_2_consensus(consensus_sequence, reference_sequence, ext
 			for line in fasta_sequence_lines:
 				writer.write(line + '\n')
 
-	return consensus_concatenated, genes
+	return consensus_concatenated, genes, consensus_dict
 
 
 def clean_headers_reference_file(reference_file, outdir, extraSeq):
@@ -223,7 +224,7 @@ def clean_headers_reference_file(reference_file, outdir, extraSeq):
 				fasta_sequence_lines = rematch_module.chunkstring(sequences[i]['sequence'], 80)
 				for line in fasta_sequence_lines:
 					writer.write(line + '\n')
-	return new_reference_file, genes
+	return new_reference_file, genes, sequences
 
 
 def write_mlst_report(sample, run_times, consensus_type, st, alleles_profile, lociOrder, outdir, time_str):
@@ -288,7 +289,7 @@ def runRematch(args):
 	print '\n' + 'STARTING ReMatCh' + '\n'
 
 	# Clean sequences headers
-	reference_file, gene_list_reference = clean_headers_reference_file(reference_file, workdir, args.extraSeq)
+	reference_file, gene_list_reference, reference_dict = clean_headers_reference_file(reference_file, workdir, args.extraSeq)
 
 	if args.mlst is not None:
 		problem_genes = False
@@ -341,9 +342,9 @@ def runRematch(args):
 					rematch_second_outdir = os.path.join(sample_outdir, 'rematch_second_run', '')
 					if not os.path.isdir(rematch_second_outdir):
 						os.mkdir(rematch_second_outdir)
-					consensus_concatenated_fasta, consensus_concatenated_gene_list = concatenate_extraSeq_2_consensus(consensus_files['noMatter'], reference_file, args.extraSeq, rematch_second_outdir)
+					consensus_concatenated_fasta, consensus_concatenated_gene_list, consensus_concatenated_dict = concatenate_extraSeq_2_consensus(consensus_files['noMatter'], reference_file, args.extraSeq, rematch_second_outdir)
 					if len(consensus_concatenated_gene_list) > 0:
-						time_taken_rematch_second, run_successfully_rematch_second, data_by_gene, sample_data_general_second, consensus_files, consensus_sequences = rematch_module.runRematchModule(sample, fastq_files, consensus_concatenated_fasta, args.threads, rematch_second_outdir, args.extraSeq, args.minCovPresence, args.minCovCall, args.minFrequencyDominantAllele, args.minGeneCoverage, args.conservedSeq, args.debug, args.numMapLoc, args.minGeneIdentity, 'second', args.softClip_baseQuality, args.softClip_recodeRun)
+						time_taken_rematch_second, run_successfully_rematch_second, data_by_gene, sample_data_general_second, consensus_files, consensus_sequences = rematch_module.runRematchModule(sample, fastq_files, consensus_concatenated_fasta, args.threads, rematch_second_outdir, args.extraSeq, args.minCovPresence, args.minCovCall, args.minFrequencyDominantAllele, args.minGeneCoverage, args.conservedSeq, args.debug, args.numMapLoc, args.minGeneIdentity, 'second', args.softClip_baseQuality, args.softClip_recodeRun, consensus_concatenated_dict, reference_dict)
 						if not args.debug:
 							os.remove(consensus_concatenated_fasta)
 						if run_successfully_rematch_second:
