@@ -103,7 +103,7 @@ def split_cigar(cigar):
 
 
 def recode_cigar_based_on_base_quality(cigar, bases_quality, softClip_baseQuality, mapping_position, direct_strand_true):
-	new_S_cigar = 'X'
+	new_S_cigar = 'M'
 	cigar = split_cigar(cigar)
 	soft_left = []
 	soft_right = []
@@ -114,9 +114,11 @@ def recode_cigar_based_on_base_quality(cigar, bases_quality, softClip_baseQualit
 			if x <= cigar[0][0] - 1:
 				if cigar[0][1] == 'S':
 					soft_left.append(x)
+					print 'A'
 			elif x > read_length_without_right_s - 1:
 				if cigar[len(cigar) - 1][1] == 'S':
 					soft_right.append(x)
+					print 'B'
 
 	left_changed = (False, 0)
 	if len(soft_left) > 0:
@@ -146,11 +148,15 @@ def recode_cigar_based_on_base_quality(cigar, bases_quality, softClip_baseQualit
 	# 		right_changed = True
 
 	if left_changed[0]:
+		print 'AA'
 		if direct_strand_true:
 			mapping_position = mapping_position - left_changed[1]
+			print 'AAA'
 	if right_changed[0]:
+		print 'BB'
 		if not direct_strand_true:
 			mapping_position = mapping_position + right_changed[1]
+			print 'BBB'
 
 	return ''.join([str(cigar_part[0]) + cigar_part[1] for cigar_part in cigar]), str(mapping_position)
 
@@ -228,8 +234,12 @@ def parallelized_recode_soft_clipping(line_collection, pickleFile, softClip_base
 			else:
 				line = line.split('\t')
 				if verify_mapped_direct_strand(int(line[1])):
+					print 'direct'
 					if not verify_mapped_tip(sequences_length[line[2]], int(line[3]), len(line[9]), line[5]):
+						print 'not tip'
+						print '\t'.join(line)
 						line[5], line[3] = recode_cigar_based_on_base_quality(line[5], line[10], softClip_baseQuality, int(line[3]), verify_mapped_direct_strand(int(line[1])))
+						print '\t'.join(line)
 				lines_sam.append('\t'.join(line))
 	with open(pickleFile, 'wb') as writer:
 		pickle.dump(lines_sam, writer)
