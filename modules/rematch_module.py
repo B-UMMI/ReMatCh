@@ -133,7 +133,7 @@ def recode_cigar_based_on_base_quality(cigar, bases_quality, softClip_baseQualit
 			left_changed = (True, cigar[0][0] - 1 - soft_left)
 		else:
 			print 'left_changed', cigar
-			cigar = [[soft_left + 1, 'S']] + cigar[1:]
+			cigar = [[soft_left + 1, new_S_cigar]] + cigar[1:]
 			print 'left_changed', cigar
 	# else:
 	# 	if cigar[0][1] == 'S':
