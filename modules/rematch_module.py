@@ -110,6 +110,7 @@ def recode_cigar_based_on_base_quality(cigar, bases_quality, softClip_baseQualit
 	cigar_flags_for_reads_length = ('M', 'I', 'S', '=', 'X')
 	read_length_without_right_s = sum([cigar_part[0] for cigar_part in cigar if cigar_part[1] in cigar_flags_for_reads_length]) - (cigar[len(cigar) - 1][0] if cigar[len(cigar) - 1][1] == 'S' else 0)
 	for x, base in enumerate(bases_quality):
+		print base, ord(base), ord(base) - 33, softClip_baseQuality, ord(base) - 33 <= softClip_baseQuality
 		if ord(base) - 33 <= softClip_baseQuality:
 			print 'C'
 			if x <= cigar[0][0] - 1:
