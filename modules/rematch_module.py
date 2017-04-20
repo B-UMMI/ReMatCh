@@ -110,65 +110,40 @@ def recode_cigar_based_on_base_quality(cigar, bases_quality, softClip_baseQualit
 	cigar_flags_for_reads_length = ('M', 'I', 'S', '=', 'X')
 	read_length_without_right_s = sum([cigar_part[0] for cigar_part in cigar if cigar_part[1] in cigar_flags_for_reads_length]) - (cigar[len(cigar) - 1][0] if cigar[len(cigar) - 1][1] == 'S' else 0)
 	for x, base in enumerate(bases_quality):
-		# print base, ord(base), ord(base) - 33, softClip_baseQuality, ord(base) - 33 <= softClip_baseQuality
 		if ord(base) - 33 >= softClip_baseQuality:
-			# print 'C'
 			if x <= cigar[0][0] - 1:
-				# print 'D'
 				if cigar[0][1] == 'S':
 					soft_left.append(x)
-					# print 'A'
 			elif x > read_length_without_right_s - 1:
-				# print 'E'
 				if cigar[len(cigar) - 1][1] == 'S':
 					soft_right.append(x)
-					# print 'B'
 
 	left_changed = (False, 0)
 	if len(soft_left) > 0:
-		soft_left = min(soft_left)
-		print 'left_changed', cigar[0][0], soft_left, cigar[0][0] - 1 - soft_left, cigar[0][0] - 1 - soft_left > 0
-		if cigar[0][0] - 1 - soft_left > 0:
-			cigar = [[soft_left + 1, 'S']] + [[cigar[0][0] - 1 - soft_left, new_S_cigar]] + cigar[1:]
-			left_changed = (True, cigar[0][0] - 1 - soft_left)
-		else:
-			print 'left_changed', cigar
-			cigar = [[soft_left + 1, new_S_cigar]] + cigar[1:]
-			left_changed = (True, soft_left + 1)
-			print 'left_changed', cigar
-	# else:
-	# 	if cigar[0][1] == 'S':
-	# 		cigar[0][1] = new_S_cigar
-	# 		left_changed = (True, cigar[0][0])
+		soft_left = min(soft_left) + 1
+		if soft_left == 1:
+			cigar = [[cigar[0][0], new_S_cigar]] + cigar[1:]
+			left_changed = (True, cigar[0][0])
+		elif cigar[0][0] - soft_left > 0:
+			cigar = [[soft_left, 'S']] + [[cigar[0][0] - soft_left, new_S_cigar]] + cigar[1:]
+			left_changed = (True, cigar[0][0] - soft_left)
 
 	right_changed = (False, 0)
 	if len(soft_right) > 0:
 		soft_right = max(soft_right) + 1
-		print 'right_changed', cigar
 		cigar = cigar[:-1]
-		print 'right_changed', soft_right, read_length_without_right_s, soft_right - read_length_without_right_s, soft_right - read_length_without_right_s > 0
 		if soft_right - read_length_without_right_s > 0:
 			cigar.append([soft_right - read_length_without_right_s, new_S_cigar])
 			right_changed = (True, soft_right - read_length_without_right_s)
-		else:
-			print 'right_changed', cigar, [len(bases_quality) - soft_right, 'S']
 		if len(bases_quality) - soft_right > 0:
 			cigar.append([len(bases_quality) - soft_right, 'S'])
-	# else:
-	# 	if cigar[len(cigar) - 1][1] == 'S':
-	# 		cigar[len(cigar) - 1][1] = new_S_cigar
-	# 		right_changed = True
 
 	if left_changed[0]:
-		print 'AA'
 		if direct_strand_true:
 			mapping_position = mapping_position - left_changed[1]
-			print 'AAA'
 	if right_changed[0]:
-		print 'BB'
 		if not direct_strand_true:
 			mapping_position = mapping_position + right_changed[1]
-			print 'BBB'
 
 	return ''.join([str(cigar_part[0]) + cigar_part[1] for cigar_part in cigar]), str(mapping_position)
 
