@@ -182,7 +182,7 @@ def parallelized_recode_soft_clipping(line_collection, pickleFile, softClip_base
 				if not verify_mapped_direct_strand(int(line[1])):
 					print 'AAA', line
 					line[9], line[10], line[1], line[5] = move_read_mapped_reverse_strand_2_direct_strand(line[9], line[10], int(line[1]), line[5])
-					print 'BBB' line
+					print 'BBB', line
 				if not verify_mapped_tip(sequences_length[line[2]], int(line[3]), len(line[9]), line[5]):
 					line[5], line[3] = recode_cigar_based_on_base_quality(line[5], line[10], softClip_baseQuality, int(line[3]), verify_mapped_direct_strand(int(line[1])))
 				lines_sam.append('\t'.join(line))
