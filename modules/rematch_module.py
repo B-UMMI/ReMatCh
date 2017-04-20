@@ -74,8 +74,7 @@ def split_cigar(cigar):
 	return splited_cigars
 
 
-def recode_cigar_based_on_base_quality(cigar, bases_quality, softClip_baseQuality, mapping_position, direct_strand_true):
-	new_S_cigar = 'M'
+def recode_cigar_based_on_base_quality(cigar, bases_quality, softClip_baseQuality, mapping_position, direct_strand_true, softClip_cigarFlagRecode):
 	cigar = split_cigar(cigar)
 	soft_left = []
 	soft_right = []
@@ -94,10 +93,10 @@ def recode_cigar_based_on_base_quality(cigar, bases_quality, softClip_baseQualit
 	if len(soft_left) > 0:
 		soft_left = min(soft_left) + 1
 		if soft_left == 1:
-			cigar = [[cigar[0][0], new_S_cigar]] + cigar[1:]
+			cigar = [[cigar[0][0], softClip_cigarFlagRecode]] + cigar[1:]
 			left_changed = (True, cigar[0][0])
 		elif cigar[0][0] - soft_left > 0:
-			cigar = [[soft_left, 'S']] + [[cigar[0][0] - soft_left, new_S_cigar]] + cigar[1:]
+			cigar = [[soft_left, 'S']] + [[cigar[0][0] - soft_left, softClip_cigarFlagRecode]] + cigar[1:]
 			left_changed = (True, cigar[0][0] - soft_left)
 
 	right_changed = (False, 0)
@@ -105,7 +104,7 @@ def recode_cigar_based_on_base_quality(cigar, bases_quality, softClip_baseQualit
 		soft_right = max(soft_right) + 1
 		cigar = cigar[:-1]
 		if soft_right - read_length_without_right_s > 0:
-			cigar.append([soft_right - read_length_without_right_s, new_S_cigar])
+			cigar.append([soft_right - read_length_without_right_s, softClip_cigarFlagRecode])
 			right_changed = (True, soft_right - read_length_without_right_s)
 		if len(bases_quality) - soft_right > 0:
 			cigar.append([len(bases_quality) - soft_right, 'S'])
@@ -169,7 +168,7 @@ def move_read_mapped_reverse_strand_2_direct_strand(seq, bases_quality, sam_flag
 
 
 @utils.trace_unhandled_exceptions
-def parallelized_recode_soft_clipping(line_collection, pickleFile, softClip_baseQuality, sequences_length):
+def parallelized_recode_soft_clipping(line_collection, pickleFile, softClip_baseQuality, sequences_length, softClip_cigarFlagRecode):
 	lines_sam = []
 	for line in line_collection:
 		line = line.splitlines()[0]
@@ -179,13 +178,13 @@ def parallelized_recode_soft_clipping(line_collection, pickleFile, softClip_base
 			else:
 				line = line.split('\t')
 				if not verify_mapped_tip(sequences_length[line[2]], int(line[3]), len(line[9]), line[5]):
-					line[5], line[3] = recode_cigar_based_on_base_quality(line[5], line[10], softClip_baseQuality, int(line[3]), verify_mapped_direct_strand(int(line[1])))
+					line[5], line[3] = recode_cigar_based_on_base_quality(line[5], line[10], softClip_baseQuality, int(line[3]), verify_mapped_direct_strand(int(line[1])), softClip_cigarFlagRecode)
 				lines_sam.append('\t'.join(line))
 	with open(pickleFile, 'wb') as writer:
 		pickle.dump(lines_sam, writer)
 
 
-def recode_soft_clipping_from_sam(sam_file, outdir, threads, softClip_baseQuality, reference_dict):
+def recode_soft_clipping_from_sam(sam_file, outdir, threads, softClip_baseQuality, reference_dict, softClip_cigarFlagRecode):
 	pickle_files = []
 	sequences_length = {}
 	for x, seq_info in reference_dict.items():
@@ -200,12 +199,12 @@ def recode_soft_clipping_from_sam(sam_file, outdir, threads, softClip_baseQualit
 			if x % 10000 == 0:
 				pickleFile = os.path.join(outdir, 'remove_soft_clipping.' + str(x) + '.pkl')
 				pickle_files.append(pickleFile)
-				pool.apply_async(parallelized_recode_soft_clipping, args=(line_collection, pickleFile, softClip_baseQuality, sequences_length,))
+				pool.apply_async(parallelized_recode_soft_clipping, args=(line_collection, pickleFile, softClip_baseQuality, sequences_length, softClip_cigarFlagRecode,))
 				line_collection = []
 		if len(line_collection) > 0:
 			pickleFile = os.path.join(outdir, 'remove_soft_clipping.' + str(x) + '.pkl')
 			pickle_files.append(pickleFile)
-			pool.apply_async(parallelized_recode_soft_clipping, args=(line_collection, pickleFile, softClip_baseQuality, sequences_length,))
+			pool.apply_async(parallelized_recode_soft_clipping, args=(line_collection, pickleFile, softClip_baseQuality, sequences_length, softClip_cigarFlagRecode,))
 			line_collection = []
 		pool.close()
 		pool.join()
@@ -246,7 +245,7 @@ def indexAlignment(alignment_file):
 	return run_successfully
 
 
-def mapping_reads(fastq_files, reference_file, threads, outdir, conserved_True, numMapLoc, rematch_run, softClip_baseQuality, softClip_recodeRun, reference_dict):
+def mapping_reads(fastq_files, reference_file, threads, outdir, conserved_True, numMapLoc, rematch_run, softClip_baseQuality, softClip_recodeRun, reference_dict, softClip_cigarFlagRecode):
 	# Create a symbolic link to the reference_file
 	reference_link = os.path.join(outdir, os.path.basename(reference_file))
 	os.symlink(reference_file, reference_link)
@@ -259,7 +258,7 @@ def mapping_reads(fastq_files, reference_file, threads, outdir, conserved_True, 
 		# Remove soft clipping
 		if rematch_run == softClip_recodeRun or softClip_recodeRun == 'both':
 			print 'Recoding soft clipped regions'
-			sam_file = recode_soft_clipping_from_sam(sam_file, outdir, threads, softClip_baseQuality, reference_dict)
+			sam_file = recode_soft_clipping_from_sam(sam_file, outdir, threads, softClip_baseQuality, reference_dict, softClip_cigarFlagRecode)
 
 		# Convert sam to bam and sort bam
 		run_successfully, bam_file = sortAlignment(sam_file, str(os.path.splitext(sam_file)[0] + '.bam'), False, threads)
@@ -977,13 +976,13 @@ rematch_timer = functools.partial(utils.timer, name='ReMatCh module')
 
 
 @rematch_timer
-def runRematchModule(sample, fastq_files, reference_file, threads, outdir, length_extra_seq, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, minimum_gene_coverage, conserved_True, debug_mode_true, numMapLoc, minimum_gene_identity, rematch_run, softClip_baseQuality, softClip_recodeRun, reference_dict):
+def runRematchModule(sample, fastq_files, reference_file, threads, outdir, length_extra_seq, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, minimum_gene_coverage, conserved_True, debug_mode_true, numMapLoc, minimum_gene_identity, rematch_run, softClip_baseQuality, softClip_recodeRun, reference_dict, softClip_cigarFlagRecode):
 	rematch_folder = os.path.join(outdir, 'rematch_module', '')
 	utils.removeDirectory(rematch_folder)
 	os.mkdir(rematch_folder)
 
 	# Map reads
-	run_successfully, bam_file, reference_file = mapping_reads(fastq_files, reference_file, threads, rematch_folder, conserved_True, numMapLoc, rematch_run, softClip_baseQuality, softClip_recodeRun, reference_dict)
+	run_successfully, bam_file, reference_file = mapping_reads(fastq_files, reference_file, threads, rematch_folder, conserved_True, numMapLoc, rematch_run, softClip_baseQuality, softClip_recodeRun, reference_dict, softClip_cigarFlagRecode)
 
 	if run_successfully:
 		# Index reference file
