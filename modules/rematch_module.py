@@ -150,7 +150,7 @@ def verify_mapped_tip(reference_length, mapping_position, read_length, cigar):
 
 def change_sam_flag_bit_mapped_reverse_strand_2_direct_strand(sam_flag_bit):
 	bit = list(format(sam_flag_bit, 'b').zfill(5))
-	bit[-5] = '1'
+	bit[-5] = '0'
 	return int(''.join(bit), 2)
 
 
