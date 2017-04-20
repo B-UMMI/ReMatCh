@@ -111,11 +111,11 @@ def recode_cigar_based_on_base_quality(cigar, bases_quality, softClip_baseQualit
 			cigar.append([len(bases_quality) - soft_right, 'S'])
 
 	if left_changed[0]:
-		if direct_strand_true:
-			mapping_position = mapping_position - left_changed[1]
-	if right_changed[0]:
-		if not direct_strand_true:
-			mapping_position = mapping_position + right_changed[1]
+		# if direct_strand_true:
+		mapping_position = mapping_position - left_changed[1]
+	# if right_changed[0]:
+	# 	if not direct_strand_true:
+	# 		mapping_position = mapping_position + right_changed[1]
 
 	return ''.join([str(cigar_part[0]) + cigar_part[1] for cigar_part in cigar]), str(mapping_position)
 
@@ -178,11 +178,6 @@ def parallelized_recode_soft_clipping(line_collection, pickleFile, softClip_base
 				lines_sam.append(line)
 			else:
 				line = line.split('\t')
-				line[1] = str(change_sam_flag_bit_mate_reverse_strand_2_direct_strand(int(line[1])))
-				if not verify_mapped_direct_strand(int(line[1])):
-					print 'AAA', line
-					line[9], line[10], line[1], line[5] = move_read_mapped_reverse_strand_2_direct_strand(line[9], line[10], int(line[1]), line[5])
-					print 'BBB', line
 				if not verify_mapped_tip(sequences_length[line[2]], int(line[3]), len(line[9]), line[5]):
 					line[5], line[3] = recode_cigar_based_on_base_quality(line[5], line[10], softClip_baseQuality, int(line[3]), verify_mapped_direct_strand(int(line[1])))
 				lines_sam.append('\t'.join(line))
