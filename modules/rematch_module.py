@@ -159,7 +159,7 @@ def move_read_mapped_reverse_strand_2_direct_strand(seq, bases_quality, sam_flag
 	bases_quality = ''.join(reversed(list(bases_quality)))
 	sam_flag_bit = change_sam_flag_bit_mapped_reverse_strand_2_direct_strand(sam_flag_bit)
 	cigar = ''.join([str(cigar_part[0]) + cigar_part[1] for cigar_part in reversed(split_cigar(cigar))])
-	return seq, bases_quality, int(sam_flag_bit), cigar
+	return seq, bases_quality, str(sam_flag_bit), cigar
 
 
 @utils.trace_unhandled_exceptions
