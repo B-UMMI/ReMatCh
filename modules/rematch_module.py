@@ -154,6 +154,12 @@ def change_sam_flag_bit_mapped_reverse_strand_2_direct_strand(sam_flag_bit):
 	return int(''.join(bit), 2)
 
 
+def change_sam_flag_bit_mate_reverse_strand_2_direct_strand(sam_flag_bit):
+	bit = list(format(sam_flag_bit, 'b').zfill(6))
+	bit[-6] = '0'
+	return int(''.join(bit), 2)
+
+
 def move_read_mapped_reverse_strand_2_direct_strand(seq, bases_quality, sam_flag_bit, cigar):
 	seq = utils.reverse_complement(seq)
 	bases_quality = ''.join(reversed(list(bases_quality)))
@@ -172,9 +178,10 @@ def parallelized_recode_soft_clipping(line_collection, pickleFile, softClip_base
 				lines_sam.append(line)
 			else:
 				line = line.split('\t')
+				line[1] = change_sam_flag_bit_mate_reverse_strand_2_direct_strand(int(line[1]))
+				if not verify_mapped_direct_strand(int(line[1])):
+					line[9], line[10], line[1], line[5] = move_read_mapped_reverse_strand_2_direct_strand(line[9], line[10], int(line[1]), line[5])
 				if not verify_mapped_tip(sequences_length[line[2]], int(line[3]), len(line[9]), line[5]):
-					if not verify_mapped_direct_strand(int(line[1])):
-						line[9], line[10], line[1], line[5] = move_read_mapped_reverse_strand_2_direct_strand(line[9], line[10], int(line[1]), line[5])
 					line[5], line[3] = recode_cigar_based_on_base_quality(line[5], line[10], softClip_baseQuality, int(line[3]), verify_mapped_direct_strand(int(line[1])))
 				lines_sam.append('\t'.join(line))
 	with open(pickleFile, 'wb') as writer:
