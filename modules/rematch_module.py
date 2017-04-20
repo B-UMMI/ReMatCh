@@ -140,10 +140,13 @@ def verify_mapped_direct_strand(sam_flag_bit):
 def verify_mapped_tip(reference_length, mapping_position, read_length, cigar):
 	tip = False
 	if 'S' in cigar:
-		if mapping_position - read_length < 0:
-			tip = True
-		elif mapping_position + read_length > reference_length:
-			tip = True
+		cigar = split_cigar(cigar)
+		if cigar[0][1] == 'S':
+			if mapping_position - cigar[0][0] < 0:
+				tip = True
+		if cigar[len(cigar) - 1][1] == 'S':
+			if mapping_position + cigar[len(cigar) - 1][0] > reference_length:
+				tip = True
 	return tip
 
 
@@ -177,8 +180,7 @@ def parallelized_recode_soft_clipping(line_collection, pickleFile, softClip_base
 				lines_sam.append(line)
 			else:
 				line = line.split('\t')
-				# if not verify_mapped_tip(sequences_length[line[2]], int(line[3]), len(line[9]), line[5]):
-				if 'S' in line[5]:
+				if not verify_mapped_tip(sequences_length[line[2]], int(line[3]), len(line[9]), line[5]):
 					line[5], line[3] = recode_cigar_based_on_base_quality(line[5], line[10], softClip_baseQuality, int(line[3]), verify_mapped_direct_strand(int(line[1])), softClip_cigarFlagRecode)
 				lines_sam.append('\t'.join(line))
 	with open(pickleFile, 'wb') as writer:
