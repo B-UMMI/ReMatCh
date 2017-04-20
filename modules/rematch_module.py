@@ -182,19 +182,19 @@ def soft_clip_2_insertion(cigar):
 	return read_cigars
 
 
-def verify_is_forward_read(number):
+def verify_is_forward_read(sam_flag_bit):
 	# 64 = 1000000
 	forward_read = False
-	bit = format(number, 'b').zfill(7)
+	bit = format(sam_flag_bit, 'b').zfill(7)
 	if bit[-7] == '1':
 		forward_read = True
 	return forward_read
 
 
-def verify_mapped_direct_strand(number):
+def verify_mapped_direct_strand(sam_flag_bit):
 	# 16 = 10000 -> mapped in reverse strand
 	direct_strand = False
-	bit = format(number, 'b').zfill(5)
+	bit = format(sam_flag_bit, 'b').zfill(5)
 	if bit[-5] == '0':
 		direct_strand = True
 	return direct_strand
@@ -210,6 +210,20 @@ def verify_mapped_tip(reference_length, mapping_position, read_length, cigar):
 	return tip
 
 
+def change_sam_flag_bit_mapped_reverse_strand_2_direct_strand(sam_flag_bit):
+	bit = format(sam_flag_bit, 'b').zfill(5)
+	bit[-5] = '1'
+	return int(bit, 2)
+
+
+def move_read_mapped_reverse_strand_2_direct_strand(seq, bases_quality, sam_flag_bit, cigar):
+	seq = utils.reverse_complement(seq)
+	bases_quality = ''.join(reversed(list(bases_quality)))
+	sam_flag_bit = change_sam_flag_bit_mapped_reverse_strand_2_direct_strand(sam_flag_bit)
+	cigar = ''.join(reversed(split_cigar(cigar)))
+	return seq, bases_quality, int(sam_flag_bit), cigar
+
+
 @utils.trace_unhandled_exceptions
 def parallelized_recode_soft_clipping(line_collection, pickleFile, softClip_baseQuality, sequences_length):
 	lines_sam = []
@@ -220,8 +234,9 @@ def parallelized_recode_soft_clipping(line_collection, pickleFile, softClip_base
 				lines_sam.append(line)
 			else:
 				line = line.split('\t')
-				# if verify_mapped_direct_strand(int(line[1])):
 				if not verify_mapped_tip(sequences_length[line[2]], int(line[3]), len(line[9]), line[5]):
+					if not verify_mapped_direct_strand(int(line[1])):
+						line[9], line[10], line[1], line[5] = move_read_mapped_reverse_strand_2_direct_strand(line[9], line[10], int(line[1]), line[5])
 					line[5], line[3] = recode_cigar_based_on_base_quality(line[5], line[10], softClip_baseQuality, int(line[3]), verify_mapped_direct_strand(int(line[1])))
 				lines_sam.append('\t'.join(line))
 	with open(pickleFile, 'wb') as writer:

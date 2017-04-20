@@ -280,3 +280,16 @@ def rchop(string, ending):
 	if string.endswith(ending):
 		string = string[:-len(ending)]
 	return string
+
+
+def reverse_complement(seq):
+	complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A', 'N': 'N'}
+
+	reverse_complement = ''
+
+	seq = reversed(list(seq.upper()))
+
+	for base in seq:
+		reverse_complement += complement[base]
+
+	return reverse_complement
