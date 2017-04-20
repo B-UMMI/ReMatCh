@@ -59,34 +59,6 @@ def mappingBowtie2(fastq_files, referenceFile, threads, outdir, conserved_True, 
 	return run_successfully, sam_file
 
 
-def remove_soft_clipping(cigar):
-	cigars = ['M', 'I', 'D', 'N', 'S', 'H', 'P', '=', 'X']
-
-	read_cigars = ''
-	numbers = ''
-	numbers_s = ''
-	for char in cigar:
-		if char not in cigars:
-			numbers += char
-		else:
-			if char == 'S':
-				numbers_s = numbers
-				numbers = ''
-			else:
-				if len(numbers_s) > 0:
-					numbers = str(int(numbers) + int(numbers_s))
-				read_cigars += numbers + '_' + char + '_'
-				numbers = ''
-				numbers_s = ''
-
-	read_cigars = read_cigars.split('_')
-	if len(numbers_s) > 0:
-		read_cigars[len(read_cigars) - 3] = str(int(read_cigars[len(read_cigars) - 3]) + int(numbers_s))
-	read_cigars = ''.join(read_cigars)
-
-	return read_cigars
-
-
 def split_cigar(cigar):
 	cigars = ['M', 'I', 'D', 'N', 'S', 'H', 'P', '=', 'X']
 
@@ -148,40 +120,6 @@ def recode_cigar_based_on_base_quality(cigar, bases_quality, softClip_baseQualit
 	return ''.join([str(cigar_part[0]) + cigar_part[1] for cigar_part in cigar]), str(mapping_position)
 
 
-def soft_clip_2_insertion(cigar):
-	cigars = ['M', 'I', 'D', 'N', 'S', 'H', 'P', '=', 'X']
-
-	read_cigars = ''
-	numbers = ''
-	numbers_s = ''
-	for char in cigar:
-		if char not in cigars:
-			numbers += char
-		else:
-			if char == 'S':
-				numbers_s = numbers
-				numbers = ''
-			else:
-				if len(numbers_s) > 0:
-					if char == 'I':
-						numbers = str(int(numbers) + int(numbers_s))
-					else:
-						read_cigars += numbers_s + '_' + 'I' + '_'
-				read_cigars += numbers + '_' + char + '_'
-				numbers = ''
-				numbers_s = ''
-
-	read_cigars = read_cigars.split('_')
-	if len(numbers_s) > 0:
-		if read_cigars[len(read_cigars) - 2] == 'I':
-			read_cigars[len(read_cigars) - 3] = str(int(read_cigars[len(read_cigars) - 3]) + int(numbers_s))
-		else:
-			read_cigars.extend([numbers_s, 'I'])
-	read_cigars = ''.join(read_cigars)
-
-	return read_cigars
-
-
 def verify_is_forward_read(sam_flag_bit):
 	# 64 = 1000000
 	forward_read = False
@@ -220,7 +158,7 @@ def move_read_mapped_reverse_strand_2_direct_strand(seq, bases_quality, sam_flag
 	seq = utils.reverse_complement(seq)
 	bases_quality = ''.join(reversed(list(bases_quality)))
 	sam_flag_bit = change_sam_flag_bit_mapped_reverse_strand_2_direct_strand(sam_flag_bit)
-	cigar = ''.join(reversed(split_cigar(cigar)))
+	cigar = ''.join([str(cigar_part[0]) + cigar_part[1] for cigar_part in reversed(split_cigar(cigar))])
 	return seq, bases_quality, int(sam_flag_bit), cigar
 
 
