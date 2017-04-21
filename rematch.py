@@ -267,11 +267,12 @@ def runRematch(args):
 
 	if args.mlst is not None:
 		time_taken_PubMLST, mlst_dicts, mlst_sequences = checkMLST.downloadPubMLSTxml(args.mlst, args.mlstSchemaNumber, workdir)
+		args.softClip_recodeRun = 'first'
+		args.conservedSeq = False
 
 	if args.reference is None:
 		reference_file = checkMLST.check_existing_schema(args.mlst, args.mlstSchemaNumber, script_path)
 		args.extraSeq = 200
-		args.conservedSeq = False
 		if reference_file is None:
 			print 'It was not found provided MLST scheme sequences for ' + args.mlst
 			print 'Trying to obtain reference MLST sequences from PubMLST'
@@ -381,7 +382,7 @@ def main():
 	parser_optional_general.add_argument('-r', '--reference', type=argparse.FileType('r'), metavar='/path/to/reference_sequence.fasta', help='Fasta file containing reference sequences', required=False)
 	parser_optional_general.add_argument('-w', '--workdir', type=str, metavar='/path/to/workdir/directory/', help='Path to the directory where ReMatCh will run and produce the outputs with reads (ended with fastq.gz/fq.gz and, in case of PE data, pair-end direction coded as _R1_001 / _R2_001 or _1 / _2) already present (organized in sample folders) or to be downloaded', required=False, default='.')
 	parser_optional_general.add_argument('-j', '--threads', type=int, metavar='N', help='Number of threads to use', required=False, default=1)
-	parser_optional_general.add_argument('--mlst', type=str, metavar='"Streptococcus agalactiae"', help='Species name (same as in PubMLST) to be used in MLST determination', required=False)
+	parser_optional_general.add_argument('--mlst', type=str, metavar='"Streptococcus agalactiae"', help='Species name (same as in PubMLST) to be used in MLST determination. ReMatCh will use Bowtie2 very-sensitive-local mapping parameters and will recode the soft clip CIGAR flags of the first run', required=False)
 	parser_optional_general.add_argument('--doNotUseProvidedSoftware', action='store_true', help='Tells ReMatCh to not use Bowtie2, Samtools and Bcftools that are provided with it')
 
 	parser_optional_rematch = parser.add_argument_group('ReMatCh module facultative options')
@@ -411,8 +412,8 @@ def main():
 
 	parser_optional_softClip = parser.add_argument_group('Soft clip facultative options')
 	parser_optional_softClip.add_argument('--softClip_baseQuality', type=int, metavar='N', help='Base quality phred score in reads soft clipped regions', required=False, default=7)
-	parser_optional_download.add_argument('--softClip_recodeRun', type=str, metavar='none', help='ReMatCh run to recode soft clipped regions (available options: %(choices)s)', choices=['first', 'second', 'both', 'none'], required=False, default='none')
-	parser_optional_download.add_argument('--softClip_cigarFlagRecode', type=str, metavar='M', help='CIGAR flag to recode CIGAR soft clip (available options: %(choices)s)', choices=['M', 'I', 'X'], required=False, default='M')
+	parser_optional_download.add_argument('--softClip_recodeRun', type=str, metavar='first', help='ReMatCh run to recode soft clipped regions (available options: %(choices)s)', choices=['first', 'second', 'both', 'none'], required=False, default='none')
+	parser_optional_download.add_argument('--softClip_cigarFlagRecode', type=str, metavar='M', help='CIGAR flag to recode CIGAR soft clip (available options: %(choices)s)', choices=['M', 'I', 'X'], required=False, default='X')
 
 	parser_optional_download_exclusive = parser.add_mutually_exclusive_group()
 	parser_optional_download_exclusive.add_argument('-l', '--listIDs', type=argparse.FileType('r'), metavar='/path/to/list_IDs.txt', help='Path to list containing the IDs to be downloaded (one per line)', required=False)
