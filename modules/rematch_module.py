@@ -414,6 +414,8 @@ def get_alt_correct(variant_position, alt_noMatter, dp, ad_idv, index_dominant_a
 			if ad_idv < minimum_depth_call:
 				alt = 'N' * len(variant_position['REF'])
 				low_coverage = True
+				if float(ad_idv) / float(dp) < minimum_depth_frequency_dominant_allele:
+					multiple_alleles = True
 			else:
 				if float(ad_idv) / float(dp) < minimum_depth_frequency_dominant_allele:
 					if index_dominant_allele is not None:
