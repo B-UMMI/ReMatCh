@@ -152,12 +152,18 @@ def get_rematch_command(log_file):
 						counter += 1
 					elif variables['command'][counter] == '--mlst':
 						species = []
+						print 'counter_1', counter
 						counter += 1
 						while counter in variables['command'] and not variables['command'][counter].startswith('-'):
+							print 'counter_1', counter
+							print 'variables[command][counter]', variables['command'][counter]
 							if len(variables['command'][counter]) > 0:
+								print 'variables[command][counter]', variables['command'][counter]
 								species.append(variables['command'][counter])
 							counter += 1
+						print 'species', species
 						species = '"' + ' '.join(species) + '"'
+						print 'species_2', species
 						command['command'].extend(['--mlst', species])
 					else:
 						command['command'].append(variables['command'][counter])
