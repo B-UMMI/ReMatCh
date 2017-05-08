@@ -71,6 +71,7 @@ def runRematch(args):
 		command.extend(['-l', samples_to_run_file])
 
 	print 'ReMatCh will start in 5 seconds...'
+	print command
 	time.sleep(5)
 
 	os.chdir(initial_present_directory)
