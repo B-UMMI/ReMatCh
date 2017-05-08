@@ -165,9 +165,9 @@ def get_rematch_command(log_file):
 								species.append(variables['command'][counter])
 							counter += 1
 						print 'species', species
-						species = '"' + ' '.join(species) + '"'
+						# species = ' '.join(species)
 						print 'species_2', species
-						command['command'].extend(['--mlst', species])
+						command['command'].extend(['--mlst', ' '.join(species)])
 					else:
 						command['command'].append(variables['command'][counter])
 						if counter + 1 < len(variables['command']) and not variables['command'][counter + 1].startswith('-'):
