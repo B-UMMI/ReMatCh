@@ -154,6 +154,8 @@ def get_rematch_command(log_file):
 						species = []
 						print 'counter_1', counter
 						counter += 1
+						print 'counter in variables[command]', counter in variables['command']
+						print 'variables[command][counter].startswith(-)', variables['command'][counter].startswith('-')
 						while counter in variables['command'] and not variables['command'][counter].startswith('-'):
 							print 'counter_1', counter
 							print 'variables[command][counter]', variables['command'][counter]
