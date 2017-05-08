@@ -151,6 +151,7 @@ def get_rematch_command(log_file):
 						command['threads'] = int(variables['command'][counter + 1])
 						counter += 1
 					elif variables['command'][counter] == '--mlst':
+						print variables
 						species = []
 						print 'counter_1', counter
 						counter += 1
