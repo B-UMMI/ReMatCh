@@ -149,6 +149,15 @@ def get_rematch_command(log_file):
 					elif variables['command'][counter] in ('-j', '--threads'):
 						command['threads'] = int(variables['command'][counter + 1])
 						counter += 1
+					elif variables['command'][counter] == '--mlst':
+						species = []
+						counter += 1
+						while not variables['command'][counter].startswith('-'):
+							if len(variables['command'][counter]) > 0:
+								species.append(variables['command'][counter])
+							counter += 1
+						species = '"' + ' '.join(species) + '"'
+						command['command'].extend(['--mlst', species])
 					else:
 						command['command'].append(variables['command'][counter])
 						if counter + 1 < len(variables['command']) and not variables['command'][counter + 1].startswith('-'):

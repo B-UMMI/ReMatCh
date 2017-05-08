@@ -435,6 +435,8 @@ def main():
 
 	if args.minGeneCoverage < 0 or args.minGeneCoverage > 100:
 		parser.error('--minGeneCoverage should be a value between [0, 100]')
+	if args.minGeneIdentity < 0 or args.minGeneIdentity > 100:
+		parser.error('--minGeneIdentity should be a value between [0, 100]')
 
 	start_time = time.time()
 
