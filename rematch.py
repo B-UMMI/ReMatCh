@@ -137,11 +137,11 @@ def format_gene_info(gene_specific_info, minimum_gene_coverage, minimum_gene_ide
 	info = None
 	if gene_specific_info['gene_coverage'] >= minimum_gene_coverage and gene_specific_info['gene_identity'] >= minimum_gene_identity:
 		if gene_specific_info['gene_number_positions_multiple_alleles'] == 0:
-			info = str(gene_specific_info['reported_data_type'])
+			info = str(gene_specific_info[reported_data_type])
 		else:
-			info = 'multiAlleles_' + str(gene_specific_info['reported_data_type'])
+			info = 'multiAlleles_' + str(gene_specific_info[reported_data_type])
 	else:
-		info = 'absent_' + str(gene_specific_info['reported_data_type'])
+		info = 'absent_' + str(gene_specific_info[reported_data_type])
 
 	return info
 
