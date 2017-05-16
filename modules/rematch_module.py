@@ -730,7 +730,7 @@ def get_coverage_report(coverage, sequence_length, minimum_depth_presence, minim
 		counter += 1
 
 	mean_coverage = 0
-	percentage_lowCoverage = 100
+	percentage_lowCoverage = 0
 	if sequence_length - 2 * length_extra_seq - count_absent > 0:
 		mean_coverage = float(sum_coverage) / float(sequence_length - 2 * length_extra_seq - count_absent)
 		percentage_lowCoverage = float(count_lowCoverage) / float(sequence_length - 2 * length_extra_seq - count_absent) * 100

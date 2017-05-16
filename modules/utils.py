@@ -169,10 +169,10 @@ def scriptVersionGit(version, directory, script_path):
 	try:
 		os.chdir(os.path.dirname(script_path))
 		command = ['git', 'log', '-1', '--date=local', '--pretty=format:"%h (%H) - Commit by %cn, %cd) : %s"']
-		run_successfully, stdout, stderr = runCommandPopenCommunicate(command, False, None, False)
+		run_successfully, stdout, stderr = runCommandPopenCommunicate(command, False, 15, False)
 		print stdout
 		command = ['git', 'remote', 'show', 'origin']
-		run_successfully, stdout, stderr = runCommandPopenCommunicate(command, False, None, False)
+		run_successfully, stdout, stderr = runCommandPopenCommunicate(command, False, 15, False)
 		print stdout
 		os.chdir(directory)
 	except:

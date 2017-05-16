@@ -71,7 +71,6 @@ def runRematch(args):
 		command.extend(['-l', samples_to_run_file])
 
 	print 'ReMatCh will start in 5 seconds...'
-	print command
 	time.sleep(5)
 
 	os.chdir(initial_present_directory)
@@ -151,22 +150,12 @@ def get_rematch_command(log_file):
 						command['threads'] = int(variables['command'][counter + 1])
 						counter += 1
 					elif variables['command'][counter] == '--mlst':
-						print variables
 						species = []
-						print 'counter_1', counter
 						counter += 1
-						print 'counter in variables[command]', counter in variables['command']
-						print 'variables[command][counter].startswith(-)', variables['command'][counter].startswith('-')
 						while counter < len(variables['command']) and not variables['command'][counter].startswith('-'):
-							print 'counter_1', counter
-							print 'variables[command][counter]', variables['command'][counter]
 							if len(variables['command'][counter]) > 0:
-								print 'variables[command][counter]', variables['command'][counter]
 								species.append(variables['command'][counter])
 							counter += 1
-						print 'species', species
-						# species = ' '.join(species)
-						print 'species_2', species
 						command['command'].extend(['--mlst', ' '.join(species)])
 					else:
 						command['command'].append(variables['command'][counter])

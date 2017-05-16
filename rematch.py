@@ -133,7 +133,7 @@ def getListIDs(workdir, fileListIDs, taxon_name):
 	return listIDs, searched_fastq_files
 
 
-def format_gene_info(gene_specific_info, minimum_gene_coverage, minimum_gene_identity):
+def format_gene_info(gene_specific_info, minimum_gene_coverage, minimum_gene_identity, reported_data_type):
 	info = None
 	if gene_specific_info['gene_coverage'] >= minimum_gene_coverage and gene_specific_info['gene_identity'] >= minimum_gene_identity:
 		if gene_specific_info['gene_number_positions_multiple_alleles'] == 0:
@@ -146,8 +146,14 @@ def format_gene_info(gene_specific_info, minimum_gene_coverage, minimum_gene_ide
 	return info
 
 
-def write_data_by_gene(gene_list_reference, minimum_gene_coverage, sample, data_by_gene, outdir, time_str, run_times, minimum_gene_identity):
-	combined_report = os.path.join(outdir, 'combined_report.data_by_gene.' + run_times + '.' + time_str + '.tab')
+def write_data_by_gene(gene_list_reference, minimum_gene_coverage, sample, data_by_gene, outdir, time_str, run_times, minimum_gene_identity, reported_data_type):
+	combined_report = os.path.join(outdir, 'combined_report.data_by_gene.' + run_times + '.' + reported_data_type + '.' + time_str + '.tab')
+
+	if reported_data_type == 'coverage_depth':
+		reported_data_type = 'gene_mean_read_coverage'
+	elif reported_data_type == 'sequence_coverage':
+		reported_data_type = 'gene_coverage'
+
 	combined_report_exist = os.path.isfile(combined_report)
 	with open(combined_report, 'at') as writer:
 		if not combined_report_exist:
@@ -156,7 +162,7 @@ def write_data_by_gene(gene_list_reference, minimum_gene_coverage, sample, data_
 		results = {}
 		headers = []
 		for i in data_by_gene:
-			results[data_by_gene[i]['header']] = format_gene_info(data_by_gene[i], minimum_gene_coverage, minimum_gene_identity)
+			results[data_by_gene[i]['header']] = format_gene_info(data_by_gene[i], minimum_gene_coverage, minimum_gene_identity, reported_data_type)
 			headers.append(data_by_gene[i]['header'])
 
 		if len(headers) != gene_list_reference:
@@ -338,7 +344,9 @@ def runRematch(args):
 			if run_successfully_rematch_first:
 				if args.mlst is not None and (args.mlstRun == 'first' or args.mlstRun == 'all'):
 					run_get_st(sample, mlst_dicts, consensus_sequences, args.mlstConsensus, 'first', workdir, time_str)
-				write_data_by_gene(gene_list_reference, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'first_run', args.minGeneIdentity)
+				write_data_by_gene(gene_list_reference, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'first_run', args.minGeneIdentity, 'coverage_depth')
+				if args.reportSequenceCoverage:
+					write_data_by_gene(gene_list_reference, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'first_run', args.minGeneIdentity, 'sequence_coverage')
 				if args.doubleRun:
 					rematch_second_outdir = os.path.join(sample_outdir, 'rematch_second_run', '')
 					if not os.path.isdir(rematch_second_outdir):
@@ -351,7 +359,9 @@ def runRematch(args):
 						if run_successfully_rematch_second:
 							if args.mlst is not None and (args.mlstRun == 'second' or args.mlstRun == 'all'):
 								run_get_st(sample, mlst_dicts, consensus_sequences, args.mlstConsensus, 'second', workdir, time_str)
-							write_data_by_gene(gene_list_reference, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'second_run', args.minGeneIdentity)
+							write_data_by_gene(gene_list_reference, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'second_run', args.minGeneIdentity, 'coverage_depth')
+							if args.reportSequenceCoverage:
+								write_data_by_gene(gene_list_reference, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'second_run', args.minGeneIdentity, 'sequence_coverage')
 					else:
 						print 'No sequences left after ReMatCh module first run. Second run will not be performed'
 						if os.path.isfile(consensus_concatenated_fasta):
@@ -391,10 +401,11 @@ def main():
 	parser_optional_rematch.add_argument('--minCovPresence', type=int, metavar='N', help='Reference position minimum coverage depth to consider the position to be present in the sample', required=False, default=5)
 	parser_optional_rematch.add_argument('--minCovCall', type=int, metavar='N', help='Reference position minimum coverage depth to perform a base call. Lower coverage will be coded as N', required=False, default=10)
 	parser_optional_rematch.add_argument('--minFrequencyDominantAllele', type=float, metavar='0.6', help='Minimum relative frequency of the dominant allele coverage depth (value between [0, 1]). Positions with lower values will be considered as having multiple alleles (and will be coded as N)', required=False, default=0.6)
-	parser_optional_rematch.add_argument('--minGeneCoverage', type=int, metavar='N', help='Minimum percentage of target reference gene sequence covered by --minCovPresence to consider a gene to be present (value between [0, 100])', required=False, default=80)
-	parser_optional_rematch.add_argument('--minGeneIdentity', type=int, metavar='N', help='Minimum percentage of identity of reference gene sequence covered by --minCovCall to consider a gene to be present (value between [0, 100]). One INDEL will be considered as one difference', required=False, default=70)
+	parser_optional_rematch.add_argument('--minGeneCoverage', type=int, metavar='N', help='Minimum percentage of target reference gene sequence covered by --minCovPresence to consider a gene to be present (value between [0, 100])', required=False, default=70)
+	parser_optional_rematch.add_argument('--minGeneIdentity', type=int, metavar='N', help='Minimum percentage of identity of reference gene sequence covered by --minCovCall to consider a gene to be present (value between [0, 100]). One INDEL will be considered as one difference', required=False, default=80)
 	parser_optional_rematch.add_argument('--numMapLoc', type=int, metavar='N', help='Maximum number of locations to which a read can map (sometimes useful when mapping against similar sequences)', required=False, default=1)
 	parser_optional_rematch.add_argument('--doubleRun', action='store_true', help='Tells ReMatCh to run a second time using as reference the noMatter consensus sequence produced in the first run. This will improve consensus sequence determination for sequences with high percentage of target reference gene sequence covered')
+	parser_optional_rematch.add_argument('--reportSequenceCoverage', action='store_true', help='Produce an extra combined_report.data_by_gene with the sequence coverage instead of coverage depth')
 	parser_optional_rematch.add_argument('--debug', action='store_true', help='DeBug Mode: do not remove temporary files')
 
 	parser_optional_mlst = parser.add_argument_group('MLST facultative options')
