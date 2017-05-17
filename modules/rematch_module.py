@@ -821,19 +821,24 @@ def analyse_sequence_data(bam_file, sequence_information, outdir, counter, refer
 
 	# Create vcf file (for multiple alleles check)
 	run_successfully, gene_vcf = create_vcf(bam_file, sequence_information['header'], outdir, counter, reference_file)
-
+	sys.stderr.write('AAA')
 	if run_successfully:
 		# Create coverage tab file
 		run_successfully, gene_coverage = compute_genome_coverage_data(bam_file, sequence_information['header'], outdir, counter)
+		sys.stderr.write('BBB')
 
 		if run_successfully:
 			variants = get_variants(gene_vcf)
+			sys.stderr.write('CCC')
 
 			coverage = get_coverage(gene_coverage)
+			sys.stderr.write('DDD')
 
 			run_successfully, number_multi_alleles, consensus_sequence, number_diferences = create_sample_consensus_sequence(outdir, sequence_information['header'], reference_file, variants, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, sequence_information['sequence'], length_extra_seq)
+			sys.stderr.write('EEE')
 
 			count_absent, percentage_lowCoverage, meanCoverage = get_coverage_report(coverage, sequence_information['length'], minimum_depth_presence, minimum_depth_call, length_extra_seq)
+			sys.stderr.write('FFF')
 
 	utils.saveVariableToPickle([run_successfully, counter, number_multi_alleles, count_absent, percentage_lowCoverage, meanCoverage, consensus_sequence, number_diferences], outdir, str('coverage_info.' + str(counter)))
 
@@ -896,7 +901,9 @@ def sequence_data(sample, reference_file, bam_file, outdir, threads, length_extr
 
 	sequences, headers = get_sequence_information(reference_file, length_extra_seq)
 
+	print '000', len(sequences), threads
 	threads_2_use = determine_threads_2_use(len(sequences), threads)
+	print '111', threads_2_use
 
 	pool = multiprocessing.Pool(processes=threads)
 	for sequence_counter in sequences:
@@ -908,6 +915,7 @@ def sequence_data(sample, reference_file, bam_file, outdir, threads, length_extr
 	pool.join()
 
 	run_successfully, sample_data, consensus_files, consensus_sequences = gather_data_together(sample, sequence_data_outdir, sequences, outdir.rsplit('/', 2)[0], debug_mode_true, length_extra_seq)
+	sys.stderr.write('GGG')
 
 	return run_successfully, sample_data, consensus_files, consensus_sequences
 
