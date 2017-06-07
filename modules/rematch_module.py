@@ -30,14 +30,14 @@ def indexSequenceBowtie2(referenceFile, threads):
 
 
 # Mapping with Bowtie2
-def mappingBowtie2(fastq_files, referenceFile, threads, outdir, conserved_True, numMapLoc):
+def mappingBowtie2(fastq_files, referenceFile, threads, outdir, conserved_True, numMapLoc, bowtieOPT):
 	sam_file = os.path.join(outdir, str('alignment.sam'))
 
 	# Index reference file
 	run_successfully = indexSequenceBowtie2(referenceFile, threads)
 
 	if run_successfully:
-		command = ['bowtie2', '-k', str(numMapLoc), '-q', '', '--threads', str(threads), '-x', referenceFile, '', '--no-unal', '-S', sam_file]
+		command = ['bowtie2', '-k', str(numMapLoc), '-q', '', '--threads', str(threads), '-x', referenceFile, '', '--no-unal', '', '-S', sam_file]
 
 		if len(fastq_files) == 1:
 			command[9] = '-U ' + fastq_files[0]
@@ -50,6 +50,9 @@ def mappingBowtie2(fastq_files, referenceFile, threads, outdir, conserved_True, 
 			command[4] = '--sensitive'
 		else:
 			command[4] = '--very-sensitive-local'
+
+		if bowtieOPT is not None:
+			command[11] = bowtieOPT
 
 		run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, False, None, True)
 
@@ -248,14 +251,14 @@ def indexAlignment(alignment_file):
 	return run_successfully
 
 
-def mapping_reads(fastq_files, reference_file, threads, outdir, conserved_True, numMapLoc, rematch_run, softClip_baseQuality, softClip_recodeRun, reference_dict, softClip_cigarFlagRecode):
+def mapping_reads(fastq_files, reference_file, threads, outdir, conserved_True, numMapLoc, rematch_run, softClip_baseQuality, softClip_recodeRun, reference_dict, softClip_cigarFlagRecode, bowtieOPT):
 	# Create a symbolic link to the reference_file
 	reference_link = os.path.join(outdir, os.path.basename(reference_file))
 	os.symlink(reference_file, reference_link)
 
 	bam_file = None
 	# Mapping reads using Bowtie2
-	run_successfully, sam_file = mappingBowtie2(fastq_files, reference_link, threads, outdir, conserved_True, numMapLoc)
+	run_successfully, sam_file = mappingBowtie2(fastq_files, reference_link, threads, outdir, conserved_True, numMapLoc, bowtieOPT)
 
 	if run_successfully:
 		# Remove soft clipping
@@ -821,24 +824,18 @@ def analyse_sequence_data(bam_file, sequence_information, outdir, counter, refer
 
 	# Create vcf file (for multiple alleles check)
 	run_successfully, gene_vcf = create_vcf(bam_file, sequence_information['header'], outdir, counter, reference_file)
-	sys.stderr.write('AAA')
 	if run_successfully:
 		# Create coverage tab file
 		run_successfully, gene_coverage = compute_genome_coverage_data(bam_file, sequence_information['header'], outdir, counter)
-		sys.stderr.write('BBB')
 
 		if run_successfully:
 			variants = get_variants(gene_vcf)
-			sys.stderr.write('CCC')
 
 			coverage = get_coverage(gene_coverage)
-			sys.stderr.write('DDD')
 
 			run_successfully, number_multi_alleles, consensus_sequence, number_diferences = create_sample_consensus_sequence(outdir, sequence_information['header'], reference_file, variants, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, sequence_information['sequence'], length_extra_seq)
-			sys.stderr.write('EEE')
 
 			count_absent, percentage_lowCoverage, meanCoverage = get_coverage_report(coverage, sequence_information['length'], minimum_depth_presence, minimum_depth_call, length_extra_seq)
-			sys.stderr.write('FFF')
 
 	utils.saveVariableToPickle([run_successfully, counter, number_multi_alleles, count_absent, percentage_lowCoverage, meanCoverage, consensus_sequence, number_diferences], outdir, str('coverage_info.' + str(counter)))
 
@@ -901,9 +898,7 @@ def sequence_data(sample, reference_file, bam_file, outdir, threads, length_extr
 
 	sequences, headers = get_sequence_information(reference_file, length_extra_seq)
 
-	print '000', len(sequences), threads
 	threads_2_use = determine_threads_2_use(len(sequences), threads)
-	print '111', threads_2_use
 
 	pool = multiprocessing.Pool(processes=threads)
 	for sequence_counter in sequences:
@@ -915,7 +910,6 @@ def sequence_data(sample, reference_file, bam_file, outdir, threads, length_extr
 	pool.join()
 
 	run_successfully, sample_data, consensus_files, consensus_sequences = gather_data_together(sample, sequence_data_outdir, sequences, outdir.rsplit('/', 2)[0], debug_mode_true, length_extra_seq)
-	sys.stderr.write('GGG')
 
 	return run_successfully, sample_data, consensus_files, consensus_sequences
 
@@ -989,13 +983,13 @@ rematch_timer = functools.partial(utils.timer, name='ReMatCh module')
 
 
 @rematch_timer
-def runRematchModule(sample, fastq_files, reference_file, threads, outdir, length_extra_seq, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, minimum_gene_coverage, conserved_True, debug_mode_true, numMapLoc, minimum_gene_identity, rematch_run, softClip_baseQuality, softClip_recodeRun, reference_dict, softClip_cigarFlagRecode):
+def runRematchModule(sample, fastq_files, reference_file, threads, outdir, length_extra_seq, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, minimum_gene_coverage, conserved_True, debug_mode_true, numMapLoc, minimum_gene_identity, rematch_run, softClip_baseQuality, softClip_recodeRun, reference_dict, softClip_cigarFlagRecode, bowtieOPT):
 	rematch_folder = os.path.join(outdir, 'rematch_module', '')
 	utils.removeDirectory(rematch_folder)
 	os.mkdir(rematch_folder)
 
 	# Map reads
-	run_successfully, bam_file, reference_file = mapping_reads(fastq_files, reference_file, threads, rematch_folder, conserved_True, numMapLoc, rematch_run, softClip_baseQuality, softClip_recodeRun, reference_dict, softClip_cigarFlagRecode)
+	run_successfully, bam_file, reference_file = mapping_reads(fastq_files, reference_file, threads, rematch_folder, conserved_True, numMapLoc, rematch_run, softClip_baseQuality, softClip_recodeRun, reference_dict, softClip_cigarFlagRecode, bowtieOPT)
 
 	if run_successfully:
 		# Index reference file

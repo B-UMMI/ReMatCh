@@ -41,12 +41,12 @@ Usage
                       (-r /path/to/reference_sequence.fasta | --mlstReference)
                       [-w /path/to/workdir/directory/] [-j N]
                       [--mlst "Streptococcus agalactiae"]
-                      [--doNotUseProvidedSoftware] [--conservedSeq] [--extraSeq N]
+                      [--doNotUseProvidedSoftware] [--extraSeq N]
                       [--minCovPresence N] [--minCovCall N]
                       [--minFrequencyDominantAllele 0.6] [--minGeneCoverage N]
-                      [--minGeneIdentity N] [--numMapLoc N] [--doubleRun]
-                      [--debug] [--mlstSchemaNumber N]
-                      [--mlstConsensus noMatter] [--mlstRun first]
+                      [--minGeneIdentity N] [--doubleRun] [--bowtieOPT] [--debug]
+                      [--mlstSchemaNumber N] [--mlstConsensus noMatter]
+                      [--mlstRun first]
                       [-a /path/to/asperaweb_id_dsa.openssh] [-k]
                       [--downloadLibrariesType PAIRED]
                       [--downloadInstrumentPlatform ILLUMINA] [--downloadCramBam]
@@ -85,9 +85,6 @@ Usage
                             Bcftools that are provided with it (default: False)
 
     ReMatCh module facultative options:
-      --conservedSeq        This option can be used with conserved sequences like
-                            MLST genes to speedup the analysis by alignning reads
-                            using Bowtie2 sensitive algorithm (default: False)
       --extraSeq N          Sequence length added to both ends of target sequences
                             (usefull to improve reads mapping to the target one)
                             that will be trimmed in ReMatCh outputs (default: 0)
@@ -108,14 +105,13 @@ Usage
                             covered by --minCovCall to consider a gene to be present
                             (value between [0, 100]). One INDEL will be considered
                             as one difference (default: 70)
-      --numMapLoc N         Maximum number of locations to which a read can map
-                            (sometimes useful when mapping against similar
-                            sequences) (default: 1)
       --doubleRun           Tells ReMatCh to run a second time using as reference the
                             noMatter consensus sequence produced in the first run.
                             This will improve consensus sequence determination for
                             sequences with high percentage of target reference gene
                             sequence covered (default: False)
+      --bowtieOPT "--no-mixed"
+                            Extra Bowtie2 options (default: None)
       --debug               DeBug Mode: do not remove temporary files (default: False)
       --mlstReference       If the curated scheme for MLST alleles is available, tells
                             ReMatCh to use these as reference (force Bowtie2 to run
