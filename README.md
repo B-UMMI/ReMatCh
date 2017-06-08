@@ -2,8 +2,7 @@ ReMatCh
 =======
 *Reads mapping against target sequences, checking mapping and consensus sequences production*  
 
-<https://github.com/B-UMMI/ReMatCh>
-
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/88c3cdda90ad4613be95a125ff6f6c5c)](https://www.codacy.com/app/tiagofilipe12/ReMatCh?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=B-UMMI/ReMatCh&amp;utm_campaign=Badge_Grade)
 
 
 Requirements
