@@ -10,7 +10,7 @@ Table of Contents
 
  - [Dependencies](#dependencies)
  - [Installation](#installation)
- - [Requirements](#requirements)
+ - [Input](#input)
  - [Usage](#Usage)
    - [Usage Examples](#usage-examples)
      - [Running ReMatCh Beginner](#running-rematch-beginner)
@@ -45,7 +45,7 @@ ReMatCh is a standalone python script and does not require any installation. Sim
     git clone https://github.com/B-UMMI/ReMatCh.git
 
 
-## Requirements
+## Input
 
  If the `--mlst` option isn't used, a fasta file with the reference sequences is required.
 
@@ -194,7 +194,7 @@ It is advisable to use copied fastq files or symbolic links to the original file
 This directory, containing the sample folders, should then be provided through the `--workdir` option. ReMatCh will store the output files there.
 As so, the command should look something like:
 
-    rematch.py -r 'reference.fasta' --workdir '/path/to/workdir/'
+    rematch.py -r reference.fasta --workdir /path/to/workdir/
 
 
 #### Running ReMatCh Moderate
@@ -203,11 +203,11 @@ To run ReMatCh in a specific set of ENA IDs you need to provide a file to `--lis
 In case of IDs containing more than one Run Accession number (like Study accession numbers), only one of them will be downloaded and the remaining will be stored in *sample_report.*.tab* file under extra_run_accession column in a comma separated style.  
 ReMatCh will store the output files in the `--workdir`.
 
-    rematch.py -r 'reference.fasta' --listIDs 'IDs.txt' --workdir '/path/to/workdir/'
+    rematch.py -r reference.fasta --listIDs IDs.txt --workdir /path/to/workdir/
 
 By default ReMatCh uses `wget` to download the sample files from ENA. We recommend using Aspera Connect 2 to speed up this process by providing the path Private-key file asperaweb_id_dsa.openssh to `-a`.
 
-    rematch.py -r 'reference.fasta' --listIDs 'IDs.txt' -a '/path/to/asperaweb_id_dsa.openssh' --workdir '/path/to/workdir/'
+    rematch.py -r reference.fasta --listIDs IDs.txt -a /path/to/asperaweb_id_dsa.openssh --workdir /path/to/workdir/
 
 
 ##### Using ENA sequencing data of a given taxon for provided reference file
@@ -222,7 +222,7 @@ The column content will be:
 
 The first line of *IDs_list.seqFromWebTaxon.tab* will contain the date of accession.
 
-    rematch.py -r 'reference.fasta' --taxon 'Streptococcus dysgalactiae' '/path/to/asperaweb_id_dsa.openssh' --workdir '/path/to/workdir/'
+    rematch.py -r reference.fasta --taxon "Streptococcus dysgalactiae" /path/to/asperaweb_id_dsa.openssh --workdir /path/to/workdir/
 
 
 #### Running ReMatCh Advanced
@@ -233,18 +233,18 @@ A fasta file containing the MLST reference sequences (`-r`) is required, along w
 The MLST results will be in the *mlst_report.*.tab* in the `--workdir`.
 Here's an example to run ReMatCh for MLST in all "Streptococcus agalactiae" samples in ENA:
 
-    rematch.py --mlst "Streptococcus agalactiae" --mlstReference --workdir '/path/to/workdir/'
+    rematch.py --mlst "Streptococcus agalactiae" --mlstReference --workdir /path/to/workdir/
 
 As default, ReMatCh uses the consensus sequence "noMatter" in MLST determination, but this can be changed with the `--mlstConsensus` option. IF the option `--doubleRun` is used, ReMatCh can determine the MLST for the second run only, or for both runs, with the `--mlstRun` option. By default the MLST will be determined in both runs.
 
-    rematch.py --mlst "Streptococcus agalactiae" --mlstReference --taxon 'Streptococcus dysgalactiae' --workdir '/path/to/workdir/' --mlstConsensus 'all' --doubleRun --mlstRun 'second'
+    rematch.py --mlst "Streptococcus agalactiae" --mlstReference --taxon "Streptococcus dysgalactiae" --workdir /path/to/workdir/ --mlstConsensus all --doubleRun --mlstRun second
 
 ##### MultiLocus Sequence Typing for ENA list of IDs or taxon
 As described above, you can run ReMatCh in a specific set of ENA IDs or in all taxon data for MLST by providing the `-l` or `--taxon` options respectively.
 
-    rematch.py --mlst "Streptococcus agalactiae" --mlstReference -l IDs.txt --workdir '/path/to/workdir/'
+    rematch.py --mlst "Streptococcus agalactiae" --mlstReference -l IDs.txt --workdir /path/to/workdir/
 
-    rematch.py --mlst "Streptococcus agalactiae" --mlstReference --taxon 'Streptococcus dysgalactiae' --workdir '/path/to/workdir/'
+    rematch.py --mlst "Streptococcus agalactiae" --mlstReference --taxon "Streptococcus dysgalactiae" --workdir /path/to/workdir/
 
 
 ## Outputs
