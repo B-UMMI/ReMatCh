@@ -8,21 +8,21 @@ ReMatCh
 Table of Contents
 --
 
- - [Dependencies](#Dependencies)
- - [Installation](#Installation)
- - [Requirements](#Requirements)
+ - [Dependencies](#dependencies)
+ - [Installation](#installation)
+ - [Requirements](#requirements)
  - [Usage](#Usage)
-   - [Usage Examples](#Usage-Examples)
-     - [Running ReMatCh Beginner](#Running-ReMatCh-Beginner)
-       - [Using local samples for provided reference file](#Using-local-samples-for-provided-reference-file)
-     - [Running ReMatCh Moderate](#Running-ReMatCh-Moderate)
-       - [Using specific ENA sequencing data for provided reference file](#Using-specific-ENA-sequencing-data-for-provided-reference-file)
-       - [Using ENA sequencing data of a given taxon for provided reference file](#Using-ENA-sequencing-data-of-a-given-taxon-for-provided-reference-file)
-     - [Running ReMatCh Advanced](#Running-ReMatCh-Advanced)
-       - [MultiLocus Sequence Typing for local samples](#MultiLocus-Sequence-Typing-for-local-samples)
-       - [MultiLocus Sequence Typing for ENA list of IDs or taxon](#MultiLocus-Sequence-Typing-for-ENA-list-of-IDs-or-taxon)
- - [Outputs](#Outputs)
- - [Contact](#Contact)
+   - [Usage Examples](#usage-examples)
+     - [Running ReMatCh Beginner](#running-rematch-beginner)
+       - [Using local samples for provided reference file](#using-local-samples-for-provided-reference-file)
+     - [Running ReMatCh Moderate](#running-remtch-moderate)
+       - [Using specific ENA sequencing data for provided reference file](#using-specific-ena-sequencing-data-for-provided-reference-file)
+       - [Using ENA sequencing data of a given taxon for provided reference file](#using-ena-sequencing-data-of-a-given-taxon-for-provided-reference-file)
+     - [Running ReMatCh Advanced](#running-rematch-advanced)
+       - [MultiLocus Sequence Typing for local samples](#multilocus-sequence-typing-for-local-samples)
+       - [MultiLocus Sequence Typing for ENA list of IDs or taxon](#multilLocus-sequence-typing-for-ena-list-of-ids-or-taxon)
+ - [Outputs](#outputs)
+ - [Contact](#contact)
 
 ## Dependencies
 **Optional**
