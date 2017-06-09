@@ -36,6 +36,7 @@ Required to run ReMatch analysis
  - *Bowtie2* >= v2.2.9
  - *Samtools* = v1.3.1
  - *Bcftools* = v1.3.1  
+
 These three executables are provided, but user's own executables can be used by providing `--doNotUseProvidedSoftware` option.
 
 
@@ -237,14 +238,14 @@ Here's an example to run ReMatCh for MLST in all "Streptococcus agalactiae" samp
 
 As default, ReMatCh uses the consensus sequence "noMatter" in MLST determination, but this can be changed with the `--mlstConsensus` option. IF the option `--doubleRun` is used, ReMatCh can determine the MLST for the second run only, or for both runs, with the `--mlstRun` option. By default the MLST will be determined in both runs.
 
-    rematch.py --mlst "Streptococcus agalactiae" --mlstReference --taxon "Streptococcus dysgalactiae" --workdir /path/to/workdir/ --mlstConsensus all --doubleRun --mlstRun second
+    rematch.py --mlst "Streptococcus agalactiae" --mlstReference --taxon "Streptococcus agalactiae" --workdir /path/to/workdir/ --mlstConsensus all --doubleRun --mlstRun second
 
 ##### MultiLocus Sequence Typing for ENA list of IDs or taxon
 As described above, you can run ReMatCh in a specific set of ENA IDs or in all taxon data for MLST by providing the `-l` or `--taxon` options respectively.
 
     rematch.py --mlst "Streptococcus agalactiae" --mlstReference -l IDs.txt --workdir /path/to/workdir/
 
-    rematch.py --mlst "Streptococcus agalactiae" --mlstReference --taxon "Streptococcus dysgalactiae" --workdir /path/to/workdir/
+    rematch.py --mlst "Streptococcus agalactiae" --mlstReference --taxon "Streptococcus agalactiae" --workdir /path/to/workdir/
 
 
 ## Outputs
