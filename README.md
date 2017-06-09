@@ -11,6 +11,8 @@ Table of Contents
  - [Dependencies](#dependencies)
  - [Installation](#installation)
  - [Input](#input)
+   - [Reference](#reference)
+   - [Samples](#samples)
  - [Usage](#Usage)
    - [Usage Examples](#usage-examples)
      - [Running ReMatCh Beginner](#running-rematch-beginner)
@@ -47,10 +49,12 @@ ReMatCh is a standalone python script and does not require any installation. Sim
 
 
 ## Input
+#### Reference
 ReMatCh requires for the reference sequeces, in fasta file, to be provided through the `-r`option.
 In our experience, the addition of 200nt upstream and downstream of the target region when using Illumina Miseq data (150nt reads), will have the desired effect, and these flanking regions will be ignored in variant calling, unless there is an INDEL affecting the target sequence.  the size of the flanking regions can be set with the opion `--extraSeq`.
 If the `--mlst` option is used, the `--mlstReference` can be used intead of the `-r`, telling ReMatCh to use the curated scheme for the MLST scheme, if available, as reference sequences with 200nt flanking the target regions, or the first alleles of each MLST gene fragment in PubMLST as reference sequences.
 
+#### Samples
 The samples can be provided through the `-w` option, if stored locally in a directory, or by telling ReMatCh to interact directly with ENA.
 This can be done by passing rematch a list of IDs to download, through the `-l`option, or to download all the reads from a given taxon, though the `--taxon` option.
 The sample files are required to be in "fq.gz" (or "fastq.gz") format.
