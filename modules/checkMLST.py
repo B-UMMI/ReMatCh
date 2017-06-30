@@ -202,7 +202,7 @@ def downloadPubMLSTxml(originalSpecies, schema_number, outdir):
                     SequenceDict[lociName] = {}
                 url_file = os.path.join(outDit, lociURL.rsplit('/', 1)[1])
                 urllib.urlretrieve(lociURL, url_file)
-                sequences, headers = rematch_module.get_sequence_information(url_file, 0)
+                sequences, ignore, ignore = rematch_module.get_sequence_information(url_file, 0)
                 for key in sequences.keys():
                     header = re.sub("\D", "", sequences[key]['header'])
                     sequence = sequences[key]['sequence'].upper()

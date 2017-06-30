@@ -190,8 +190,8 @@ def write_sample_report(sample, outdir, time_str, fileSize, run_successfully_fas
 
 
 def concatenate_extraSeq_2_consensus(consensus_sequence, reference_sequence, extraSeq_length, outdir):
-    reference_dict, ignore = rematch_module.get_sequence_information(reference_sequence, extraSeq_length)
-    consensus_dict, genes = rematch_module.get_sequence_information(consensus_sequence, 0)
+    reference_dict, ignore, ignore = rematch_module.get_sequence_information(reference_sequence, extraSeq_length)
+    consensus_dict, genes, ignore = rematch_module.get_sequence_information(consensus_sequence, 0)
     for k, values_consensus in consensus_dict.items():
         for values_reference in reference_dict.values():
             if values_reference['header'] == values_consensus['header']:
@@ -216,12 +216,7 @@ def clean_headers_reference_file(reference_file, outdir, extraSeq):
     print 'Checking if reference sequences contain ' + str(problematic_characters) + '\n'
     headers_changed = False
     new_reference_file = reference_file
-    sequences, genes = rematch_module.get_sequence_information(reference_file, extraSeq)
-    for i in sequences:
-        if any(x in sequences[i]['header'] for x in problematic_characters):
-            for x in problematic_characters:
-                sequences[i]['header'] = sequences[i]['header'].replace(x, '_')
-            headers_changed = True
+    sequences, genes, headers_changed = rematch_module.get_sequence_information(reference_file, extraSeq)
     if headers_changed:
         print 'At least one of the those characters was found. Replacing those with _' + '\n'
         new_reference_file = os.path.join(outdir, os.path.splitext(os.path.basename(reference_file))[0] + '.headers_renamed.fasta')

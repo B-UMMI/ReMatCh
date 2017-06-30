@@ -846,6 +846,7 @@ def clean_header(header):
 def get_sequence_information(fasta_file, length_extra_seq):
     sequence_dict = {}
     headers = {}
+    headers_changed = False
 
     with open(fasta_file, 'rtU') as reader:
         blank_line_found = False
@@ -871,6 +872,8 @@ def get_sequence_information(fasta_file, length_extra_seq):
                         sequence_counter += 1
                         temp_sequence_dict[sequence_counter] = {'header': new_header, 'sequence': '', 'length': 0}
                         headers[new_header] = str(original_header)
+                        if new_header != original_header:
+                            headers_changed = True
                     else:
                         temp_sequence_dict[sequence_counter]['sequence'] += line
                         temp_sequence_dict[sequence_counter]['length'] += len(line)
@@ -886,7 +889,7 @@ def get_sequence_information(fasta_file, length_extra_seq):
                 print '{header} sequence ignored due to length <= 0'.format(header=temp_sequence_dict.values()[0]['header'])
                 del headers[temp_sequence_dict.values()[0]['header']]
 
-    return sequence_dict, headers
+    return sequence_dict, headers, headers_changed
 
 
 def determine_threads_2_use(number_sequences, threads):
@@ -901,7 +904,7 @@ def sequence_data(sample, reference_file, bam_file, outdir, threads, length_extr
     utils.removeDirectory(sequence_data_outdir)
     os.mkdir(sequence_data_outdir)
 
-    sequences, headers = get_sequence_information(reference_file, length_extra_seq)
+    sequences, headers, headers_changed = get_sequence_information(reference_file, length_extra_seq)
 
     threads_2_use = determine_threads_2_use(len(sequences), threads)
 
