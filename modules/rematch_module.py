@@ -899,7 +899,7 @@ def determine_threads_2_use(number_sequences, threads):
         return threads / number_sequences
 
 
-def sequence_data(sample, reference_file, bam_file, outdir, threads, length_extra_seq, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, debug_mode_true):
+def sequence_data(sample, reference_file, bam_file, outdir, threads, length_extra_seq, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, debug_mode_true, notWriteConsensus):
     sequence_data_outdir = os.path.join(outdir, 'sequence_data', '')
     utils.removeDirectory(sequence_data_outdir)
     os.mkdir(sequence_data_outdir)
@@ -938,7 +938,7 @@ def write_consensus(outdir, sample, consensus_sequence):
     return consensus_files
 
 
-def gather_data_together(sample, data_directory, sequences_information, outdir, debug_mode_true, length_extra_seq):
+def gather_data_together(sample, data_directory, sequences_information, outdir, debug_mode_true, length_extra_seq, notWriteConsensus):
     run_successfully = True
     counter = 0
     sample_data = {}
@@ -960,16 +960,17 @@ def gather_data_together(sample, data_directory, sequences_information, outdir, 
                 if run_successfully:
                     run_successfully, sequence_counter, multiple_alleles_found, count_absent, percentage_lowCoverage, meanCoverage, consensus_sequence, number_diferences = utils.extractVariableFromPickle(file_path)
 
-                    for consensus_type in consensus_sequence:
-                        consensus_sequences_together[consensus_type][sequence_counter] = {'header': consensus_sequence[consensus_type]['header'], 'sequence': consensus_sequence[consensus_type]['sequence']}
+                    if not notWriteConsensus:
+                        for consensus_type in consensus_sequence:
+                            consensus_sequences_together[consensus_type][sequence_counter] = {'header': consensus_sequence[consensus_type]['header'], 'sequence': consensus_sequence[consensus_type]['sequence']}
 
-                    if write_consensus_first_time:
-                        for consensus_type in ['correct', 'noMatter', 'alignment']:
-                            file_to_remove = os.path.join(outdir, str(sample + '.' + consensus_type + '.fasta'))
-                            if os.path.isfile(file_to_remove):
-                                os.remove(file_to_remove)
-                        write_consensus_first_time = False
-                    consensus_files = write_consensus(outdir, sample, consensus_sequence)
+                        if write_consensus_first_time:
+                            for consensus_type in ['correct', 'noMatter', 'alignment']:
+                                file_to_remove = os.path.join(outdir, str(sample + '.' + consensus_type + '.fasta'))
+                                if os.path.isfile(file_to_remove):
+                                    os.remove(file_to_remove)
+                            write_consensus_first_time = False
+                        consensus_files = write_consensus(outdir, sample, consensus_sequence)
 
                     gene_identity = 0
                     if sequences_information[sequence_counter]['length'] - 2 * length_extra_seq - count_absent > 0:
@@ -991,7 +992,7 @@ rematch_timer = functools.partial(utils.timer, name='ReMatCh module')
 
 
 @rematch_timer
-def runRematchModule(sample, fastq_files, reference_file, threads, outdir, length_extra_seq, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, minimum_gene_coverage, conserved_True, debug_mode_true, numMapLoc, minimum_gene_identity, rematch_run, softClip_baseQuality, softClip_recodeRun, reference_dict, softClip_cigarFlagRecode, bowtieOPT, gene_list_reference):
+def runRematchModule(sample, fastq_files, reference_file, threads, outdir, length_extra_seq, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, minimum_gene_coverage, conserved_True, debug_mode_true, numMapLoc, minimum_gene_identity, rematch_run, softClip_baseQuality, softClip_recodeRun, reference_dict, softClip_cigarFlagRecode, bowtieOPT, gene_list_reference, notWriteConsensus):
     rematch_folder = os.path.join(outdir, 'rematch_module', '')
     utils.removeDirectory(rematch_folder)
     os.mkdir(rematch_folder)
@@ -1004,7 +1005,7 @@ def runRematchModule(sample, fastq_files, reference_file, threads, outdir, lengt
         run_successfully, stdout = index_fasta_samtools(reference_file, None, None, True)
         if run_successfully:
             print 'Analysing alignment data'
-            run_successfully, sample_data, consensus_files, consensus_sequences = sequence_data(sample, reference_file, bam_file, rematch_folder, threads, length_extra_seq, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, debug_mode_true)
+            run_successfully, sample_data, consensus_files, consensus_sequences = sequence_data(sample, reference_file, bam_file, rematch_folder, threads, length_extra_seq, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, debug_mode_true, notWriteConsensus)
 
             if run_successfully:
                 print 'Writing report file'

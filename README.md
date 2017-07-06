@@ -44,7 +44,8 @@ Usage
                       [--doNotUseProvidedSoftware] [--extraSeq N]
                       [--minCovPresence N] [--minCovCall N]
                       [--minFrequencyDominantAllele 0.6] [--minGeneCoverage N]
-                      [--minGeneIdentity N] [--doubleRun] [--bowtieOPT] [--debug]
+                      [--minGeneIdentity N] [--doubleRun] [--notWriteConsensus]
+                      [--bowtieOPT] [--debug]
                       [--mlstSchemaNumber N] [--mlstConsensus noMatter]
                       [--mlstRun first]
                       [-a /path/to/asperaweb_id_dsa.openssh] [-k]
@@ -110,6 +111,7 @@ Usage
                             This will improve consensus sequence determination for
                             sequences with high percentage of target reference gene
                             sequence covered (default: False)
+      --notWriteConsensus   Do not write consensus sequences (default: False)
       --bowtieOPT "--no-mixed"
                             Extra Bowtie2 options (default: None)
       --debug               DeBug Mode: do not remove temporary files (default: False)

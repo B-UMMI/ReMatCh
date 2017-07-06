@@ -336,7 +336,7 @@ def runRematch(args):
         if run_successfully_fastq is not False:
             fileSize = sum(os.path.getsize(fastq) for fastq in fastq_files)
             # Run ReMatCh
-            time_taken_rematch_first, run_successfully_rematch_first, data_by_gene, sample_data_general_first, consensus_files, consensus_sequences = rematch_module.runRematchModule(sample, fastq_files, reference_file, args.threads, sample_outdir, args.extraSeq, args.minCovPresence, args.minCovCall, args.minFrequencyDominantAllele, args.minGeneCoverage, args.conservedSeq, args.debug, args.numMapLoc, args.minGeneIdentity, 'first', args.softClip_baseQuality, args.softClip_recodeRun, reference_dict, args.softClip_cigarFlagRecode, args.bowtieOPT, gene_list_reference)
+            time_taken_rematch_first, run_successfully_rematch_first, data_by_gene, sample_data_general_first, consensus_files, consensus_sequences = rematch_module.runRematchModule(sample, fastq_files, reference_file, args.threads, sample_outdir, args.extraSeq, args.minCovPresence, args.minCovCall, args.minFrequencyDominantAllele, args.minGeneCoverage, args.conservedSeq, args.debug, args.numMapLoc, args.minGeneIdentity, 'first', args.softClip_baseQuality, args.softClip_recodeRun, reference_dict, args.softClip_cigarFlagRecode, args.bowtieOPT, gene_list_reference, args.notWriteConsensus)
             if run_successfully_rematch_first:
                 if args.mlst is not None and (args.mlstRun == 'first' or args.mlstRun == 'all'):
                     run_get_st(sample, mlst_dicts, consensus_sequences, args.mlstConsensus, 'first', workdir, time_str)
@@ -349,7 +349,7 @@ def runRematch(args):
                         os.mkdir(rematch_second_outdir)
                     consensus_concatenated_fasta, consensus_concatenated_gene_list, consensus_concatenated_dict = concatenate_extraSeq_2_consensus(consensus_files['noMatter'], reference_file, args.extraSeq, rematch_second_outdir)
                     if len(consensus_concatenated_gene_list) > 0:
-                        time_taken_rematch_second, run_successfully_rematch_second, data_by_gene, sample_data_general_second, consensus_files, consensus_sequences = rematch_module.runRematchModule(sample, fastq_files, consensus_concatenated_fasta, args.threads, rematch_second_outdir, args.extraSeq, args.minCovPresence, args.minCovCall, args.minFrequencyDominantAllele, args.minGeneCoverage, args.conservedSeq, args.debug, args.numMapLoc, args.minGeneIdentity, 'second', args.softClip_baseQuality, args.softClip_recodeRun, consensus_concatenated_dict, args.softClip_cigarFlagRecode, args.bowtieOPT, gene_list_reference)
+                        time_taken_rematch_second, run_successfully_rematch_second, data_by_gene, sample_data_general_second, consensus_files, consensus_sequences = rematch_module.runRematchModule(sample, fastq_files, consensus_concatenated_fasta, args.threads, rematch_second_outdir, args.extraSeq, args.minCovPresence, args.minCovCall, args.minFrequencyDominantAllele, args.minGeneCoverage, args.conservedSeq, args.debug, args.numMapLoc, args.minGeneIdentity, 'second', args.softClip_baseQuality, args.softClip_recodeRun, consensus_concatenated_dict, args.softClip_cigarFlagRecode, args.bowtieOPT, gene_list_reference, args.notWriteConsensus)
                         if not args.debug:
                             os.remove(consensus_concatenated_fasta)
                         if run_successfully_rematch_second:
@@ -404,6 +404,7 @@ def main():
     # parser_optional_rematch.add_argument('--numMapLoc', type=int, metavar='N', help='Maximum number of locations to which a read can map (sometimes useful when mapping against similar sequences)', required=False, default=1)
     parser_optional_rematch.add_argument('--doubleRun', action='store_true', help='Tells ReMatCh to run a second time using as reference the noMatter consensus sequence produced in the first run. This will improve consensus sequence determination for sequences with high percentage of target reference gene sequence covered')
     parser_optional_rematch.add_argument('--reportSequenceCoverage', action='store_true', help='Produce an extra combined_report.data_by_gene with the sequence coverage instead of coverage depth')
+    parser_optional_rematch.add_argument('--notWriteConsensus', action='store_true', help='Do not write consensus sequences')
     parser_optional_rematch.add_argument('--bowtieOPT', type=str, metavar='"--no-mixed"', help='Extra Bowtie2 options', required=False)
     parser_optional_rematch.add_argument('--debug', action='store_true', help='DeBug Mode: do not remove temporary files')
 
