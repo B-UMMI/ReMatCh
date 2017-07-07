@@ -836,7 +836,7 @@ def analyse_sequence_data(bam_file, sequence_information, outdir, counter, refer
 
 def clean_header(header):
     problematic_characters = ["|", " ", ",", ".", "(", ")", "'", "/", ":"]
-    new_header = header
+    new_header = str(header)
     if any(x in header for x in problematic_characters):
             for x in problematic_characters:
                 new_header = new_header.replace(x, '_')
