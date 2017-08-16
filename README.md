@@ -2,49 +2,78 @@ ReMatCh
 =======
 *Reads mapping against target sequences, checking mapping and consensus sequences production*  
 
-<https://github.com/B-UMMI/ReMatCh>
+ [![Codacy Badge](https://api.codacy.com/project/badge/Grade/88c3cdda90ad4613be95a125ff6f6c5c)](https://www.codacy.com/app/tiagofilipe12/ReMatCh?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=B-UMMI/ReMatCh&amp;utm_campaign=Badge_Grade)  
+ <https://github.com/B-UMMI/ReMatCh>
 
 
 
-Requirements
-------------
+Table of Contents
+--
 
- - Fasta file with reference sequences
+ - [Dependencies](#dependencies)
+ - [Installation](#installation)
+ - [Input](#input)
+   - [Reference](#reference)
+   - [Samples](#samples)
+ - [Usage](#Usage)
+   - [Usage Examples](#usage-examples)
+     - [Running ReMatCh Beginner](#running-rematch-beginner)
+       - [Using local samples for provided reference file](#using-local-samples-for-provided-reference-file)
+     - [Running ReMatCh Moderate](#running-remtch-moderate)
+       - [Using specific ENA sequencing data for provided reference file](#using-specific-ena-sequencing-data-for-provided-reference-file)
+       - [Using ENA sequencing data of a given taxon for provided reference file](#using-ena-sequencing-data-of-a-given-taxon-for-provided-reference-file)
+     - [Running ReMatCh Advanced](#running-rematch-advanced)
+       - [MultiLocus Sequence Typing for local samples](#multilocus-sequence-typing-for-local-samples)
+       - [MultiLocus Sequence Typing for ENA list of IDs or taxon](#multilLocus-sequence-typing-for-ena-list-of-ids-or-taxon)
+ - [Outputs](#outputs)
+ - [Contact](#contact)
 
-
-
-Dependencies
-------------
+## Dependencies
 **Optional**
 
 Required to download sequence data from ENA database:
  - *Aspera Connect 2* >= v3.6.1
  - *gzip* >= v1.6 (normally found in Linux OS) (important for bam/cram conversion into fastq)
+ - *wget* (normally found in Linux OS)
 
 Required to run ReMatch analysis
  - *Bowtie2* >= v2.2.9
  - *Samtools* = v1.3.1
  - *Bcftools* = v1.3.1  
-(these three executables are provided, but user's own executables can be used by providing `--doNotUseProvidedSoftware` option)
+
+These three executables are provided, but user's own executables can be used by providing `--doNotUseProvidedSoftware` option.
 
 
+## Installation
+ReMatCh is a standalone python script and does not require any installation. Simply clone the git repository:
 
-Installation
-------------
     git clone https://github.com/B-UMMI/ReMatCh.git
 
 
+## Input
+#### Reference
+ReMatCh requires for the reference sequeces, in fasta file, to be provided through the `-r`option.
+In our experience, the addition of 200nt upstream and downstream of the target region when using Illumina Miseq data (150nt reads), will have the desired effect, and these flanking regions will be ignored in variant calling, unless there is an INDEL affecting the target sequence.  the size of the flanking regions can be set with the opion `--extraSeq`.
+If the `--mlst` option is used, the `--mlstReference` can be used intead of the `-r`, telling ReMatCh to use the curated scheme for the MLST scheme, if available, as reference sequences with 200nt flanking the target regions, or the first alleles of each MLST gene fragment in PubMLST as reference sequences.
 
-Usage
------
+#### Samples
+The samples can be provided through the `-w` option, if stored locally in a directory, or by telling ReMatCh to interact directly with ENA.
+This can be done by passing rematch a list of IDs to download, through the `-l`option, or to download all the reads from a given taxon, though the `--taxon` option.
+The sample files are required to be in "fq.gz" (or "fastq.gz") format.
+
+
+## Usage
     usage: rematch.py [-h] [--version]
-                      -r /path/to/reference_sequence.fasta
+                      (-r /path/to/reference_sequence.fasta | --mlstReference)
                       [-w /path/to/workdir/directory/] [-j N]
-                      [--doNotUseProvidedSoftware]
-                      [--conservedSeq] [--extraSeq N] [--minCovPresence N]
-                      [--minCovCall N] [--minFrequencyDominantAllele 0.6]
-                      [--minGeneCoverage N] [--minGeneIdentity N] [--doubleRun]
-                      [--debug]
+                      [--mlst "Streptococcus agalactiae"]
+                      [--doNotUseProvidedSoftware] [--extraSeq N]
+                      [--minCovPresence N] [--minCovCall N]
+                      [--minFrequencyDominantAllele 0.6] [--minGeneCoverage N]
+                      [--minGeneIdentity N] [--doubleRun] [--notWriteConsensus]
+                      [--bowtieOPT] [--debug]
+                      [--mlstSchemaNumber N] [--mlstConsensus noMatter]
+                      [--mlstRun first]
                       [-a /path/to/asperaweb_id_dsa.openssh] [-k]
                       [--downloadLibrariesType PAIRED]
                       [--downloadInstrumentPlatform ILLUMINA] [--downloadCramBam]
@@ -56,13 +85,17 @@ Usage
     optional arguments:
       -h, --help            show this help message and exit
       --version             Version information
+      -l /path/to/list_IDs.txt, --listIDs /path/to/list_IDs.txt
+                      Path to list containing the IDs to be downloaded (one
+                      per line) (default: None)
+      -t "Streptococcus agalactiae", --taxon "Streptococcus agalactiae"
+                      Taxon name for which ReMatCh will download fastq files
+                      (default: None)
 
-    Required options:
+    General facultative options:
       -r /path/to/reference_sequence.fasta, --reference /path/to/reference_sequence.fasta
                             Fasta file containing reference sequences (default:
                             None)
-
-    General facultative options:
       -w /path/to/workdir/directory/, --workdir /path/to/workdir/directory/
                             Path to the directory where ReMatCh will run and
                             produce the outputs with reads (ended with
@@ -71,14 +104,14 @@ Usage
                             already present (organized in sample folders) or
                             to be downloaded (default: .)
       -j N, --threads N     Number of threads to use (default: 1)
+      --mlst "Streptococcus agalactiae"
+                            Species name (same as in PubMLST) to be used in MLST
+                            determination (default: None)
       --doNotUseProvidedSoftware
                             Tells ReMatCh to not use Bowtie2, Samtools and
                             Bcftools that are provided with it (default: False)
 
     ReMatCh module facultative options:
-      --conservedSeq        This option can be used with conserved sequences like
-                            MLST genes to speedup the analysis by alignning reads
-                            using Bowtie2 sensitive algorithm (default: False)
       --extraSeq N          Sequence length added to both ends of target sequences
                             (usefull to improve reads mapping to the target one)
                             that will be trimmed in ReMatCh outputs (default: 0)
@@ -104,7 +137,27 @@ Usage
                             This will improve consensus sequence determination for
                             sequences with high percentage of target reference gene
                             sequence covered (default: False)
+      --notWriteConsensus   Do not write consensus sequences (default: False)
+      --bowtieOPT "--no-mixed"
+                            Extra Bowtie2 options (default: None)
       --debug               DeBug Mode: do not remove temporary files (default: False)
+      --mlstReference       If the curated scheme for MLST alleles is available, tells
+                            ReMatCh to use these as reference (force Bowtie2 to run
+                            with very-sensitive-local parameters, and sets --extraSeq
+                            to 200), otherwise ReMatCh uses the first alleles of each
+                            MLST gene fragment in PubMLST as reference sequences (force
+                            Bowtie2 to run with very-sensitive-local parameters, and
+                            sets --extraSeq to 0)
+
+    MLST facultative options:
+      --mlstSchemaNumber N  Number of the species PubMLST schema to be used in
+                            case of multiple schemes available (by default will
+                            use the first schema) (default: None)
+      --mlstConsensus noMatter
+                            Consensus sequence to be used in MLST determination
+                            (default: noMatter)
+      --mlstRun first       ReMatCh run outputs to be used in MLST determination
+                            (default: all)
 
     Download facultative options:
       -a /path/to/asperaweb_id_dsa.openssh, --asperaKey /path/to/asperaweb_id_dsa.openssh
@@ -136,12 +189,12 @@ Usage
                             (default: None)
 
 
+### Usage Examples
 
-**Running ReMatCh in local samples**  
-To run ReMatCh in local fastq files, please organize those files in sample folders.  
-It is advisable to use copied fastq files or symbolic links to the original files.  
-Then provide the directory containing sample folders to `--workdir`. ReMatCh will store the output files there.  
-E.g.:  
+#### Running ReMatCh Beginner
+##### Using local samples for provided reference file
+To run ReMatCh in local fastq files, please organize those files into sample folders, as shown bellow.
+E.g.:
 ```
   workir/
     sample_1/
@@ -151,23 +204,64 @@ E.g.:
       fastq_file_b_R1_001.fastq.gz
       fastq_file_b_R2_001.fastq.gz
 ```
+It is advisable to use copied fastq files or symbolic links to the original files.
+This directory, containing the sample folders, should then be provided through the `--workdir` option. ReMatCh will store the output files there.
+As so, the command should look something like:
 
-**Running ReMatCh in specific ENA sequencing data**  
-To run ReMatCh in a specific set of ENA IDs, provide a file to `--listIDs` containing a list of ENA IDs that will be downloaded.  
-The IDs can be Sample Accession numbers or Run Accession numbers (for example).  
+    rematch.py -r reference.fasta --workdir /path/to/workdir/
+
+
+#### Running ReMatCh Moderate
+##### Using specific ENA sequencing data for provided reference file
+To run ReMatCh in a specific set of ENA IDs you need to provide a file to `--listIDs` containing a list of ENA IDs to be downloaded. The IDs can be Sample Accession numbers or Run Accession numbers (for example), as long as there's only one ID per line in the file.
 In case of IDs containing more than one Run Accession number (like Study accession numbers), only one of them will be downloaded and the remaining will be stored in *sample_report.*.tab* file under extra_run_accession column in a comma separated style.  
-ReMatCh will store the output files in the `--workdir`.  
+ReMatCh will store the output files in the `--workdir`.
 
-**Running ReMatCh in ENA sequencing data of a given taxon**  
-To run ReMatCh in all ENA data of a given taxon, provide the taxon name to `--taxon`.  
+    rematch.py -r reference.fasta --listIDs IDs.txt --workdir /path/to/workdir/
+
+By default ReMatCh uses `wget` to download the sample files from ENA. We recommend using Aspera Connect 2 to speed up this process by providing the path Private-key file asperaweb_id_dsa.openssh to `-a`.
+
+    rematch.py -r reference.fasta --listIDs IDs.txt -a /path/to/asperaweb_id_dsa.openssh --workdir /path/to/workdir/
+
+
+##### Using ENA sequencing data of a given taxon for provided reference file
+To run ReMatCh in all ENA data of a given taxon, provide the taxon name to `--taxon`.
 The ENA Run Accession numbers for the given taxon will be stored in IDs_list.seqFromWebTaxon.tab file.  
-The column content will be: 1) Run Accession numbers, 2) Sequencing instrument models, 3) (secondary) Study Accession numbers, 4) library types, 5) library layouts.  
-The first line of *IDs_list.seqFromWebTaxon.tab* will contain the date of accession.  
+The column content will be:
+ 1) Run Accession numbers
+ 2) Sequencing instrument models
+ 3) (secondary) Study Accession numbers
+ 4) library types
+ 5) library layouts
+
+The first line of *IDs_list.seqFromWebTaxon.tab* will contain the date of accession.
+
+    rematch.py -r reference.fasta --taxon "Streptococcus dysgalactiae" /path/to/asperaweb_id_dsa.openssh --workdir /path/to/workdir/
 
 
+#### Running ReMatCh Advanced
+##### MultiLocus Sequence Typing for local samples
+To run ReMatCh in a set of samples for MLST the option `--mlst` needs to be provided with species name (same as in PubMLST - https://pubmlst.org/databases/) to be used in MLST determination.
+If more than one scheme is available for the species, the desired schema number should be passed to ReMatCh with the `--mlstSchemaNumber` option.
+A fasta file containing the MLST reference sequences (`-r`) is required, along with the size of the flanking regions as recomended by us (set with the opion `--extraSeq`). Alternatively the `--mlstReference` option can be used, telling ReMatCH to use the curated scheme for the MLST scheme, if available, as reference sequences with 200nt flanking the target regions, or the first alleles of each MLST gene fragment in PubMLST as reference sequences.
+The MLST results will be in the *mlst_report.*.tab* in the `--workdir`.
+Here's an example to run ReMatCh for MLST in all "Streptococcus agalactiae" samples in ENA:
 
-Outputs
--------
+    rematch.py --mlst "Streptococcus agalactiae" --mlstReference --workdir /path/to/workdir/
+
+As default, ReMatCh uses the consensus sequence "noMatter" in MLST determination, but this can be changed with the `--mlstConsensus` option. IF the option `--doubleRun` is used, ReMatCh can determine the MLST for the second run only, or for both runs, with the `--mlstRun` option. By default the MLST will be determined in both runs.
+
+    rematch.py --mlst "Streptococcus agalactiae" --mlstReference --taxon "Streptococcus agalactiae" --workdir /path/to/workdir/ --mlstConsensus all --doubleRun --mlstRun second
+
+##### MultiLocus Sequence Typing for ENA list of IDs or taxon
+As described above, you can run ReMatCh in a specific set of ENA IDs or in all taxon data for MLST by providing the `-l` or `--taxon` options respectively.
+
+    rematch.py --mlst "Streptococcus agalactiae" --mlstReference -l IDs.txt --workdir /path/to/workdir/
+
+    rematch.py --mlst "Streptococcus agalactiae" --mlstReference --taxon "Streptococcus agalactiae" --workdir /path/to/workdir/
+
+
+## Outputs
 **run.*.log**  
 ReMatCh running log file.  
 
@@ -206,6 +300,10 @@ In case of multiple alleles occurrence, if the frequency of the dominant allele 
 **cpu_information.*.cpu.txt** and **cpu_information.*.slurm.txt**  
 Store CPUs and SLURM information at the time of run.  
 
+**mlst_report.*.tab**
+This file contains a report with the MLST information (columns) for the different samples (in lines).
+For each sample, the file will have information on the run the MLST was determined (first or second), the consensus sequenced used (noMatter, correct or alignment), the ST obtained ( or '-' if no ST was obtained) and the allele number (or '-' if not an exact match) for each loci in the scheme.
+
 **Samples folders**  
 For each sample, three fasta files will be produced:  
  - *sample.noMatter.fasta* - Fasta file containing the target gene sequence with the more probable nucleotides (determined by the majority rule for positions covered by >= *--minCovPresence*). Positions with less than `--minCovPresence` coverage depth will be considered as deletions.
@@ -216,8 +314,7 @@ For each sample, three fasta files will be produced:
  - *rematch_second_run/* - Folder containing the same files/folders described above, but for the *second_run*. Only created if `--doubleRun` is set
 
 
+## Contact
 
-Contact
--------
 Miguel Machado  
 <mpmachado@medicina.ulisboa.pt>

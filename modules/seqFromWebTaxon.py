@@ -1,8 +1,20 @@
+#!/usr/bin/env python
+
+# -*- coding: utf-8 -*-
+
+'''
+Adapted from:
+https://github.com/mickaelsilva/pythonscripts/blob/master/SeqOfWeb/SeqFromWebTaxon.py
+mickaelsilva
+'''
+
 import urllib2
 import sys
 import urllib
 import xml.etree.ElementTree as ET
 import time
+import argparse
+import os
 
 
 def runSeqFromWebTaxon(taxonname, outputfile, getmachine, getOmicsDataType, getLibraryType, print_True):
@@ -93,3 +105,31 @@ def runSeqFromWebTaxon(taxonname, outputfile, getmachine, getOmicsDataType, getL
 
 	else:
 		print "taxon name does not exist"
+
+
+def main():
+	parser = argparse.ArgumentParser(description="This program gets a list of sequencing runs and machine were the sequencing was performed, given a taxon name accepted by the European nucleotide Archive")
+	parser.add_argument('-i', nargs=1, type=str, help='taxon name', metavar='"Streptococcus agalactiae"', required=True)
+	parser.add_argument('-o', nargs=1, type=str, help='output file name', required=True)
+	parser.add_argument('-g', help='True to include sequencing machine in the output', action='store_true', required=False)
+	parser.add_argument('--getOmicsDataType', help='Informs the programme to include OMICS data type (examples: GENOMIC / TRANSCRIPTOMIC / SYNTHETIC) in the output', action='store_true')
+	parser.add_argument('--getLibraryType', help='Informs the programme to include library type (examples: PAIRED / SINGLE) in the output', action='store_true')
+
+	args = parser.parse_args()
+
+	getmachine = args.g
+	taxonname = args.i[0]
+
+	outdir = os.path.dirname(os.path.abspath(args.o[0]))
+	if not os.path.isdir(outdir):
+		os.makedirs(outdir)
+	outputfile = os.path.abspath(args.o[0])
+
+	getOmicsDataType = args.getOmicsDataType
+	getLibraryType = args.getLibraryType
+
+	runSeqFromWebTaxon(taxonname, outputfile, getmachine, getOmicsDataType, getLibraryType, True)
+
+
+if __name__ == "__main__":
+	main()
