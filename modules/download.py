@@ -81,9 +81,18 @@ def downloadWithAspera(aspera_file_path, asperaKey, outdir, pickle_prefix):
 
 
 @utils.trace_unhandled_exceptions
-def downloadWithFtp(ftp_file_path, outdir, pickle_prefix):
+def downloadWithWget(ftp_file_path, outdir, pickle_prefix):
     file_download = ftp_file_path.rsplit('/', 1)[1]
-    command = ['wget', ftp_file_path, '-O', os.path.join(outdir, file_download)]
+    command = ['wget', '--tries=2', ftp_file_path, '-O', os.path.join(outdir, file_download)]
+    run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, False, 3600, True)
+
+    utils.saveVariableToPickle(run_successfully, outdir, str(pickle_prefix + '.' + file_download))
+
+
+@utils.trace_unhandled_exceptions
+def downloadWithCurl(ftp_file_path, outdir, pickle_prefix):
+    file_download = ftp_file_path.rsplit('/', 1)[1]
+    command = ['curl', '--retry', '2', ftp_file_path, '-O', os.path.join(outdir, file_download)]
     run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, False, 3600, True)
 
     utils.saveVariableToPickle(run_successfully, outdir, str(pickle_prefix + '.' + file_download))
@@ -108,6 +117,12 @@ def getPickleRunSuccessfully(directory, pickle_prefix):
     return run_successfully
 
 
+def curl_installed():
+    command = ['which', 'curl']
+    run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, False, None, False)
+    return run_successfully
+
+
 def download(downloadInformation_type, asperaKey, outdir):
     pickle_prefix = 'download'
 
@@ -123,13 +138,20 @@ def download(downloadInformation_type, asperaKey, outdir):
         run_successfully = getPickleRunSuccessfully(outdir, pickle_prefix)
 
     if downloadInformation_type['ftp'] is not None and not run_successfully:
-        pool = multiprocessing.Pool(processes=2)
-        for file_download in downloadInformation_type['ftp']:
-            pool.apply_async(downloadWithFtp, args=(file_download, outdir, pickle_prefix,))
-        pool.close()
-        pool.join()
-
-        run_successfully = getPickleRunSuccessfully(outdir, pickle_prefix)
+        if curl_installed():
+            pool = multiprocessing.Pool(processes=2)
+            for file_download in downloadInformation_type['ftp']:
+                pool.apply_async(downloadWithCurl, args=(file_download, outdir, pickle_prefix,))
+            pool.close()
+            pool.join()
+            run_successfully = getPickleRunSuccessfully(outdir, pickle_prefix)
+        if not run_successfully:
+            pool = multiprocessing.Pool(processes=2)
+            for file_download in downloadInformation_type['ftp']:
+                pool.apply_async(downloadWithWget, args=(file_download, outdir, pickle_prefix,))
+            pool.close()
+            pool.join()
+            run_successfully = getPickleRunSuccessfully(outdir, pickle_prefix)
 
     return run_successfully
 
