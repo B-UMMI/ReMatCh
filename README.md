@@ -1,4 +1,4 @@
-ReMatCh
+![ReMatCh](https://user-images.githubusercontent.com/13034956/32177163-736db7da-bd81-11e7-991c-566f2fc2760e.png)
 =======
 *Reads mapping against target sequences, checking mapping and consensus sequences production*  
 
