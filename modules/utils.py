@@ -25,7 +25,7 @@ class Logger(object):
 
     def write(self, message):
         self.terminal.write(message)
-        self.log.write(message)
+        self.log.write(message.encode('utf-8'))
         self.log.flush()
 
     def flush(self):
@@ -87,11 +87,13 @@ def checkPrograms(programs_version_dictionary):
                 run_successfully, stdout, stderr = runCommandPopenCommunicate(check_version, False, None, False)
                 if stdout == '':
                     stdout = stderr
-                if program == 'wget':
+                if program in ['wget', 'awk']:
                     version_line = stdout.splitlines()[0].split(' ', 3)[2]
+                elif program in ['prefetch', 'fastq-dump']:
+                    version_line = stdout.splitlines()[1].split(' ')[-1]
                 else:
                     version_line = stdout.splitlines()[0].split(' ')[-1]
-                replace_characters = ['"', 'v', 'V', '+']
+                replace_characters = ['"', 'v', 'V', '+', ',']
                 for i in replace_characters:
                     version_line = version_line.replace(i, '')
                 print program + ' (' + version_line + ') found'
@@ -112,22 +114,25 @@ def checkPrograms(programs_version_dictionary):
     return listMissings
 
 
-def requiredPrograms(asperaKey, downloadCramBam):
+def requiredPrograms(asperaKey, downloadCramBam, SRA, SRAopt):
     programs_version_dictionary = {}
     programs_version_dictionary['wget'] = ['--version', '>=', '1.12']
+    programs_version_dictionary['gzip'] = ['--version', '>=', '1.6']
     programs_version_dictionary['bowtie2'] = ['--version', '>=', '2.2.9']
     programs_version_dictionary['samtools'] = ['--version', '==', '1.3.1']
     programs_version_dictionary['bcftools'] = ['--version', '==', '1.3.1']
     if asperaKey is not None:
         programs_version_dictionary['ascp'] = ['--version', '>=', '3.6.1']
-    if downloadCramBam:
-        programs_version_dictionary['gzip'] = ['--version', '>=', '1.6']
+    if SRA or SRAopt:
+        programs_version_dictionary['prefetch'] = ['--version', '>=', '2.8.2']
+        programs_version_dictionary['fastq-dump'] = ['--version', '>=', '2.8.2']
+        programs_version_dictionary['awk'] = ['--version', '>=', '3.0.4']
     missingPrograms = checkPrograms(programs_version_dictionary)
     if len(missingPrograms) > 0:
         sys.exit('\n' + 'Errors:' + '\n' + '\n'.join(missingPrograms))
 
 
-def general_information(logfile, version, outdir, time_str, doNotUseProvidedSoftware, asperaKey, downloadCramBam):
+def general_information(logfile, version, outdir, time_str, doNotUseProvidedSoftware, asperaKey, downloadCramBam, SRA, SRAopt):
     # Check if output directory exists
 
     print '\n' + '==========> ReMatCh <=========='
@@ -158,7 +163,7 @@ def general_information(logfile, version, outdir, time_str, doNotUseProvidedSoft
     setPATHvariable(doNotUseProvidedSoftware, script_path)
 
     # Check programms
-    requiredPrograms(asperaKey, downloadCramBam)
+    requiredPrograms(asperaKey, downloadCramBam, SRA, SRAopt)
 
     return script_path
 

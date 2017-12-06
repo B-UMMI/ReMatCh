@@ -765,7 +765,7 @@ def write_variants_vcf(variants, outdir, sequence_to_analyse, sufix):
 
 
 def parse_fasta_inMemory(fasta_memory):
-    fasta_memory = fasta_memory.splitlines()
+    fasta_memory = fasta_memory.decode("utf-8").splitlines()
     sequence_dict = {}
     for line in fasta_memory:
         if len(line) > 0:

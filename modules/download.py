@@ -4,6 +4,7 @@ import multiprocessing
 import sys
 import functools
 import time
+import subprocess
 
 
 def getReadRunInfo(ena_id):
@@ -37,7 +38,7 @@ def getDownloadInformation(readRunInfo):
                 if len(info_line[i]) > 0:
                     files_path = info_line[i].split(';')
                     if len(files_path) > 2:
-                        print 'WARNING: Were found more files than expected in ' + header[1] + ' download links!'
+                        print 'WARNING: Were found more files than expected in {downloadInformation}-{download_types} download links!'.format(downloadInformation=header[0], download_types=header[1])
                     if downloadInformation[header[0]] is None:
                         downloadInformation[header[0]] = {}
                     downloadInformation[header[0]][header[1]] = files_path
@@ -49,7 +50,7 @@ def getSequencingInformation(readRunInfo):
     header_line = readRunInfo[0].split('\t')
     info_line = readRunInfo[1].split('\t')
 
-    sequencingInformation = {'run_accession': None, 'instrument_platform': None, 'instrument_model': None, 'library_layout': None, 'library_source': None, 'extra_run_accession': None, 'nominal_length': None, 'read_count': None, 'base_count': None}
+    sequencingInformation = {'run_accession': None, 'instrument_platform': None, 'instrument_model': None, 'library_layout': None, 'library_source': None, 'extra_run_accession': None, 'nominal_length': None, 'read_count': None, 'base_count': None, 'date_download': time.strftime("%Y-%m-%d")}
 
     for i in range(0, len(header_line)):
         header = header_line[i].lower()
@@ -73,29 +74,69 @@ def getSequencingInformation(readRunInfo):
 
 
 @utils.trace_unhandled_exceptions
-def downloadWithAspera(aspera_file_path, asperaKey, outdir, pickle_prefix):
-    command = ['ascp', '-QT', '-l', '300m', '-P33001', '-i', asperaKey, str('era-fasp@' + aspera_file_path), outdir]
+def downloadWithAspera(aspera_file_path, asperaKey, outdir, pickle_prefix, SRA, ena_id):
+    command = ['ascp', '-QT', '-l', '300m', '', '-i', asperaKey, '', outdir]
+    if not SRA:
+        command[4] = '-P33001'
+        command[7] = str('era-fasp@' + aspera_file_path)
+        pickle = pickle_prefix + '.' + aspera_file_path.rsplit('/', 1)[1]
+    else:
+        command[7] = 'anonftp@ftp.ncbi.nlm.nih.gov:/sra/sra-instant/reads/ByRun/sra/{a}/{b}/{c}/{c}.sra'.format(a=ena_id[:3], b=ena_id[:6], c=ena_id)
+        pickle = pickle_prefix + '.' + ena_id
+
     run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, False, 3600, True)
 
-    utils.saveVariableToPickle(run_successfully, outdir, str(pickle_prefix + '.' + aspera_file_path.rsplit('/', 1)[1]))
+    utils.saveVariableToPickle(run_successfully, outdir, pickle)
 
 
 @utils.trace_unhandled_exceptions
-def downloadWithWget(ftp_file_path, outdir, pickle_prefix):
-    file_download = ftp_file_path.rsplit('/', 1)[1]
-    command = ['wget', '--tries=2', ftp_file_path, '-O', os.path.join(outdir, file_download)]
+def downloadWithWget(ftp_file_path, outdir, pickle_prefix, SRA, ena_id):
+    command = ['wget', '--tries=2', '', '-O', '']
+    if not SRA:
+        command[2] = ftp_file_path
+        file_download = ftp_file_path.rsplit('/', 1)[1]
+        command[4] = os.path.join(outdir, file_download)
+        pickle = pickle_prefix + '.' + file_download
+    else:
+        command[2] = 'ftp://ftp-trace.ncbi.nih.gov/sra/sra-instant/reads/ByRun/sra/{a}/{b}/{c}/{c}.sra'.format(a=ena_id[:3], b=ena_id[:6], c=ena_id)
+        command[4] = os.path.join(outdir, ena_id + '.sra')
+        pickle = pickle_prefix + '.' + ena_id
     run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, False, 3600, True)
 
-    utils.saveVariableToPickle(run_successfully, outdir, str(pickle_prefix + '.' + file_download))
+    utils.saveVariableToPickle(run_successfully, outdir, pickle)
 
 
 @utils.trace_unhandled_exceptions
-def downloadWithCurl(ftp_file_path, outdir, pickle_prefix):
-    file_download = ftp_file_path.rsplit('/', 1)[1]
-    command = ['curl', '--retry', '2', ftp_file_path, '-O', os.path.join(outdir, file_download)]
+def downloadWithSRAprefetch(asperaKey, outdir, pickle_prefix, ena_id):
+    command = ['prefetch', '', ena_id]
+
+    if asperaKey is not None:
+        ignore, ascp, ignore = utils.runCommandPopenCommunicate(['which', 'ascp'], False, None, False)
+        command[1] = '-a {ascp}|{asperaKey}'.format(ascp=ascp.splitlines()[0], asperaKey=asperaKey)
+
+    run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, False, 3600, True)
+    if run_successfully:
+        ignore, prefetch_outdir, ignore = utils.runCommandPopenCommunicate(['echo', '$HOME/ncbi/public/sra'], True, None, False)
+        os.rename(os.path.join(prefetch_outdir.splitlines()[0], ena_id + '.sra'), os.path.join(outdir, ena_id + '.sra'))
+
+    utils.saveVariableToPickle(run_successfully, outdir, pickle_prefix + '.' + ena_id)
+
+
+@utils.trace_unhandled_exceptions
+def downloadWithCurl(ftp_file_path, outdir, pickle_prefix, SRA, ena_id):
+    command = ['curl', '--retry', '2', '', '-o', '']
+    if not SRA:
+        command[3] = ftp_file_path
+        file_download = ftp_file_path.rsplit('/', 1)[1]
+        command[5] = os.path.join(outdir, file_download)
+        pickle = pickle_prefix + '.' + file_download
+    else:
+        command[3] = 'ftp://ftp-trace.ncbi.nih.gov/sra/sra-instant/reads/ByRun/sra/{a}/{b}/{c}/{c}.sra'.format(a=ena_id[:3], b=ena_id[:6], c=ena_id)
+        command[5] = os.path.join(outdir, ena_id + '.sra')
+        pickle = pickle_prefix + '.' + ena_id
     run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, False, 3600, True)
 
-    utils.saveVariableToPickle(run_successfully, outdir, str(pickle_prefix + '.' + file_download))
+    utils.saveVariableToPickle(run_successfully, outdir, pickle)
 
 
 def getPickleRunSuccessfully(directory, pickle_prefix):
@@ -123,45 +164,63 @@ def curl_installed():
     return run_successfully
 
 
-def download(downloadInformation_type, asperaKey, outdir):
+def download(downloadInformation_type, asperaKey, outdir, SRA, SRAopt, ena_id):
     pickle_prefix = 'download'
 
     run_successfully = False
+    download_SRA = False
 
-    if asperaKey is not None and downloadInformation_type['aspera'] is not None:
-        pool = multiprocessing.Pool(processes=2)
-        for file_download in downloadInformation_type['aspera']:
-            pool.apply_async(downloadWithAspera, args=(file_download, asperaKey, outdir, pickle_prefix,))
-        pool.close()
-        pool.join()
-
-        run_successfully = getPickleRunSuccessfully(outdir, pickle_prefix)
-
-    if downloadInformation_type['ftp'] is not None and not run_successfully:
-        if curl_installed():
+    if not SRA:
+        if asperaKey is not None and downloadInformation_type['aspera'] is not None:
             pool = multiprocessing.Pool(processes=2)
-            for file_download in downloadInformation_type['ftp']:
-                pool.apply_async(downloadWithCurl, args=(file_download, outdir, pickle_prefix,))
+            for file_download in downloadInformation_type['aspera']:
+                pool.apply_async(downloadWithAspera, args=(file_download, asperaKey, outdir, pickle_prefix, SRA, ena_id,))
             pool.close()
             pool.join()
+            run_successfully = getPickleRunSuccessfully(outdir, pickle_prefix)
+        if not run_successfully and downloadInformation_type['ftp'] is not None:
+            if curl_installed():
+                pool = multiprocessing.Pool(processes=2)
+                for file_download in downloadInformation_type['ftp']:
+                    pool.apply_async(downloadWithCurl, args=(file_download, outdir, pickle_prefix, SRA, ena_id,))
+                pool.close()
+                pool.join()
+                run_successfully = getPickleRunSuccessfully(outdir, pickle_prefix)
+            if not run_successfully:
+                pool = multiprocessing.Pool(processes=2)
+                for file_download in downloadInformation_type['ftp']:
+                    pool.apply_async(downloadWithWget, args=(file_download, outdir, pickle_prefix, SRA, ena_id,))
+                pool.close()
+                pool.join()
+                run_successfully = getPickleRunSuccessfully(outdir, pickle_prefix)
+
+    if not run_successfully and (SRA or SRAopt):
+        if asperaKey is not None:
+            downloadWithAspera(None, asperaKey, outdir, pickle_prefix, SRA or SRAopt, ena_id)
             run_successfully = getPickleRunSuccessfully(outdir, pickle_prefix)
         if not run_successfully:
-            pool = multiprocessing.Pool(processes=2)
-            for file_download in downloadInformation_type['ftp']:
-                pool.apply_async(downloadWithWget, args=(file_download, outdir, pickle_prefix,))
-            pool.close()
-            pool.join()
+            downloadWithSRAprefetch(asperaKey, outdir, pickle_prefix, ena_id)
             run_successfully = getPickleRunSuccessfully(outdir, pickle_prefix)
+            if not run_successfully:
+                if curl_installed():
+                    downloadWithCurl(None, outdir, pickle_prefix, SRA or SRAopt, ena_id)
+                    run_successfully = getPickleRunSuccessfully(outdir, pickle_prefix)
+                if not run_successfully:
+                    downloadWithWget(None, outdir, pickle_prefix, SRA or SRAopt, ena_id)
+                    run_successfully = getPickleRunSuccessfully(outdir, pickle_prefix)
+        if run_successfully:
+            download_SRA = True
 
-    return run_successfully
+    return run_successfully, download_SRA
 
 
-def downloadFiles(downloadInformation, asperaKey, outdir, download_cram_bam_True):
+def downloadFiles(downloadInformation, asperaKey, outdir, download_cram_bam_True, SRA, SRAopt, ena_id):
     run_successfully = False
     cram_index_run_successfully = False
+    download_SRA = False
 
     if downloadInformation['fastq'] is not None:
-        run_successfully = download(downloadInformation['fastq'], asperaKey, outdir)
+        run_successfully, download_SRA = download(downloadInformation['fastq'], asperaKey, outdir, SRA, SRAopt, ena_id)
 
     if not run_successfully:
         if downloadInformation['submitted'] is not None:
@@ -172,14 +231,17 @@ def downloadFiles(downloadInformation, asperaKey, outdir, download_cram_bam_True
                         cram_bam = True
                         break
                 if not cram_bam:
-                    run_successfully = download(downloadInformation['submitted'], asperaKey, outdir)
+                    run_successfully, download_SRA = download(downloadInformation['submitted'], asperaKey, outdir, False, False, ena_id)
 
             elif download_cram_bam_True:
-                run_successfully = download(downloadInformation['submitted'], asperaKey, outdir)
+                run_successfully, download_SRA = download(downloadInformation['submitted'], asperaKey, outdir, False, False, ena_id)
                 if run_successfully and downloadInformation['cram_index'] is not None:
-                    cram_index_run_successfully = download(downloadInformation['cram_index'], asperaKey, outdir)
+                    cram_index_run_successfully = download(downloadInformation['cram_index'], asperaKey, outdir, False, False, ena_id)
 
-    return run_successfully, cram_index_run_successfully
+    if not run_successfully and (SRA or SRAopt):
+        run_successfully, download_SRA = download(downloadInformation['fastq'], asperaKey, outdir, True, SRAopt, ena_id)
+
+    return run_successfully, cram_index_run_successfully, download_SRA
 
 
 def sortAlignment(alignment_file, output_file, sortByName_True, threads):
@@ -399,33 +461,80 @@ def rename_move_files(list_files, new_name, outdir, download_paired_type):
     return run_successfully, list_new_files
 
 
+# @utils.trace_unhandled_exceptions
+def rename_header_sra(fastq):
+    run_successfully = False
+    try:
+        command = ['awk', '\'{if(NR%4==1) $0=gensub(/\./, \"/\", 2); print}\'', fastq, '|', 'gzip', '-1', '>', str(fastq + '.gz')]
+        print 'Running: ' + str(' '.join(command))
+        return_code = subprocess.call(' '.join(command), shell=True)
+        if return_code == 0:
+            run_successfully = True
+        else:
+            print 'Something went wrong with command: {command}'.format(commad=' '.join(command))
+    except Exception as e:
+        print e
+
+    return run_successfully
+
+
+def sra_2_fastq(download_dir, ena_id):
+    command = ['fastq-dump', '-I', '-O', download_dir, '--split-files', '{download_dir}{ena_id}.sra'.format(download_dir=download_dir, ena_id=ena_id)]
+    run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, False, 3600, True)
+    if run_successfully:
+        files = [os.path.join(download_dir, f) for f in os.listdir(download_dir) if not f.startswith('.') and os.path.isfile(os.path.join(download_dir, f)) and not f.endswith('.sra')]
+
+        pool = multiprocessing.Pool(processes=2)
+        results = []
+        p = pool.map_async(rename_header_sra, files, callback=results.extend)
+        p.wait()
+
+        run_successfully = all(results)
+
+    return run_successfully
+
+
 download_timer = functools.partial(utils.timer, name='Download module')
 
 
 @download_timer
-def runDownload(ena_id, download_paired_type, asperaKey, outdir, download_cram_bam_True, threads, instrument_platform):
+def runDownload(ena_id, download_paired_type, asperaKey, outdir, download_cram_bam_True, threads, instrument_platform, SRA, SRAopt):
     download_dir = os.path.join(outdir, 'download', '')
     utils.removeDirectory(download_dir)
     os.mkdir(download_dir)
 
     run_successfully = False
     downloaded_files = None
-    sequencingInformation = {'run_accession': None, 'instrument_platform': None, 'instrument_model': None, 'library_layout': None, 'library_source': None, 'extra_run_accession': None, 'nominal_length': None, 'read_count': None, 'base_count': None, 'date_download': None}
+    sequencingInformation = {'run_accession': None, 'instrument_platform': None, 'instrument_model': None, 'library_layout': None, 'library_source': None, 'extra_run_accession': None, 'nominal_length': None, 'read_count': None, 'base_count': None, 'date_download': time.strftime("%Y-%m-%d")}
 
     readRunInfo = getReadRunInfo(ena_id)
     if readRunInfo is not None:
         downloadInformation = getDownloadInformation(readRunInfo)
         downloadInformation = check_correct_links(downloadInformation)
         sequencingInformation = getSequencingInformation(readRunInfo)
-        sequencingInformation['date_download'] = time.strftime("%Y-%m-%d")
 
         if instrument_platform.lower() == 'all' or (sequencingInformation['instrument_platform'] is not None and sequencingInformation['instrument_platform'].lower() == instrument_platform.lower()):
             if download_paired_type.lower() == 'both' or (sequencingInformation['library_layout'] is not None and sequencingInformation['library_layout'].lower() == download_paired_type.lower()):
-                run_successfully, cram_index_run_successfully = downloadFiles(downloadInformation, asperaKey, download_dir, download_cram_bam_True)
+                run_successfully, cram_index_run_successfully, download_SRA = downloadFiles(downloadInformation, asperaKey, download_dir, download_cram_bam_True, SRA, SRAopt, ena_id)
+                if download_SRA:
+                    run_successfully = sra_2_fastq(download_dir, ena_id)
                 if run_successfully:
                     run_successfully, downloaded_files = get_fastq_files(download_dir, cram_index_run_successfully, threads, sequencingInformation['library_layout'])
                 if run_successfully and downloaded_files is not None:
                     run_successfully, downloaded_files = rename_move_files(downloaded_files, sequencingInformation['run_accession'], outdir, sequencingInformation['library_layout'])
+    else:
+        if SRA or SRAopt:
+            run_successfully, cram_index_run_successfully, download_SRA = downloadFiles({'fastq': None, 'submitted': None, 'cram_index': None}, asperaKey, download_dir, download_cram_bam_True, SRA, SRAopt, ena_id)
+            if download_SRA:
+                run_successfully = sra_2_fastq(download_dir, ena_id)
+            if run_successfully:
+                run_successfully, downloaded_files = get_fastq_files(download_dir, cram_index_run_successfully, threads, 'paired')
+                if not run_successfully:
+                    run_successfully, downloaded_files = get_fastq_files(download_dir, cram_index_run_successfully, threads, 'single')
+            if run_successfully and downloaded_files is not None:
+                run_successfully, downloaded_files = rename_move_files(downloaded_files, ena_id, outdir, 'paired')
+                if not run_successfully:
+                    run_successfully, downloaded_files = rename_move_files(downloaded_files, ena_id, outdir, 'single')
 
     utils.removeDirectory(download_dir)
 

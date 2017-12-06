@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 # -*- coding: utf-8 -*-
 
@@ -262,7 +262,7 @@ def runRematch(args):
     logfile, time_str = utils.start_logger(workdir)
 
     # Get general information
-    script_path = utils.general_information(logfile, version, workdir, time_str, args.doNotUseProvidedSoftware, asperaKey, args.downloadCramBam)
+    script_path = utils.general_information(logfile, version, workdir, time_str, args.doNotUseProvidedSoftware, asperaKey, args.downloadCramBam, args.SRA, args.SRAopt)
 
     # Set listIDs
     listIDs, searched_fastq_files = getListIDs(workdir, args.listIDs.name if args.listIDs is not None else None, args.taxon)
@@ -323,7 +323,7 @@ def runRematch(args):
         sequencingInformation = {'run_accession': None, 'instrument_platform': None, 'instrument_model': None, 'library_layout': None, 'library_source': None, 'extra_run_accession': None, 'nominal_length': None, 'read_count': None, 'base_count': None, 'date_download': None}
         if not searched_fastq_files:
             # Download Files
-            time_taken_fastq, run_successfully_fastq, fastq_files, sequencingInformation = download.runDownload(sample, args.downloadLibrariesType, asperaKey, sample_outdir, args.downloadCramBam, args.threads, args.downloadInstrumentPlatform)
+            time_taken_fastq, run_successfully_fastq, fastq_files, sequencingInformation = download.runDownload(sample, args.downloadLibrariesType, asperaKey, sample_outdir, args.downloadCramBam, args.threads, args.downloadInstrumentPlatform, args.SRA, args.SRAopt)
         else:
             fastq_files = listIDs[sample]
 
@@ -391,6 +391,10 @@ def main():
     parser_optional_general.add_argument('--mlst', type=str, metavar='"Streptococcus agalactiae"', help='Species name (same as in PubMLST) to be used in MLST determination. ReMatCh will use Bowtie2 very-sensitive-local mapping parameters and will recode the soft clip CIGAR flags of the first run', required=False)
     parser_optional_general.add_argument('--doNotUseProvidedSoftware', action='store_true', help='Tells ReMatCh to not use Bowtie2, Samtools and Bcftools that are provided with it')
 
+    parser_optional_download_exclusive = parser.add_mutually_exclusive_group()
+    parser_optional_download_exclusive.add_argument('-l', '--listIDs', type=argparse.FileType('r'), metavar='/path/to/list_IDs.txt', help='Path to list containing the IDs to be downloaded (one per line)', required=False)
+    parser_optional_download_exclusive.add_argument('-t', '--taxon', type=str, metavar='"Streptococcus agalactiae"', help='Taxon name for which ReMatCh will download fastq files', required=False)
+
     parser_optional_rematch = parser.add_argument_group('ReMatCh module facultative options')
     parser_optional_rematch.add_argument('--conservedSeq', action='store_true', help=argparse.SUPPRESS)
     # parser_optional_rematch.add_argument('--conservedSeq', action='store_true', help='This option can be used with conserved sequences like MLST genes to speedup the analysis by alignning reads using Bowtie2 sensitive algorithm')
@@ -421,14 +425,14 @@ def main():
     parser_optional_download.add_argument('--downloadInstrumentPlatform', type=str, metavar='ILLUMINA', help='Tells ReMatCh to download files with specific library layout (available options: %(choices)s)', choices=['ILLUMINA', 'ALL'], required=False, default='ILLUMINA')
     parser_optional_download.add_argument('--downloadCramBam', action='store_true', help='Tells ReMatCh to also download cram/bam files and convert them to fastq files')
 
+    parser_optional_SRA = parser.add_mutually_exclusive_group()
+    parser_optional_SRA.add_argument('--SRA', action='store_true', help='Tells getSeqENA.py to download reads in fastq format only from NCBI SRA database (not recommended)')
+    parser_optional_SRA.add_argument('--SRAopt', action='store_true', help='Tells getSeqENA.py to download reads from NCBI SRA if the download from ENA fails')
+
     parser_optional_softClip = parser.add_argument_group('Soft clip facultative options')
     parser_optional_softClip.add_argument('--softClip_baseQuality', type=int, metavar='N', help='Base quality phred score in reads soft clipped regions', required=False, default=7)
-    parser_optional_download.add_argument('--softClip_recodeRun', type=str, metavar='first', help='ReMatCh run to recode soft clipped regions (available options: %(choices)s)', choices=['first', 'second', 'both', 'none'], required=False, default='none')
-    parser_optional_download.add_argument('--softClip_cigarFlagRecode', type=str, metavar='M', help='CIGAR flag to recode CIGAR soft clip (available options: %(choices)s)', choices=['M', 'I', 'X'], required=False, default='X')
-
-    parser_optional_download_exclusive = parser.add_mutually_exclusive_group()
-    parser_optional_download_exclusive.add_argument('-l', '--listIDs', type=argparse.FileType('r'), metavar='/path/to/list_IDs.txt', help='Path to list containing the IDs to be downloaded (one per line)', required=False)
-    parser_optional_download_exclusive.add_argument('-t', '--taxon', type=str, metavar='"Streptococcus agalactiae"', help='Taxon name for which ReMatCh will download fastq files', required=False)
+    parser_optional_softClip.add_argument('--softClip_recodeRun', type=str, metavar='first', help='ReMatCh run to recode soft clipped regions (available options: %(choices)s)', choices=['first', 'second', 'both', 'none'], required=False, default='none')
+    parser_optional_softClip.add_argument('--softClip_cigarFlagRecode', type=str, metavar='M', help='CIGAR flag to recode CIGAR soft clip (available options: %(choices)s)', choices=['M', 'I', 'X'], required=False, default='X')
 
     args = parser.parse_args()
 
