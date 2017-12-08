@@ -270,7 +270,13 @@ def write_summary_report(outdir, reported_data_type, time_str, gene_list_referen
             seq_list = list(set(seq_list))
         writer.write('#sample' + '\t' + '\t'.join([gene_list_reference[seq] for seq in seq_list]) + '\n')
         for sample, info in genes_present.items():
-            writer.write(sample + '\t' + '\t'.join([info[seq] for seq in seq_list if seq in info else 'NF']) + '\n')
+            data = []
+            for seq in seq_list:
+                if seq in info:
+                    data.append(info[seq])
+                else:
+                    data.append('NF')
+            writer.write(sample + '\t' + '\t'.join(data) + '\n')
 
 
 def runRematch(args):
