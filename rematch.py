@@ -271,10 +271,10 @@ def write_summary_report(outdir, reported_data_type, time_str, gene_list_referen
         for info in genes_present.values():
             seq_list.extend(info.keys())
             seq_list = list(set(seq_list))
-        writer.write('#sample' + '\t' + '\t'.join([gene_list_reference[seq] for seq in seq_list]) + '\n')
+        writer.write('#sample' + '\t' + '\t'.join([gene_list_reference[seq] for seq in sorted(seq_list)]) + '\n')
         for sample, info in genes_present.items():
             data = []
-            for seq in seq_list:
+            for seq in sorted(seq_list):
                 if seq in info:
                     data.append(info[seq])
                 else:
