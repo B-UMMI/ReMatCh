@@ -206,10 +206,11 @@ def concatenate_extraSeq_2_consensus(consensus_sequence, reference_sequence, ext
     for k, values_consensus in consensus_dict.items():
         for values_reference in reference_dict.values():
             if values_reference['header'] == values_consensus['header']:
-                if extraSeq_length <= len(values_reference['sequence']):
-                    right_extra_seq = '' if extraSeq_length == 0 else values_reference['sequence'][-extraSeq_length:]
-                    consensus_dict[k]['sequence'] = values_reference['sequence'][:extraSeq_length] + consensus_dict[k]['sequence'] + right_extra_seq
-                    consensus_dict[k]['length'] += extraSeq_length + len(right_extra_seq)
+                if len(set(values_consensus['sequence'])) > 1:
+                    if extraSeq_length <= len(values_reference['sequence']):
+                        right_extra_seq = '' if extraSeq_length == 0 else values_reference['sequence'][-extraSeq_length:]
+                        consensus_dict[k]['sequence'] = values_reference['sequence'][:extraSeq_length] + consensus_dict[k]['sequence'] + right_extra_seq
+                        consensus_dict[k]['length'] += extraSeq_length + len(right_extra_seq)
 
     consensus_concatenated = os.path.join(outdir, 'consensus_concatenated_extraSeq.fasta')
     with open(consensus_concatenated, 'wt') as writer:
