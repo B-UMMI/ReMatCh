@@ -206,7 +206,7 @@ def concatenate_extraSeq_2_consensus(consensus_sequence, reference_sequence, ext
     for k, values_consensus in consensus_dict.items():
         for values_reference in reference_dict.values():
             if values_reference['header'] == values_consensus['header']:
-                if len(set(values_consensus[k]['sequence'])) > 1:
+                if len(set(consensus_dict[k]['sequence'])) > 1:
                     if extraSeq_length <= len(values_reference['sequence']):
                         right_extra_seq = '' if extraSeq_length == 0 else values_reference['sequence'][-extraSeq_length:]
                         consensus_dict[k]['sequence'] = values_reference['sequence'][:extraSeq_length] + consensus_dict[k]['sequence'] + right_extra_seq
