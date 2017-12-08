@@ -380,15 +380,22 @@ def runRematch(args):
                         os.mkdir(rematch_second_outdir)
                     consensus_concatenated_fasta, consensus_concatenated_gene_list, consensus_concatenated_dict = concatenate_extraSeq_2_consensus(consensus_files['noMatter'], reference_file, args.extraSeq, rematch_second_outdir)
                     if len(consensus_concatenated_gene_list) > 0:
-                        time_taken_rematch_second, run_successfully_rematch_second, data_by_gene, sample_data_general_second, consensus_files, consensus_sequences = rematch_module.runRematchModule(sample, fastq_files, consensus_concatenated_fasta, args.threads, rematch_second_outdir, args.extraSeq, args.minCovPresence, args.minCovCall, args.minFrequencyDominantAllele, args.minGeneCoverage, args.conservedSeq, args.debug, args.numMapLoc, args.minGeneIdentity, 'second', args.softClip_baseQuality, args.softClip_recodeRun, consensus_concatenated_dict, args.softClip_cigarFlagRecode, args.bowtieOPT, gene_list_reference, args.notWriteConsensus)
-                        if not args.debug:
-                            os.remove(consensus_concatenated_fasta)
-                        if run_successfully_rematch_second:
-                            if args.mlst is not None and (args.mlstRun == 'second' or args.mlstRun == 'all'):
-                                run_get_st(sample, mlst_dicts, consensus_sequences, args.mlstConsensus, 'second', workdir, time_str)
-                            ignore = write_data_by_gene(gene_list_reference, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'second_run', args.minGeneIdentity, 'coverage_depth', False, {})
-                            if args.reportSequenceCoverage:
-                                ignore = write_data_by_gene(gene_list_reference, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'second_run', args.minGeneIdentity, 'sequence_coverage', False, {})
+                        if args.mlst is None or (args.mlst is not None and len(consensus_concatenated_gene_list) == len(gene_list_reference)):
+                            time_taken_rematch_second, run_successfully_rematch_second, data_by_gene, sample_data_general_second, consensus_files, consensus_sequences = rematch_module.runRematchModule(sample, fastq_files, consensus_concatenated_fasta, args.threads, rematch_second_outdir, args.extraSeq, args.minCovPresence, args.minCovCall, args.minFrequencyDominantAllele, args.minGeneCoverage, args.conservedSeq, args.debug, args.numMapLoc, args.minGeneIdentity, 'second', args.softClip_baseQuality, args.softClip_recodeRun, consensus_concatenated_dict, args.softClip_cigarFlagRecode, args.bowtieOPT, gene_list_reference, args.notWriteConsensus)
+                            if not args.debug:
+                                os.remove(consensus_concatenated_fasta)
+                            if run_successfully_rematch_second:
+                                if args.mlst is not None and (args.mlstRun == 'second' or args.mlstRun == 'all'):
+                                    run_get_st(sample, mlst_dicts, consensus_sequences, args.mlstConsensus, 'second', workdir, time_str)
+                                ignore = write_data_by_gene(gene_list_reference, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'second_run', args.minGeneIdentity, 'coverage_depth', False, {})
+                                if args.reportSequenceCoverage:
+                                    ignore = write_data_by_gene(gene_list_reference, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'second_run', args.minGeneIdentity, 'sequence_coverage', False, {})
+                        else:
+                            print 'Some sequences missing after ReMatCh module first run. Second run will not be performed'
+                            if os.path.isfile(consensus_concatenated_fasta):
+                                os.remove(consensus_concatenated_fasta)
+                            if os.path.isdir(rematch_second_outdir):
+                                utils.removeDirectory(rematch_second_outdir)
                     else:
                         print 'No sequences left after ReMatCh module first run. Second run will not be performed'
                         if os.path.isfile(consensus_concatenated_fasta):
