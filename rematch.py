@@ -172,7 +172,7 @@ def write_data_by_gene(gene_list_reference, minimum_gene_coverage, sample, data_
         results = {}
         headers = []
         for i in data_by_gene:
-            results[data_by_gene[i]['header']] = format_gene_info(data_by_gene[i], minimum_gene_coverage, minimum_gene_identity, reported_data_type, summary, sample, genes_present)
+            results[data_by_gene[i]['header']], genes_present = format_gene_info(data_by_gene[i], minimum_gene_coverage, minimum_gene_identity, reported_data_type, summary, sample, genes_present)
             headers.append(data_by_gene[i]['header'])
 
         if len(headers) != gene_list_reference:
