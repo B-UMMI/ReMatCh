@@ -861,7 +861,7 @@ def get_sequence_information(fasta_file, length_extra_seq):
                             if temp_sequence_dict.values()[0]['length'] - 2 * length_extra_seq > 0:
                                 sequence_dict[temp_sequence_dict.keys()[0]] = temp_sequence_dict.values()[0]
                             else:
-                                print '{header} sequence ignored due to length <= 0'.format(header=temp_sequence_dict.values()[0]['header'])
+                                print '{header} sequence ignored due to length = 0'.format(header=temp_sequence_dict.values()[0]['header'])
                                 del headers[temp_sequence_dict.values()[0]['header']]
                             temp_sequence_dict = {}
 
