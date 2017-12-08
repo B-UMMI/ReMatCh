@@ -372,7 +372,7 @@ def runRematch(args):
                     run_get_st(sample, mlst_dicts, consensus_sequences, args.mlstConsensus, 'first', workdir, time_str)
                 genes_present_coverage_depth = write_data_by_gene(gene_list_reference, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'first_run', args.minGeneIdentity, 'coverage_depth', args.summary, genes_present_coverage_depth)
                 if args.reportSequenceCoverage:
-                    genes_present_sequence_coverage = write_data_by_gene(gene_list_reference, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'first_run', args.minGeneIdentity, 'sequence_coverage', genes_present_sequence_coverage)
+                    genes_present_sequence_coverage = write_data_by_gene(gene_list_reference, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'first_run', args.minGeneIdentity, 'sequence_coverage', args.summary, genes_present_sequence_coverage)
                 if args.doubleRun:
                     rematch_second_outdir = os.path.join(sample_outdir, 'rematch_second_run', '')
                     if not os.path.isdir(rematch_second_outdir):
@@ -385,9 +385,9 @@ def runRematch(args):
                         if run_successfully_rematch_second:
                             if args.mlst is not None and (args.mlstRun == 'second' or args.mlstRun == 'all'):
                                 run_get_st(sample, mlst_dicts, consensus_sequences, args.mlstConsensus, 'second', workdir, time_str)
-                            write_data_by_gene(gene_list_reference, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'second_run', args.minGeneIdentity, 'coverage_depth')
+                            ignore = write_data_by_gene(gene_list_reference, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'second_run', args.minGeneIdentity, 'coverage_depth', False, {})
                             if args.reportSequenceCoverage:
-                                write_data_by_gene(gene_list_reference, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'second_run', args.minGeneIdentity, 'sequence_coverage')
+                                ignore = write_data_by_gene(gene_list_reference, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'second_run', args.minGeneIdentity, 'sequence_coverage', False, {})
                     else:
                         print 'No sequences left after ReMatCh module first run. Second run will not be performed'
                         if os.path.isfile(consensus_concatenated_fasta):
