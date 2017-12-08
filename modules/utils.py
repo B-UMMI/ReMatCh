@@ -106,7 +106,9 @@ def checkPrograms(programs_version_dictionary):
                         else:
                             program_found_version[2] = program_found_version[2].split('_')[0]
                     for i in range(0, len(program_version_required)):
-                        if int(program_found_version[i]) < int(program_version_required[i]):
+                        if int(program_found_version[i]) >= int(program_version_required[i]):
+                            break
+                        else:
                             listMissings.append('It is required ' + program + ' with version ' + programs[program][1] + ' ' + programs[program][2])
                 else:
                     if version_line != programs[program][2]:

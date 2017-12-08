@@ -150,6 +150,10 @@ The sample files are required to be in "fq.gz" (or "fastq.gz") format.
                             sequences with high percentage of target reference gene
                             sequence covered (default: False)
       --notWriteConsensus   Do not write consensus sequences (default: False)
+      --summary             Produce extra report files containing only sequences
+                            present in at least one sample (usefull when using a
+                            large number of reference sequences, and only for
+                            first run) (default: False)
       --bowtieOPT "--no-mixed"
                             Extra Bowtie2 options (default: None)
       --debug               DeBug Mode: do not remove temporary files (default: False)
