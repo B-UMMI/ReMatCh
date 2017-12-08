@@ -263,7 +263,7 @@ def run_get_st(sample, mlst_dicts, consensus_sequences, mlstConsensus, run_times
 
 
 def write_summary_report(outdir, reported_data_type, time_str, gene_list_reference, genes_present):
-    with open(os.path.join(outdir, 'summary.{reported_data_type}.{time_str}.tab'.format(reported_data_type, time_str)), 'wt') as writer:
+    with open(os.path.join(outdir, 'summary.{reported_data_type}.{time_str}.tab'.format(reported_data_type=reported_data_type, time_str=time_str)), 'wt') as writer:
         seq_list = []
         for info in genes_present.values():
             seq_list.extend(info.keys())
