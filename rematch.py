@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 # -*- coding: utf-8 -*-
 
@@ -9,7 +9,7 @@ and consensus sequences production
 
 Copyright (C) 2017 Miguel Machado <mpmachado@medicina.ulisboa.pt>
 
-Last modified: April 12, 2017
+Last modified: December 09, 2017
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ import modules.rematch_module as rematch_module
 import modules.checkMLST as checkMLST
 
 
-version = '3.2'
+version = '3.3'
 
 
 def searchFastqFiles(directory):
@@ -133,20 +133,29 @@ def getListIDs(workdir, fileListIDs, taxon_name):
     return listIDs, searched_fastq_files
 
 
-def format_gene_info(gene_specific_info, minimum_gene_coverage, minimum_gene_identity, reported_data_type):
+def format_gene_info(gene_specific_info, minimum_gene_coverage, minimum_gene_identity, reported_data_type, summary, sample, genes_present):
     info = None
     if gene_specific_info['gene_coverage'] >= minimum_gene_coverage and gene_specific_info['gene_identity'] >= minimum_gene_identity:
+        if summary and sample not in genes_present:
+            genes_present[sample] = {}
+
         if gene_specific_info['gene_number_positions_multiple_alleles'] == 0:
-            info = str(gene_specific_info[reported_data_type])
+            s = str(gene_specific_info[reported_data_type])
+            info = str(s)
+            if summary:
+                genes_present[sample][gene_specific_info['header']] = str(s)
         else:
-            info = 'multiAlleles_' + str(gene_specific_info[reported_data_type])
+            s = 'multiAlleles_' + str(gene_specific_info[reported_data_type])
+            info = str(s)
+            if summary:
+                genes_present[sample][gene_specific_info['header']] = str(s)
     else:
         info = 'absent_' + str(gene_specific_info[reported_data_type])
 
-    return info
+    return info, genes_present
 
 
-def write_data_by_gene(gene_list_reference, minimum_gene_coverage, sample, data_by_gene, outdir, time_str, run_times, minimum_gene_identity, reported_data_type):
+def write_data_by_gene(gene_list_reference, minimum_gene_coverage, sample, data_by_gene, outdir, time_str, run_times, minimum_gene_identity, reported_data_type, summary, genes_present):
     combined_report = os.path.join(outdir, 'combined_report.data_by_gene.' + run_times + '.' + reported_data_type + '.' + time_str + '.tab')
 
     if reported_data_type == 'coverage_depth':
@@ -156,14 +165,14 @@ def write_data_by_gene(gene_list_reference, minimum_gene_coverage, sample, data_
 
     combined_report_exist = os.path.isfile(combined_report)
     with open(combined_report, 'at') as writer:
-        seq_list = gene_list_reference.keys()
+        seq_list = sorted(gene_list_reference.keys())
         if not combined_report_exist:
             writer.write('#sample' + '\t' + '\t'.join([gene_list_reference[seq] for seq in seq_list]) + '\n')
 
         results = {}
         headers = []
         for i in data_by_gene:
-            results[data_by_gene[i]['header']] = format_gene_info(data_by_gene[i], minimum_gene_coverage, minimum_gene_identity, reported_data_type)
+            results[data_by_gene[i]['header']], genes_present = format_gene_info(data_by_gene[i], minimum_gene_coverage, minimum_gene_identity, reported_data_type, summary, sample, genes_present)
             headers.append(data_by_gene[i]['header'])
 
         if len(headers) != gene_list_reference:
@@ -172,6 +181,8 @@ def write_data_by_gene(gene_list_reference, minimum_gene_coverage, sample, data_
                     results[gene] = 'NA'
 
         writer.write(sample + '\t' + '\t'.join([results[seq] for seq in seq_list]) + '\n')
+
+    return genes_present
 
 
 def write_sample_report(sample, outdir, time_str, fileSize, run_successfully_fastq, run_successfully_rematch_first, run_successfully_rematch_second, time_taken_fastq, time_taken_rematch_first, time_taken_rematch_second, time_taken_sample, sequencingInformation, sample_data_general_first, sample_data_general_second, fastq_used):
@@ -192,13 +203,16 @@ def write_sample_report(sample, outdir, time_str, fileSize, run_successfully_fas
 def concatenate_extraSeq_2_consensus(consensus_sequence, reference_sequence, extraSeq_length, outdir):
     reference_dict, ignore, ignore = rematch_module.get_sequence_information(reference_sequence, extraSeq_length)
     consensus_dict, genes, ignore = rematch_module.get_sequence_information(consensus_sequence, 0)
+    number_consensus_with_sequences = 0
     for k, values_consensus in consensus_dict.items():
         for values_reference in reference_dict.values():
             if values_reference['header'] == values_consensus['header']:
-                if extraSeq_length <= len(values_reference['sequence']):
-                    right_extra_seq = '' if extraSeq_length == 0 else values_reference['sequence'][-extraSeq_length:]
-                    consensus_dict[k]['sequence'] = values_reference['sequence'][:extraSeq_length] + consensus_dict[k]['sequence'] + right_extra_seq
-                    consensus_dict[k]['length'] += extraSeq_length + len(right_extra_seq)
+                if len(set(consensus_dict[k]['sequence'])) > 1:
+                    number_consensus_with_sequences += 1
+                    if extraSeq_length <= len(values_reference['sequence']):
+                        right_extra_seq = '' if extraSeq_length == 0 else values_reference['sequence'][-extraSeq_length:]
+                        consensus_dict[k]['sequence'] = values_reference['sequence'][:extraSeq_length] + consensus_dict[k]['sequence'] + right_extra_seq
+                        consensus_dict[k]['length'] += extraSeq_length + len(right_extra_seq)
 
     consensus_concatenated = os.path.join(outdir, 'consensus_concatenated_extraSeq.fasta')
     with open(consensus_concatenated, 'wt') as writer:
@@ -208,7 +222,7 @@ def concatenate_extraSeq_2_consensus(consensus_sequence, reference_sequence, ext
             for line in fasta_sequence_lines:
                 writer.write(line + '\n')
 
-    return consensus_concatenated, genes, consensus_dict
+    return consensus_concatenated, genes, consensus_dict, number_consensus_with_sequences
 
 
 def clean_headers_reference_file(reference_file, outdir, extraSeq):
@@ -251,6 +265,23 @@ def run_get_st(sample, mlst_dicts, consensus_sequences, mlstConsensus, run_times
         print 'ST found for ' + mlstConsensus + ' consensus: ' + str(st) + ' (' + alleles_profile + ')'
 
 
+def write_summary_report(outdir, reported_data_type, time_str, gene_list_reference, genes_present):
+    with open(os.path.join(outdir, 'summary.{reported_data_type}.{time_str}.tab'.format(reported_data_type=reported_data_type, time_str=time_str)), 'wt') as writer:
+        seq_list = []
+        for info in genes_present.values():
+            seq_list.extend(info.keys())
+            seq_list = list(set(seq_list))
+        writer.write('#sample' + '\t' + '\t'.join([gene_list_reference[seq] for seq in sorted(seq_list)]) + '\n')
+        for sample, info in genes_present.items():
+            data = []
+            for seq in sorted(seq_list):
+                if seq in info:
+                    data.append(info[seq])
+                else:
+                    data.append('NF')
+            writer.write(sample + '\t' + '\t'.join(data) + '\n')
+
+
 def runRematch(args):
     workdir = os.path.abspath(args.workdir)
     if not os.path.isdir(workdir):
@@ -262,7 +293,7 @@ def runRematch(args):
     logfile, time_str = utils.start_logger(workdir)
 
     # Get general information
-    script_path = utils.general_information(logfile, version, workdir, time_str, args.doNotUseProvidedSoftware, asperaKey, args.downloadCramBam)
+    script_path = utils.general_information(logfile, version, workdir, time_str, args.doNotUseProvidedSoftware, asperaKey, args.downloadCramBam, args.SRA, args.SRAopt)
 
     # Set listIDs
     listIDs, searched_fastq_files = getListIDs(workdir, args.listIDs.name if args.listIDs is not None else None, args.taxon)
@@ -309,6 +340,8 @@ def runRematch(args):
     # To use in combined report
 
     number_samples_successfully = 0
+    genes_present_coverage_depth = {}
+    genes_present_sequence_coverage = {}
     for sample in listIDs:
         sample_start_time = time.time()
         print '\n\n' + 'Sample ID: ' + sample
@@ -323,7 +356,7 @@ def runRematch(args):
         sequencingInformation = {'run_accession': None, 'instrument_platform': None, 'instrument_model': None, 'library_layout': None, 'library_source': None, 'extra_run_accession': None, 'nominal_length': None, 'read_count': None, 'base_count': None, 'date_download': None}
         if not searched_fastq_files:
             # Download Files
-            time_taken_fastq, run_successfully_fastq, fastq_files, sequencingInformation = download.runDownload(sample, args.downloadLibrariesType, asperaKey, sample_outdir, args.downloadCramBam, args.threads, args.downloadInstrumentPlatform)
+            time_taken_fastq, run_successfully_fastq, fastq_files, sequencingInformation = download.runDownload(sample, args.downloadLibrariesType, asperaKey, sample_outdir, args.downloadCramBam, args.threads, args.downloadInstrumentPlatform, args.SRA, args.SRAopt)
         else:
             fastq_files = listIDs[sample]
 
@@ -340,24 +373,31 @@ def runRematch(args):
             if run_successfully_rematch_first:
                 if args.mlst is not None and (args.mlstRun == 'first' or args.mlstRun == 'all'):
                     run_get_st(sample, mlst_dicts, consensus_sequences, args.mlstConsensus, 'first', workdir, time_str)
-                write_data_by_gene(gene_list_reference, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'first_run', args.minGeneIdentity, 'coverage_depth')
+                genes_present_coverage_depth = write_data_by_gene(gene_list_reference, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'first_run', args.minGeneIdentity, 'coverage_depth', args.summary, genes_present_coverage_depth)
                 if args.reportSequenceCoverage:
-                    write_data_by_gene(gene_list_reference, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'first_run', args.minGeneIdentity, 'sequence_coverage')
+                    genes_present_sequence_coverage = write_data_by_gene(gene_list_reference, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'first_run', args.minGeneIdentity, 'sequence_coverage', args.summary, genes_present_sequence_coverage)
                 if args.doubleRun:
                     rematch_second_outdir = os.path.join(sample_outdir, 'rematch_second_run', '')
                     if not os.path.isdir(rematch_second_outdir):
                         os.mkdir(rematch_second_outdir)
-                    consensus_concatenated_fasta, consensus_concatenated_gene_list, consensus_concatenated_dict = concatenate_extraSeq_2_consensus(consensus_files['noMatter'], reference_file, args.extraSeq, rematch_second_outdir)
+                    consensus_concatenated_fasta, consensus_concatenated_gene_list, consensus_concatenated_dict, number_consensus_with_sequences = concatenate_extraSeq_2_consensus(consensus_files['noMatter'], reference_file, args.extraSeq, rematch_second_outdir)
                     if len(consensus_concatenated_gene_list) > 0:
-                        time_taken_rematch_second, run_successfully_rematch_second, data_by_gene, sample_data_general_second, consensus_files, consensus_sequences = rematch_module.runRematchModule(sample, fastq_files, consensus_concatenated_fasta, args.threads, rematch_second_outdir, args.extraSeq, args.minCovPresence, args.minCovCall, args.minFrequencyDominantAllele, args.minGeneCoverage, args.conservedSeq, args.debug, args.numMapLoc, args.minGeneIdentity, 'second', args.softClip_baseQuality, args.softClip_recodeRun, consensus_concatenated_dict, args.softClip_cigarFlagRecode, args.bowtieOPT, gene_list_reference, args.notWriteConsensus)
-                        if not args.debug:
-                            os.remove(consensus_concatenated_fasta)
-                        if run_successfully_rematch_second:
-                            if args.mlst is not None and (args.mlstRun == 'second' or args.mlstRun == 'all'):
-                                run_get_st(sample, mlst_dicts, consensus_sequences, args.mlstConsensus, 'second', workdir, time_str)
-                            write_data_by_gene(gene_list_reference, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'second_run', args.minGeneIdentity, 'coverage_depth')
-                            if args.reportSequenceCoverage:
-                                write_data_by_gene(gene_list_reference, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'second_run', args.minGeneIdentity, 'sequence_coverage')
+                        if args.mlst is None or (args.mlst is not None and number_consensus_with_sequences == len(gene_list_reference)):
+                            time_taken_rematch_second, run_successfully_rematch_second, data_by_gene, sample_data_general_second, consensus_files, consensus_sequences = rematch_module.runRematchModule(sample, fastq_files, consensus_concatenated_fasta, args.threads, rematch_second_outdir, args.extraSeq, args.minCovPresence, args.minCovCall, args.minFrequencyDominantAllele, args.minGeneCoverage, args.conservedSeq, args.debug, args.numMapLoc, args.minGeneIdentity, 'second', args.softClip_baseQuality, args.softClip_recodeRun, consensus_concatenated_dict, args.softClip_cigarFlagRecode, args.bowtieOPT, gene_list_reference, args.notWriteConsensus)
+                            if not args.debug:
+                                os.remove(consensus_concatenated_fasta)
+                            if run_successfully_rematch_second:
+                                if args.mlst is not None and (args.mlstRun == 'second' or args.mlstRun == 'all'):
+                                    run_get_st(sample, mlst_dicts, consensus_sequences, args.mlstConsensus, 'second', workdir, time_str)
+                                ignore = write_data_by_gene(gene_list_reference, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'second_run', args.minGeneIdentity, 'coverage_depth', False, {})
+                                if args.reportSequenceCoverage:
+                                    ignore = write_data_by_gene(gene_list_reference, args.minGeneCoverage, sample, data_by_gene, workdir, time_str, 'second_run', args.minGeneIdentity, 'sequence_coverage', False, {})
+                        else:
+                            print 'Some sequences missing after ReMatCh module first run. Second run will not be performed'
+                            if os.path.isfile(consensus_concatenated_fasta):
+                                os.remove(consensus_concatenated_fasta)
+                            if os.path.isdir(rematch_second_outdir):
+                                utils.removeDirectory(rematch_second_outdir)
                     else:
                         print 'No sequences left after ReMatCh module first run. Second run will not be performed'
                         if os.path.isfile(consensus_concatenated_fasta):
@@ -377,6 +417,11 @@ def runRematch(args):
         if all([run_successfully_fastq is not False, run_successfully_rematch_first is not False, run_successfully_rematch_second is not False]):
             number_samples_successfully += 1
 
+    if args.summary:
+        write_summary_report(workdir, 'coverage_depth', time_str, gene_list_reference, genes_present_coverage_depth)
+        if args.reportSequenceCoverage:
+            write_summary_report(workdir, 'sequence_coverage', time_str, gene_list_reference, genes_present_sequence_coverage)
+
     return number_samples_successfully, len(listIDs)
 
 
@@ -391,6 +436,10 @@ def main():
     parser_optional_general.add_argument('--mlst', type=str, metavar='"Streptococcus agalactiae"', help='Species name (same as in PubMLST) to be used in MLST determination. ReMatCh will use Bowtie2 very-sensitive-local mapping parameters and will recode the soft clip CIGAR flags of the first run', required=False)
     parser_optional_general.add_argument('--doNotUseProvidedSoftware', action='store_true', help='Tells ReMatCh to not use Bowtie2, Samtools and Bcftools that are provided with it')
 
+    parser_optional_download_exclusive = parser.add_mutually_exclusive_group()
+    parser_optional_download_exclusive.add_argument('-l', '--listIDs', type=argparse.FileType('r'), metavar='/path/to/list_IDs.txt', help='Path to list containing the IDs to be downloaded (one per line)', required=False)
+    parser_optional_download_exclusive.add_argument('-t', '--taxon', type=str, metavar='"Streptococcus agalactiae"', help='Taxon name for which ReMatCh will download fastq files', required=False)
+
     parser_optional_rematch = parser.add_argument_group('ReMatCh module facultative options')
     parser_optional_rematch.add_argument('--conservedSeq', action='store_true', help=argparse.SUPPRESS)
     # parser_optional_rematch.add_argument('--conservedSeq', action='store_true', help='This option can be used with conserved sequences like MLST genes to speedup the analysis by alignning reads using Bowtie2 sensitive algorithm')
@@ -404,6 +453,7 @@ def main():
     # parser_optional_rematch.add_argument('--numMapLoc', type=int, metavar='N', help='Maximum number of locations to which a read can map (sometimes useful when mapping against similar sequences)', required=False, default=1)
     parser_optional_rematch.add_argument('--doubleRun', action='store_true', help='Tells ReMatCh to run a second time using as reference the noMatter consensus sequence produced in the first run. This will improve consensus sequence determination for sequences with high percentage of target reference gene sequence covered')
     parser_optional_rematch.add_argument('--reportSequenceCoverage', action='store_true', help='Produce an extra combined_report.data_by_gene with the sequence coverage instead of coverage depth')
+    parser_optional_rematch.add_argument('--summary', action='store_true', help='Produce extra report files containing only sequences present in at least one sample (usefull when using a large number of reference sequences, and only for first run)')
     parser_optional_rematch.add_argument('--notWriteConsensus', action='store_true', help='Do not write consensus sequences')
     parser_optional_rematch.add_argument('--bowtieOPT', type=str, metavar='"--no-mixed"', help='Extra Bowtie2 options', required=False)
     parser_optional_rematch.add_argument('--debug', action='store_true', help='DeBug Mode: do not remove temporary files')
@@ -421,14 +471,14 @@ def main():
     parser_optional_download.add_argument('--downloadInstrumentPlatform', type=str, metavar='ILLUMINA', help='Tells ReMatCh to download files with specific library layout (available options: %(choices)s)', choices=['ILLUMINA', 'ALL'], required=False, default='ILLUMINA')
     parser_optional_download.add_argument('--downloadCramBam', action='store_true', help='Tells ReMatCh to also download cram/bam files and convert them to fastq files')
 
+    parser_optional_SRA = parser.add_mutually_exclusive_group()
+    parser_optional_SRA.add_argument('--SRA', action='store_true', help='Tells getSeqENA.py to download reads in fastq format only from NCBI SRA database (not recommended)')
+    parser_optional_SRA.add_argument('--SRAopt', action='store_true', help='Tells getSeqENA.py to download reads from NCBI SRA if the download from ENA fails')
+
     parser_optional_softClip = parser.add_argument_group('Soft clip facultative options')
     parser_optional_softClip.add_argument('--softClip_baseQuality', type=int, metavar='N', help='Base quality phred score in reads soft clipped regions', required=False, default=7)
-    parser_optional_download.add_argument('--softClip_recodeRun', type=str, metavar='first', help='ReMatCh run to recode soft clipped regions (available options: %(choices)s)', choices=['first', 'second', 'both', 'none'], required=False, default='none')
-    parser_optional_download.add_argument('--softClip_cigarFlagRecode', type=str, metavar='M', help='CIGAR flag to recode CIGAR soft clip (available options: %(choices)s)', choices=['M', 'I', 'X'], required=False, default='X')
-
-    parser_optional_download_exclusive = parser.add_mutually_exclusive_group()
-    parser_optional_download_exclusive.add_argument('-l', '--listIDs', type=argparse.FileType('r'), metavar='/path/to/list_IDs.txt', help='Path to list containing the IDs to be downloaded (one per line)', required=False)
-    parser_optional_download_exclusive.add_argument('-t', '--taxon', type=str, metavar='"Streptococcus agalactiae"', help='Taxon name for which ReMatCh will download fastq files', required=False)
+    parser_optional_softClip.add_argument('--softClip_recodeRun', type=str, metavar='first', help='ReMatCh run to recode soft clipped regions (available options: %(choices)s)', choices=['first', 'second', 'both', 'none'], required=False, default='none')
+    parser_optional_softClip.add_argument('--softClip_cigarFlagRecode', type=str, metavar='M', help='CIGAR flag to recode CIGAR soft clip (available options: %(choices)s)', choices=['M', 'I', 'X'], required=False, default='X')
 
     args = parser.parse_args()
 

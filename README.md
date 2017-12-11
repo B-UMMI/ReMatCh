@@ -29,13 +29,8 @@ Table of Contents
  - [Contact](#contact)
 
 ## Dependencies
-**Optional**
 
-Required to download sequence data from ENA database:
- - *Aspera Connect 2* >= v3.6.1
- - *gzip* >= v1.6 (normally found in Linux OS) (important for bam/cram conversion into fastq)
- - *wget* (normally found in Linux OS)
-
+**Mandatory**  
 Required to run ReMatch analysis
  - *Bowtie2* >= v2.2.9
  - *Samtools* = v1.3.1
@@ -43,6 +38,14 @@ Required to run ReMatch analysis
 
 These three executables are provided, but user's own executables can be used by providing `--doNotUseProvidedSoftware` option.
 
+**Optional**  
+Required to download sequence data from ENA/SRA database:
+ - *Aspera Connect 2* >= v3.6.1
+ - *wget* (normally found in Linux OS)
+ - *gzip* >= v1.6 (normally found in Linux OS)
+ - _curl_ (optional)
+ - [_SRA toolkit_](https://trace.ncbi.nlm.nih.gov/Traces/sra/sra.cgi?view=software) >= v2.8.2 (optional) (for SRA interaction)
+ - _GNU Awk_ (optional) (normally found in Linux OS) (for SRA interaction)
 
 ## Installation
 ReMatCh is a standalone python script and does not require any installation. Simply clone the git repository:
@@ -67,8 +70,9 @@ The sample files are required to be in "fq.gz" (or "fastq.gz") format.
                       (-r /path/to/reference_sequence.fasta | --mlstReference)
                       [-w /path/to/workdir/directory/] [-j N]
                       [--mlst "Streptococcus agalactiae"]
-                      [--doNotUseProvidedSoftware] [--extraSeq N]
-                      [--minCovPresence N] [--minCovCall N]
+                      [--doNotUseProvidedSoftware]
+                      [-l /path/to/list_IDs.txt | -t "Streptococcus agalactiae"]
+                      [--extraSeq N] [--minCovPresence N] [--minCovCall N]
                       [--minFrequencyDominantAllele 0.6] [--minGeneCoverage N]
                       [--minGeneIdentity N] [--doubleRun] [--notWriteConsensus]
                       [--bowtieOPT] [--debug]
@@ -77,7 +81,7 @@ The sample files are required to be in "fq.gz" (or "fastq.gz") format.
                       [-a /path/to/asperaweb_id_dsa.openssh] [-k]
                       [--downloadLibrariesType PAIRED]
                       [--downloadInstrumentPlatform ILLUMINA] [--downloadCramBam]
-                      [-l /path/to/list_IDs.txt | -t "Streptococcus agalactiae"]
+                      [--SRA | --SRAopt]
 
     Reads mapping against target sequences, checking mapping and consensus
     sequences production
@@ -111,6 +115,14 @@ The sample files are required to be in "fq.gz" (or "fastq.gz") format.
                             Tells ReMatCh to not use Bowtie2, Samtools and
                             Bcftools that are provided with it (default: False)
 
+    Download list options (one of the following):
+      -l /path/to/list_IDs.txt, --listIDs /path/to/list_IDs.txt
+                            Path to list containing the IDs to be downloaded (one
+                            per line) (default: None)
+      -t "Streptococcus agalactiae", --taxon "Streptococcus agalactiae"
+                            Taxon name for which ReMatCh will download fastq files
+                            (default: None)
+
     ReMatCh module facultative options:
       --extraSeq N          Sequence length added to both ends of target sequences
                             (usefull to improve reads mapping to the target one)
@@ -138,6 +150,10 @@ The sample files are required to be in "fq.gz" (or "fastq.gz") format.
                             sequences with high percentage of target reference gene
                             sequence covered (default: False)
       --notWriteConsensus   Do not write consensus sequences (default: False)
+      --summary             Produce extra report files containing only sequences
+                            present in at least one sample (usefull when using a
+                            large number of reference sequences, and only for
+                            first run) (default: False)
       --bowtieOPT "--no-mixed"
                             Extra Bowtie2 options (default: None)
       --debug               DeBug Mode: do not remove temporary files (default: False)
@@ -178,15 +194,12 @@ The sample files are required to be in "fq.gz" (or "fastq.gz") format.
                             layout (default: ILLUMINA)
       --downloadCramBam     Tells ReMatCh to also download cram/bam files and
                             convert them to fastq files (default: False)
-
-
-    Download list options (one of the following):
-      -l /path/to/list_IDs.txt, --listIDs /path/to/list_IDs.txt
-                            Path to list containing the IDs to be downloaded (one
-                            per line) (default: None)
-      -t "Streptococcus agalactiae", --taxon "Streptococcus agalactiae"
-                            Taxon name for which ReMatCh will download fastq files
-                            (default: None)
+                            SRA download options (one of the following):
+      --SRA                 Tells getSeqENA.py to download reads in fastq format
+                            only from NCBI SRA database (not recommended)
+                            (default: False)
+      --SRAopt              Tells getSeqENA.py to download reads from NCBI SRA
+                            if the download from ENA fails
 
 
 ### Usage Examples
