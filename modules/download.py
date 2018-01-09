@@ -91,7 +91,7 @@ def downloadWithAspera(aspera_file_path, asperaKey, outdir, pickle_prefix, SRA, 
 
 @utils.trace_unhandled_exceptions
 def downloadWithWget(ftp_file_path, outdir, pickle_prefix, SRA, ena_id):
-    command = ['wget', '--tries=2', '', '-O', '']
+    command = ['wget', '--tries=1', '', '-O', '']
     if not SRA:
         command[2] = ftp_file_path
         file_download = ftp_file_path.rsplit('/', 1)[1]
@@ -124,7 +124,7 @@ def downloadWithSRAprefetch(asperaKey, outdir, pickle_prefix, ena_id):
 
 @utils.trace_unhandled_exceptions
 def downloadWithCurl(ftp_file_path, outdir, pickle_prefix, SRA, ena_id):
-    command = ['curl', '--retry', '2', '', '-o', '']
+    command = ['curl', '--retry', '1', '', '-o', '']
     if not SRA:
         command[3] = ftp_file_path
         file_download = ftp_file_path.rsplit('/', 1)[1]
@@ -208,6 +208,7 @@ def download(downloadInformation_type, asperaKey, outdir, SRA, SRAopt, ena_id):
                 if not run_successfully:
                     downloadWithWget(None, outdir, pickle_prefix, SRA or SRAopt, ena_id)
                     run_successfully = getPickleRunSuccessfully(outdir, pickle_prefix)
+
         if run_successfully:
             download_SRA = True
 
@@ -277,7 +278,7 @@ def alignmentToFastq(alignment_file, outdir, threads, pair_end_type):
             elif pair_end_type.lower() == 'single':
                 outfiles = [str(fastq_basename + '.fq')]
 
-    if os.path.isfile(bamFile):
+    if bamFile is not None and os.path.isfile(bamFile):
         os.remove(bamFile)
 
     return run_successfully, outfiles
@@ -482,7 +483,7 @@ def sra_2_fastq(download_dir, ena_id):
     command = ['fastq-dump', '-I', '-O', download_dir, '--split-files', '{download_dir}{ena_id}.sra'.format(download_dir=download_dir, ena_id=ena_id)]
     run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, False, 3600, True)
     if run_successfully:
-        files = [os.path.join(download_dir, f) for f in os.listdir(download_dir) if not f.startswith('.') and os.path.isfile(os.path.join(download_dir, f)) and not f.endswith('.sra')]
+        files = [os.path.join(download_dir, f) for f in os.listdir(download_dir) if not f.startswith('.') and os.path.isfile(os.path.join(download_dir, f)) and f.endswith('.fastq')]
 
         pool = multiprocessing.Pool(processes=2)
         results = []

@@ -74,7 +74,8 @@ The sample files are required to be in "fq.gz" (or "fastq.gz") format.
                       [-l /path/to/list_IDs.txt | -t "Streptococcus agalactiae"]
                       [--extraSeq N] [--minCovPresence N] [--minCovCall N]
                       [--minFrequencyDominantAllele 0.6] [--minGeneCoverage N]
-                      [--minGeneIdentity N] [--doubleRun] [--notWriteConsensus]
+                      [--minGeneIdentity N] [--doubleRun]
+                      [--reportSequenceCoverage] [--notWriteConsensus]
                       [--bowtieOPT] [--debug]
                       [--mlstSchemaNumber N] [--mlstConsensus noMatter]
                       [--mlstRun first]
@@ -149,6 +150,10 @@ The sample files are required to be in "fq.gz" (or "fastq.gz") format.
                             This will improve consensus sequence determination for
                             sequences with high percentage of target reference gene
                             sequence covered (default: False)
+      --reportSequenceCoverage
+                            Produce an extra combined_report.data_by_gene with
+                            the sequence coverage instead of coverage depth
+                            (default: False)
       --notWriteConsensus   Do not write consensus sequences (default: False)
       --summary             Produce extra report files containing only sequences
                             present in at least one sample (usefull when using a

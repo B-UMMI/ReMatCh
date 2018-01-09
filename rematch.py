@@ -7,9 +7,9 @@ rematch.py - Reads mapping against target sequences, checking mapping
 and consensus sequences production
 <https://github.com/B-UMMI/ReMatCh/>
 
-Copyright (C) 2017 Miguel Machado <mpmachado@medicina.ulisboa.pt>
+Copyright (C) 2018 Miguel Machado <mpmachado@medicina.ulisboa.pt>
 
-Last modified: December 09, 2017
+Last modified: January 09, 2018
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
