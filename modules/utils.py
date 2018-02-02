@@ -246,10 +246,10 @@ def trace_unhandled_exceptions(func):
                                  'message': exc_value.message,  # or see traceback._some_str()
                                 }
             del (exc_type, exc_value, exc_traceback)
-            traceback_template = '''
+            traceback_template = 
             Traceback (most recent call last):
             File "%(filename)s", line %(lineno)s, in %(name)s %(type)s: %(message)s\n
-            '''
+            
             traceback.print_exc()
             print(traceback.format_exc())
             print(traceback_template % traceback_details)
