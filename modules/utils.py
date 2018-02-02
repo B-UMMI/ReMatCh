@@ -228,6 +228,7 @@ def extractVariableFromPickle(pickleFile):
     return variable
 
 
+'''
 def trace_unhandled_exceptions(func):
     @functools.wraps(func)
     def wrapped_func(*args, **kwargs):
@@ -252,6 +253,21 @@ def trace_unhandled_exceptions(func):
             traceback.print_exc()
             print(traceback.format_exc())
             print(traceback_template % traceback_details)
+    return wrapped_func
+'''
+
+
+def trace_unhandled_exceptions(func):
+    @functools.wraps(func)
+    def wrapped_func(*args, **kwargs):
+        try:
+            func(*args, **kwargs)
+        except Exception as e:
+            print('Exception in ' + func.__name__)
+            print(e)
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            print(exc_type, fname, exc_tb.tb_lineno)
     return wrapped_func
 
 
