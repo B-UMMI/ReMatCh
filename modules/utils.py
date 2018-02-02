@@ -265,9 +265,10 @@ def trace_unhandled_exceptions(func):
         except Exception as e:
             print('Exception in ' + func.__name__)
             print(e)
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            print(exc_type, fname, exc_tb.tb_lineno)
+
+            exc_type, exc_value, exc_tb = sys.exc_info()
+            # print(exc_value)
+            print(''.join(traceback.format_exception(exc_type, exc_value, exc_tb)))
     return wrapped_func
 
 
