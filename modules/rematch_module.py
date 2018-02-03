@@ -718,18 +718,12 @@ def get_coverage_report(coverage, sequence_length, minimum_depth_presence, minim
     counter = 1
     while counter <= sequence_length:
         if counter > length_extra_seq and counter <= sequence_length - length_extra_seq:
-            if counter not in coverage:
+            if coverage[counter] < minimum_depth_presence:
                 count_absent += 1
-                count_lowCoverage += 1
-                print('{position} position not found'.format(position=counter))
-                # TODO: remove print line
             else:
-                if coverage[counter] < minimum_depth_presence:
-                    count_absent += 1
-                else:
-                    if coverage[counter] < minimum_depth_call:
-                        count_lowCoverage += 1
-                    sum_coverage += coverage[counter]
+                if coverage[counter] < minimum_depth_call:
+                    count_lowCoverage += 1
+                sum_coverage += coverage[counter]
         counter += 1
 
     mean_coverage = 0
