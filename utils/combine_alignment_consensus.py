@@ -42,7 +42,7 @@ def concatenate_files(input_files_list, outdir):
 		with open(input_file, 'rtU') as reader:
 			writer = None
 			for line in reader:
-				line = line.splitlines()[0]
+				line = line.rstrip('\r\n')
 				if line.startswith('>'):
 					file_output = os.path.join(outdir, line[1:] + '.fasta')
 					if writer is not None:

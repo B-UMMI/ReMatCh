@@ -37,7 +37,7 @@ def conversion(infile, outfile):
     with open(infile, 'rtU') as reader:
         with open(outfile, 'wt') as writer:
             for line in reader:
-                line = line.splitlines()[0]
+                line = line.rstrip('\r\n')
                 if line.startswith('>'):
                     writer.write(line + '\n')
                     if counter % 10 == 0:

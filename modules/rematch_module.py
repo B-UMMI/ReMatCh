@@ -853,7 +853,7 @@ def get_sequence_information(fasta_file, length_extra_seq):
         sequence_counter = 0
         temp_sequence_dict = {}
         for line in reader:
-            line = line.splitlines()[0]
+            line = line.rstrip('\r\n')
             if len(line) > 0:
                 if not blank_line_found:
                     if line.startswith('>'):
@@ -875,8 +875,8 @@ def get_sequence_information(fasta_file, length_extra_seq):
                         if new_header != original_header:
                             headers_changed = True
                     else:
-                        temp_sequence_dict[sequence_counter]['sequence'] += line
-                        temp_sequence_dict[sequence_counter]['length'] += len(line)
+                        temp_sequence_dict[sequence_counter]['sequence'] += line.replace(' ', '')
+                        temp_sequence_dict[sequence_counter]['length'] += len(line.replace(' ', ''))
                 else:
                     sys.exit('It was found a blank line between the fasta file above line ' + line)
             else:
