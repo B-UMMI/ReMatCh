@@ -992,7 +992,11 @@ rematch_timer = functools.partial(utils.timer, name='ReMatCh module')
 
 
 @rematch_timer
-def runRematchModule(sample, fastq_files, reference_file, threads, outdir, length_extra_seq, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele, minimum_gene_coverage, conserved_True, debug_mode_true, numMapLoc, minimum_gene_identity, rematch_run, softClip_baseQuality, softClip_recodeRun, reference_dict, softClip_cigarFlagRecode, bowtieOPT, gene_list_reference, notWriteConsensus):
+def runRematchModule(sample, fastq_files, reference_file, threads, outdir, length_extra_seq, minimum_depth_presence,
+                     minimum_depth_call, minimum_depth_frequency_dominant_allele, minimum_gene_coverage, conserved_True,
+                     debug_mode_true, numMapLoc, minimum_gene_identity, rematch_run, softClip_baseQuality,
+                     softClip_recodeRun, reference_dict, softClip_cigarFlagRecode, bowtieOPT, gene_list_reference,
+                     notWriteConsensus):
     rematch_folder = os.path.join(outdir, 'rematch_module', '')
     utils.removeDirectory(rematch_folder)
     os.mkdir(rematch_folder)
