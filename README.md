@@ -30,6 +30,7 @@ Table of Contents
 ## Dependencies
 
 **Mandatory**  
+ - *Python* >= v3  
 Required to run ReMatch analysis
  - *Bowtie2* >= v2.2.9
  - *Samtools* = v1.3.1
@@ -47,7 +48,7 @@ Required to download sequence data from ENA/SRA database:
  - _GNU Awk_ (optional) (normally found in Linux OS) (for SRA interaction)
 
 ## Installation
-ReMatCh is a standalone python script and does not require any installation. Simply clone the git repository:
+ReMatCh is a standalone Python script and does not require any installation. Simply clone the git repository:
 
     git clone https://github.com/B-UMMI/ReMatCh.git
 
