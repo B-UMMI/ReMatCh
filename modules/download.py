@@ -1,4 +1,4 @@
-import utils
+from . import utils
 import os.path
 import multiprocessing
 import sys
@@ -8,13 +8,15 @@ import subprocess
 
 
 def get_read_run_info(ena_id):
-    import urllib
+    # TODO: check bellow if next works
+    import urllib.request
 
     url = 'http://www.ebi.ac.uk/ena/data/warehouse/filereport?accession=' + ena_id + '&result=read_run'
 
     read_run_info = None
     try:
-        url = urllib.urlopen(url)
+        # TODO: check bellow if next works
+        url = urllib.request.urlopen(url)
         read_run_info = url.read().splitlines()
         if len(read_run_info) <= 1:
             read_run_info = None
@@ -33,7 +35,7 @@ def get_download_information(read_run_info):
 
     for i in range(0, len(header_line)):
         header = header_line[i].lower().rsplit('_', 1)
-        if header[0] in download_information.keys():
+        if header[0] in list(download_information.keys()):
             if header[1] in download_types:
                 if len(info_line[i]) > 0:
                     files_path = info_line[i].split(';')
@@ -59,7 +61,7 @@ def get_sequencing_information(read_run_info):
 
     for i in range(0, len(header_line)):
         header = header_line[i].lower()
-        if header in sequencing_information.keys():
+        if header in list(sequencing_information.keys()):
             if len(info_line[i]) > 0:
                 sequencing_information[header] = info_line[i]
 
@@ -311,7 +313,6 @@ def alignment_to_fastq(alignment_file, threads, pair_end_type):
 
 
 def formart_fastq_headers(in_fastq_1, in_fastq_2):
-    import itertools
 
     out_fastq_1 = in_fastq_1 + '.temp'
     out_fastq_2 = in_fastq_2 + '.temp'
@@ -322,7 +323,7 @@ def formart_fastq_headers(in_fastq_1, in_fastq_2):
         plus_line = True
         quality_line = True
         number_reads = 0
-        for in_1, in_2 in itertools.izip(reader_in_fastq_1, reader_in_fastq_2):
+        for in_1, in_2 in zip(reader_in_fastq_1, reader_in_fastq_2):  # TODO: check if zip without iteratools work
             if len(in_1) > 0:
                 in_1 = in_1.splitlines()[0]
                 in_2 = in_2.splitlines()[0]
@@ -477,7 +478,7 @@ def rename_move_files(list_files, new_name, outdir, download_paired_type):
                         os.remove(list_files[i])
                 else:
                     os.rename(list_files[i], list_new_files[i])
-            list_new_files = list_new_files.values()
+            list_new_files = list(list_new_files.values())
         except Exception as e:
             print(e)
             run_successfully = False
