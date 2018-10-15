@@ -35,7 +35,6 @@ import modules.download as download
 import modules.rematch_module as rematch_module
 import modules.checkMLST as check_mlst
 
-
 version = '4.0'
 
 
@@ -528,6 +527,9 @@ def run_rematch(args):
 
 
 def main():
+    if sys.version_info[0] < 3:
+        sys.exit('Must be using Python 3. Try calling "python3 rematch.py"')
+
     parser = argparse.ArgumentParser(prog='rematch.py',
                                      description='Reads mapping against target sequences, checking mapping and'
                                                  ' consensus sequences production',
@@ -654,25 +656,26 @@ def main():
                                           help='Tells ReMatCh to also download cram/bam files and convert them to fastq'
                                                ' files')
 
-    parser_optional_SRA = parser.add_mutually_exclusive_group()
-    parser_optional_SRA.add_argument('--SRA', action='store_true',
+    parser_optional_sra = parser.add_mutually_exclusive_group()
+    parser_optional_sra.add_argument('--SRA', action='store_true',
                                      help='Tells getSeqENA.py to download reads in fastq format only from NCBI SRA'
                                           ' database (not recommended)')
-    parser_optional_SRA.add_argument('--SRAopt', action='store_true',
+    parser_optional_sra.add_argument('--SRAopt', action='store_true',
                                      help='Tells getSeqENA.py to download reads from NCBI SRA if the download from ENA'
                                           ' fails')
 
-    parser_optional_softClip = parser.add_argument_group('Soft clip facultative options')
-    parser_optional_softClip.add_argument('--softClip_baseQuality', type=int, metavar='N',
-                                          help='Base quality phred score in reads soft clipped regions', required=False,
-                                          default=7)
-    parser_optional_softClip.add_argument('--softClip_recodeRun', type=str, metavar='first',
-                                          help='ReMatCh run to recode soft clipped regions (available'
-                                               ' options: %(choices)s)', choices=['first', 'second', 'both', 'none'],
-                                          required=False, default='none')
-    parser_optional_softClip.add_argument('--softClip_cigarFlagRecode', type=str, metavar='M',
-                                          help='CIGAR flag to recode CIGAR soft clip (available options: %(choices)s)',
-                                          choices=['M', 'I', 'X'], required=False, default='X')
+    parser_optional_soft_clip = parser.add_argument_group('Soft clip facultative options')
+    parser_optional_soft_clip.add_argument('--softClip_baseQuality', type=int, metavar='N',
+                                           help='Base quality phred score in reads soft clipped regions',
+                                           required=False,
+                                           default=7)
+    parser_optional_soft_clip.add_argument('--softClip_recodeRun', type=str, metavar='first',
+                                           help='ReMatCh run to recode soft clipped regions (available'
+                                                ' options: %(choices)s)', choices=['first', 'second', 'both', 'none'],
+                                           required=False, default='none')
+    parser_optional_soft_clip.add_argument('--softClip_cigarFlagRecode', type=str, metavar='M',
+                                           help='CIGAR flag to recode CIGAR soft clip (available options: %(choices)s)',
+                                           choices=['M', 'I', 'X'], required=False, default='X')
 
     args = parser.parse_args()
 
