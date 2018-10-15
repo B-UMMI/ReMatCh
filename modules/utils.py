@@ -38,7 +38,7 @@ class Logger(object):
 def get_cpu_information(outdir, time_str):
     with open(os.path.join(outdir, 'cpu_information.' + time_str + '.cpu.txt'), 'wt') as writer:
         command = ['cat', '/proc/cpuinfo']
-        run_successfully, stdout, stderr = runCommandPopenCommunicate(command, False, None, False)
+        run_successfully, stdout, stderr = run_command_popen_communicate(command, False, None, False)
         if run_successfully:
             writer.write(stdout)
 
@@ -71,7 +71,7 @@ def checkPrograms(programs_version_dictionary):
     listMissings = []
     for program in programs:
         which_program[1] = program
-        run_successfully, stdout, stderr = runCommandPopenCommunicate(which_program, False, None, False)
+        run_successfully, stdout, stderr = run_command_popen_communicate(which_program, False, None, False)
         if not run_successfully:
             listMissings.append(program + ' not found in PATH.')
         else:
@@ -84,7 +84,7 @@ def checkPrograms(programs_version_dictionary):
                     programs[program].append(stdout.splitlines()[0])
                 else:
                     check_version = [stdout.splitlines()[0], programs[program][0]]
-                run_successfully, stdout, stderr = runCommandPopenCommunicate(check_version, False, None, False)
+                run_successfully, stdout, stderr = run_command_popen_communicate(check_version, False, None, False)
                 if stdout == '':
                     stdout = stderr
                 if program in ['wget', 'awk']:
@@ -111,10 +111,12 @@ def checkPrograms(programs_version_dictionary):
                         elif int(program_found_version[i]) == int(program_version_required[i]):
                             continue
                         else:
-                            listMissings.append('It is required ' + program + ' with version ' + programs[program][1] + ' ' + programs[program][2])
+                            listMissings.append('It is required ' + program + ' with version ' +
+                                                programs[program][1] + ' ' + programs[program][2])
                 else:
                     if version_line != programs[program][2]:
-                        listMissings.append('It is required ' + program + ' with version ' + programs[program][1] + ' ' + programs[program][2])
+                        listMissings.append('It is required ' + program + ' with version ' + programs[program][1] +
+                                            ' ' + programs[program][2])
     return listMissings
 
 
@@ -178,10 +180,10 @@ def scriptVersionGit(version, directory, script_path):
     try:
         os.chdir(os.path.dirname(script_path))
         command = ['git', 'log', '-1', '--date=local', '--pretty=format:"%h (%H) - Commit by %cn, %cd) : %s"']
-        run_successfully, stdout, stderr = runCommandPopenCommunicate(command, False, 15, False)
+        run_successfully, stdout, stderr = run_command_popen_communicate(command, False, 15, False)
         print(stdout)
         command = ['git', 'remote', 'show', 'origin']
-        run_successfully, stdout, stderr = runCommandPopenCommunicate(command, False, 15, False)
+        run_successfully, stdout, stderr = run_command_popen_communicate(command, False, 15, False)
         print(stdout)
     except:
         print('HARMLESS WARNING: git command possibly not found. The GitHub repository information will not be'
@@ -190,7 +192,7 @@ def scriptVersionGit(version, directory, script_path):
         os.chdir(directory)
 
 
-def runTime(start_time):
+def run_time(start_time):
     end_time = time.time()
     time_taken = end_time - start_time
     hours, rest = divmod(time_taken, 3600)
@@ -207,7 +209,7 @@ def timer(function, name):
 
         results = list(function(*args, **kwargs))  # guarantees return is a list to allow .insert()
 
-        time_taken = runTime(start_time)
+        time_taken = run_time(start_time)
         print('END {0}'.format(name))
 
         results.insert(0, time_taken)
@@ -215,18 +217,18 @@ def timer(function, name):
     return wrapper
 
 
-def removeDirectory(directory):
+def remove_directory(directory):
     if os.path.isdir(directory):
         shutil.rmtree(directory)
 
 
-def saveVariableToPickle(variableToStore, outdir, prefix):
+def save_variable_to_pickle(variableToStore, outdir, prefix):
     pickleFile = os.path.join(outdir, str(prefix + '.pkl'))
     with open(pickleFile, 'wb') as writer:
         pickle.dump(variableToStore, writer)
 
 
-def extractVariableFromPickle(pickleFile):
+def extract_variable_from_pickle(pickleFile):
     with open(pickleFile, 'rb') as reader:
         variable = pickle.load(reader)
     return variable
@@ -252,7 +254,7 @@ def kill_subprocess_Popen(subprocess_Popen, command):
     subprocess_Popen.kill()
 
 
-def runCommandPopenCommunicate(command, shell_True, timeout_sec_None, print_comand_True):
+def run_command_popen_communicate(command, shell_True, timeout_sec_None, print_comand_True):
     run_successfully = False
     if not isinstance(command, str):
         command = ' '.join(command)
@@ -271,11 +273,11 @@ def runCommandPopenCommunicate(command, shell_True, timeout_sec_None, print_coma
     if timeout_sec_None is None:
         stdout, stderr = proc.communicate()
     else:
-        timer = Timer(timeout_sec_None, kill_subprocess_Popen, args=(proc, command,))
-        timer.start()
+        timer_run = Timer(timeout_sec_None, kill_subprocess_Popen, args=(proc, command,))
+        timer_run.start()
         stdout, stderr = proc.communicate()
-        timer.cancel()
-        not_killed_by_timer = timer.isAlive()
+        timer_run.cancel()
+        not_killed_by_timer = timer_run.isAlive()
 
     if proc.returncode == 0:
         run_successfully = True
@@ -300,11 +302,11 @@ def rchop(string, ending):
 def reverse_complement(seq):
     complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A', 'N': 'N'}
 
-    reverse_complement = ''
+    reverse_complement_string = ''
 
     seq = reversed(list(seq.upper()))
 
     for base in seq:
-        reverse_complement += complement[base]
+        reverse_complement_string += complement[base]
 
-    return reverse_complement
+    return reverse_complement_string

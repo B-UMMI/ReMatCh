@@ -1,7 +1,6 @@
 import sys
 import os
-import urllib.request, urllib.error, urllib.parse
-import urllib.request, urllib.parse, urllib.error
+import urllib.request
 import csv
 from glob import glob
 import re
@@ -67,7 +66,7 @@ def write_mlst_reference(species, mlst_sequences, outdir, time_str):
     return reference_file
 
 
-def getST(mlst_dicts, dict_sequences):
+def get_st(mlst_dicts, dict_sequences):
     SequenceDict = mlst_dicts[0]
     STdict = mlst_dicts[1]
     lociOrder = mlst_dicts[2]
@@ -97,7 +96,7 @@ downloadPubMLST = functools.partial(utils.timer, name='Download PubMLST module')
 
 
 @downloadPubMLST
-def downloadPubMLSTxml(originalSpecies, schema_number, outdir):
+def download_pub_mlst_xml(originalSpecies, schema_number, outdir):
     print('Searching MLST database for ' + originalSpecies)
 
     xmlURL = 'http://pubmlst.org/data/dbases.xml'
@@ -169,7 +168,7 @@ def downloadPubMLSTxml(originalSpecies, schema_number, outdir):
                 pickle = os.path.join(outDit, str(schema_date + '.pkl'))
                 if os.path.isfile(pickle):
                     print("\tschema files already exist for %s" % (SchemaName))
-                    mlst_dicts = utils.extractVariableFromPickle(pickle)
+                    mlst_dicts = utils.extract_variable_from_pickle(pickle)
                     SequenceDict = mlst_dicts[0]
                     for lociName, alleleSequences in list(SequenceDict.items()):  # TODO: check if list works here
                         for sequence in alleleSequences:
@@ -182,7 +181,7 @@ def downloadPubMLSTxml(originalSpecies, schema_number, outdir):
             elif any(species_name in x for x in os.listdir(pubmlst_dir)):
                 print("Older version of %s's scheme found! Deleting..." % (SchemaName))
                 for directory in glob(str(pubmlst_dir + str(species_name + '_*'))):
-                    utils.removeDirectory(directory)
+                    utils.remove_directory(directory)
                     os.makedirs(outDit)
             else:
                 os.makedirs(outDit)
@@ -215,5 +214,5 @@ def downloadPubMLSTxml(originalSpecies, schema_number, outdir):
                         mlst_sequences[lociName] = sequence
                 os.remove(url_file)
             mlst_dicts = [SequenceDict, STdict, lociOrder]
-            utils.saveVariableToPickle(mlst_dicts, outDit, schema_date)
+            utils.save_variable_to_pickle(mlst_dicts, outDit, schema_date)
     return mlst_dicts, mlst_sequences

@@ -18,7 +18,7 @@ import argparse
 import os
 
 
-def runSeqFromWebTaxon(taxonname, outputfile, getmachine, getOmicsDataType, getLibraryType, print_True):
+def run_seq_from_web_taxon(taxonname, outputfile, getmachine, getOmicsDataType, getLibraryType, print_True):
     print('\n' + 'Searching RunIDs for ' + taxonname)
 
     # TODO: check bellow if next works
@@ -143,7 +143,7 @@ def main():
     getOmicsDataType = args.getOmicsDataType
     getLibraryType = args.getLibraryType
 
-    runSeqFromWebTaxon(taxonname, outputfile, getmachine, getOmicsDataType, getLibraryType, True)
+    run_seq_from_web_taxon(taxonname, outputfile, getmachine, getOmicsDataType, getLibraryType, True)
 
 
 if __name__ == "__main__":

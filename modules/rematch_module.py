@@ -15,7 +15,7 @@ def index_fasta_samtools(fasta, region_none, region_outfile_none, print_comand_t
         command[4] = '>'
         command[5] = region_outfile_none
         shell_true = True
-    run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, shell_true, None, print_comand_true)
+    run_successfully, stdout, stderr = utils.run_command_popen_communicate(command, shell_true, None, print_comand_true)
     return run_successfully, stdout
 
 
@@ -25,7 +25,7 @@ def index_sequence_bowtie2(reference_file, threads):
         run_successfully = True
     else:
         command = ['bowtie2-build', '--threads', str(threads), reference_file, reference_file]
-        run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, False, None, True)
+        run_successfully, stdout, stderr = utils.run_command_popen_communicate(command, False, None, True)
     return run_successfully
 
 
@@ -55,7 +55,7 @@ def mapping_bowtie2(fastq_files, reference_file, threads, outdir, conserved_true
         if bowtie_opt is not None:
             command[11] = bowtie_opt
 
-        run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, False, None, True)
+        run_successfully, stdout, stderr = utils.run_command_popen_communicate(command, False, None, True)
 
     if not run_successfully:
         sam_file = None
@@ -250,7 +250,7 @@ def sort_alignment(alignment_file, output_file, sort_by_name_true, threads):
     command = ['samtools', 'sort', '-o', output_file, '-O', out_format_string, '', '-@', str(threads), alignment_file]
     if sort_by_name_true:
         command[6] = '-n'
-    run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, False, None, True)
+    run_successfully, stdout, stderr = utils.run_command_popen_communicate(command, False, None, True)
     if not run_successfully:
         output_file = None
     return run_successfully, output_file
@@ -259,7 +259,7 @@ def sort_alignment(alignment_file, output_file, sort_by_name_true, threads):
 # Index alignment file
 def index_alignment(alignment_file):
     command = ['samtools', 'index', alignment_file]
-    run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, False, None, True)
+    run_successfully, stdout, stderr = utils.run_command_popen_communicate(command, False, None, True)
     return run_successfully
 
 
@@ -301,7 +301,7 @@ def create_vcf(bam_file, sequence_to_analyse, outdir, counter, reference_file):
                reference_file, '--region', sequence_to_analyse, '--output', gene_vcf, '--VCF', '--uncompressed',
                '--output-tags', 'INFO/AD,AD,DP', bam_file]
 
-    run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, False, None, False)
+    run_successfully, stdout, stderr = utils.run_command_popen_communicate(command, False, None, False)
     if not run_successfully:
         gene_vcf = None
     return run_successfully, gene_vcf
@@ -819,7 +819,7 @@ def compute_genome_coverage_data(alignment_file, sequence_to_analyse, outdir, co
     genome_coverage_data_file = os.path.join(outdir, 'samtools_depth.sequence_' + str(counter) + '.tab')
     command = ['samtools', 'depth', '-a', '-q', '0', '-r', sequence_to_analyse, alignment_file, '>',
                genome_coverage_data_file]
-    run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, True, None, False)
+    run_successfully, stdout, stderr = utils.run_command_popen_communicate(command, True, None, False)
     return run_successfully, genome_coverage_data_file
 
 
@@ -835,10 +835,10 @@ def write_variants_vcf(variants, outdir, sequence_to_analyse, sufix):
 
     compressed_vcf_file = vcf_file + '.gz'
     command = ['bcftools', 'convert', '-o', compressed_vcf_file, '-O', 'z', vcf_file]
-    run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, False, None, False)
+    run_successfully, stdout, stderr = utils.run_command_popen_communicate(command, False, None, False)
     if run_successfully:
         command = ['bcftools', 'index', compressed_vcf_file]
-        run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, False, None, False)
+        run_successfully, stdout, stderr = utils.run_command_popen_communicate(command, False, None, False)
 
     if not run_successfully:
         compressed_vcf_file = None
@@ -867,7 +867,7 @@ def compute_consensus_sequence(reference_file, sequence_to_analyse, compressed_v
     run_successfully, stdout = index_fasta_samtools(reference_file, sequence_to_analyse, gene_fasta, False)
     if run_successfully:
         command = ['bcftools', 'consensus', '-f', gene_fasta, compressed_vcf_file]
-        run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, False, None, False)
+        run_successfully, stdout, stderr = utils.run_command_popen_communicate(command, False, None, False)
         if run_successfully:
             sequence_dict = parse_fasta_in_memory(stdout)
 
@@ -933,9 +933,9 @@ def analyse_sequence_data(bam_file, sequence_information, outdir, counter, refer
                 get_coverage_report(coverage, sequence_information['length'], minimum_depth_presence,
                                     minimum_depth_call, length_extra_seq)
 
-    utils.saveVariableToPickle([run_successfully, counter, number_multi_alleles, count_absent, percentage_low_coverage,
-                                mean_coverage, consensus_sequence, number_diferences],
-                               outdir, str('coverage_info.' + str(counter)))
+    utils.save_variable_to_pickle([run_successfully, counter, number_multi_alleles, count_absent,
+                                   percentage_low_coverage, mean_coverage, consensus_sequence, number_diferences],
+                                  outdir, str('coverage_info.' + str(counter)))
 
 
 def clean_header(header):
@@ -1009,7 +1009,7 @@ def determine_threads_2_use(number_sequences, threads):
 def sequence_data(sample, reference_file, bam_file, outdir, threads, length_extra_seq, minimum_depth_presence,
                   minimum_depth_call, minimum_depth_frequency_dominant_allele, debug_mode_true, not_write_consensus):
     sequence_data_outdir = os.path.join(outdir, 'sequence_data', '')
-    utils.removeDirectory(sequence_data_outdir)
+    utils.remove_directory(sequence_data_outdir)
     os.mkdir(sequence_data_outdir)
 
     sequences, headers, headers_changed = get_sequence_information(reference_file, length_extra_seq)
@@ -1019,7 +1019,7 @@ def sequence_data(sample, reference_file, bam_file, outdir, threads, length_extr
     pool = multiprocessing.Pool(processes=threads)
     for sequence_counter in sequences:
         sequence_dir = os.path.join(sequence_data_outdir, str(sequence_counter), '')
-        utils.removeDirectory(sequence_dir)
+        utils.remove_directory(sequence_dir)
         os.makedirs(sequence_dir)
         pool.apply_async(analyse_sequence_data, args=(bam_file, sequences[sequence_counter], sequence_dir,
                                                       sequence_counter, reference_file, length_extra_seq,
@@ -1078,7 +1078,7 @@ def gather_data_together(sample, data_directory, sequences_information, outdir, 
                 if run_successfully:
                     run_successfully, sequence_counter, multiple_alleles_found, count_absent, percentage_low_coverage, \
                         mean_coverage, consensus_sequence, \
-                        number_diferences = utils.extractVariableFromPickle(file_path)
+                        number_diferences = utils.extract_variable_from_pickle(file_path)
 
                     if not not_write_consensus:
                         for consensus_type in consensus_sequence:
@@ -1113,7 +1113,7 @@ def gather_data_together(sample, data_directory, sequences_information, outdir, 
                     counter += 1
 
         if not debug_mode_true:
-            utils.removeDirectory(gene_dir_path)
+            utils.remove_directory(gene_dir_path)
 
     if counter != len(sequences_information):
         run_successfully = False
@@ -1131,7 +1131,7 @@ def run_rematch_module(sample, fastq_files, reference_file, threads, outdir, len
                        soft_clip_base_quality, soft_clip_recode_run, reference_dict, soft_clip_cigar_flag_recode,
                        bowtie_opt, gene_list_reference, not_write_consensus):
     rematch_folder = os.path.join(outdir, 'rematch_module', '')
-    utils.removeDirectory(rematch_folder)
+    utils.remove_directory(rematch_folder)
     os.mkdir(rematch_folder)
 
     # Map reads
@@ -1191,7 +1191,7 @@ def run_rematch_module(sample, fastq_files, reference_file, threads, outdir, len
                                      str('mean_sample_coverage: ' + str(round(mean_sample_coverage, 2)))]))
 
     if not debug_mode_true:
-        utils.removeDirectory(rematch_folder)
+        utils.remove_directory(rematch_folder)
 
     return run_successfully, sample_data if 'sample_data' in locals() else None, \
            {'number_absent_genes': number_absent_genes if 'number_absent_genes' in locals() else None,
