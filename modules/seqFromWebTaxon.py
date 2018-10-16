@@ -9,7 +9,6 @@ mickaelsilva
 '''
 
 import sys
-# TODO: check bellow if next works
 import urllib.request
 import urllib.parse
 import xml.etree.ElementTree as ET
@@ -21,11 +20,9 @@ import os
 def run_seq_from_web_taxon(taxonname, outputfile, getmachine, getOmicsDataType, getLibraryType, print_True):
     print('\n' + 'Searching RunIDs for ' + taxonname)
 
-    # TODO: check bellow if next works
     taxonname = urllib.parse.quote(taxonname)
     url = "http://www.ebi.ac.uk/ena/data/view/Taxon%3A" + taxonname + "&display=xml"
     try:
-        # TODO: check bellow if next works
         content = urllib.request.urlopen(url)
         xml = content.read()
         tree = ET.fromstring(xml)
@@ -48,7 +45,7 @@ def run_seq_from_web_taxon(taxonname, outputfile, getmachine, getOmicsDataType, 
 
         runid = ''
         n = 0
-        with open(outputfile, "wb") as f:
+        with open(outputfile, "wt") as f:
             f.write('#' + str(time.strftime("%d/%m/%Y")) + "\n")
             model = ''
             prjid = ''
@@ -65,7 +62,6 @@ def run_seq_from_web_taxon(taxonname, outputfile, getmachine, getOmicsDataType, 
                         if child2.tag == 'EXPERIMENT_REF':
                             expid = child2.get('accession')
                             url2 = "http://www.ebi.ac.uk/ena/data/view/" + expid + "&display=xml"
-                            # TODO: check bellow if next works
                             content = urllib.request.urlopen(url2)
                             xml = content.read()
                             tree2 = ET.fromstring(xml)

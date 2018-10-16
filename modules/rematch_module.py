@@ -308,7 +308,7 @@ def create_vcf(bam_file, sequence_to_analyse, outdir, counter, reference_file):
 
 
 # Read vcf file
-class Vcf:  # TODO: not sure if this works
+class Vcf:
     def __init__(self, vcf_file):
         self.vcf = open(vcf_file, 'rtU')
         self.line_read = self.vcf.readline()
@@ -847,7 +847,7 @@ def write_variants_vcf(variants, outdir, sequence_to_analyse, sufix):
 
 
 def parse_fasta_in_memory(fasta_memory):
-    fasta_memory = fasta_memory.decode("utf-8").splitlines()
+    fasta_memory = fasta_memory.splitlines()
     sequence_dict = {}
     for line in fasta_memory:
         if len(line) > 0:
@@ -877,12 +877,12 @@ def compute_consensus_sequence(reference_file, sequence_to_analyse, compressed_v
 def create_sample_consensus_sequence(outdir, sequence_to_analyse, reference_file, variants, minimum_depth_presence,
                                      minimum_depth_call, minimum_depth_frequency_dominant_allele, sequence,
                                      length_extra_seq):
-    variants_correct, variants_no_matter, variants_alignment, multiple_alleles_found = \
+    variants_correct, variants_noMatter, variants_alignment, multiple_alleles_found = \
         get_true_variants(variants, minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele,
                           sequence)
 
-    variants_correct, variants_no_matter, variants_alignment, number_multi_alleles, number_diferences = \
-        cleanning_variants_extra_seq(variants_correct, variants_no_matter, variants_alignment, multiple_alleles_found,
+    variants_correct, variants_noMatter, variants_alignment, number_multi_alleles, number_diferences = \
+        cleanning_variants_extra_seq(variants_correct, variants_noMatter, variants_alignment, multiple_alleles_found,
                                      length_extra_seq, len(sequence))
 
     run_successfully = False

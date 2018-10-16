@@ -25,7 +25,7 @@ class Logger(object):
 
     def write(self, message):
         self.terminal.write(message)
-        self.log.write(message.encode('utf-8'))
+        self.log.write(message)
         self.log.flush()
 
     def flush(self):
@@ -273,11 +273,11 @@ def run_command_popen_communicate(command, shell_True, timeout_sec_None, print_c
     if timeout_sec_None is None:
         stdout, stderr = proc.communicate()
     else:
-        timer_run = Timer(timeout_sec_None, kill_subprocess_Popen, args=(proc, command,))
-        timer_run.start()
+        time_counter = Timer(timeout_sec_None, kill_subprocess_Popen, args=(proc, command,))
+        time_counter.start()
         stdout, stderr = proc.communicate()
-        timer_run.cancel()
-        not_killed_by_timer = timer_run.isAlive()
+        time_counter.cancel()
+        not_killed_by_timer = time_counter.isAlive()
 
     if proc.returncode == 0:
         run_successfully = True
@@ -290,7 +290,7 @@ def run_command_popen_communicate(command, shell_True, timeout_sec_None, print_c
         if len(stderr) > 0:
             print('STDERR')
             print(stderr.decode("utf-8"))
-    return run_successfully, stdout, stderr
+    return run_successfully, stdout.decode("utf-8"), stderr.decode("utf-8")
 
 
 def rchop(string, ending):

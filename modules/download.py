@@ -8,16 +8,14 @@ import subprocess
 
 
 def get_read_run_info(ena_id):
-    # TODO: check bellow if next works
     import urllib.request
 
     url = 'http://www.ebi.ac.uk/ena/data/warehouse/filereport?accession=' + ena_id + '&result=read_run'
 
     read_run_info = None
     try:
-        # TODO: check bellow if next works
         url = urllib.request.urlopen(url)
-        read_run_info = url.read().splitlines()
+        read_run_info = url.read().decode("utf8").splitlines()
         if len(read_run_info) <= 1:
             read_run_info = None
     except Exception as error:
@@ -324,7 +322,7 @@ def formart_fastq_headers(in_fastq_1, in_fastq_2):
         plus_line = True
         quality_line = True
         number_reads = 0
-        for in_1, in_2 in zip(reader_in_fastq_1, reader_in_fastq_2):  # TODO: check if zip without iteratools work
+        for in_1, in_2 in zip(reader_in_fastq_1, reader_in_fastq_2):
             if len(in_1) > 0:
                 in_1 = in_1.splitlines()[0]
                 in_2 = in_2.splitlines()[0]

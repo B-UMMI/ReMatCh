@@ -58,7 +58,7 @@ def write_mlst_reference(species, mlst_sequences, outdir, time_str):
     print('Writing MLST alleles as reference_sequences' + '\n')
     reference_file = os.path.join(outdir, str(species.replace('/', '_').replace(' ', '_') + '.' + time_str + '.fasta'))
     with open(reference_file, 'wt') as writer:
-        for header, sequence in list(mlst_sequences.items()):  # TODO: check if list works here
+        for header, sequence in list(mlst_sequences.items()):
             writer.write('>' + header + '\n')
             fasta_sequence_lines = rematch_module.chunkstring(sequence, 80)
             for line in fasta_sequence_lines:
@@ -72,7 +72,7 @@ def get_st(mlst_dicts, dict_sequences):
     lociOrder = mlst_dicts[2]
 
     alleles_profile = ['-'] * len(lociOrder)
-    for x, sequence_data in list(dict_sequences.items()):  # TODO: check if list works here
+    for x, sequence_data in list(dict_sequences.items()):
         if sequence_data['header'] not in SequenceDict:
             print(sequence_data['header'] + ' not found between consensus sequences!')
             break
@@ -80,7 +80,7 @@ def get_st(mlst_dicts, dict_sequences):
             allele_number = SequenceDict[sequence_data['header']][sequence_data['sequence']]
             alleles_profile[lociOrder.index(sequence_data['header'])] = allele_number
         else:
-            for sequence_st, allele_number in list(SequenceDict[sequence_data['header']].items()):  # TODO: check if list works here
+            for sequence_st, allele_number in list(SequenceDict[sequence_data['header']].items()):
                 if sequence_st in sequence_data['sequence']:
                     alleles_profile[lociOrder.index(sequence_data['header'])] = allele_number
 
@@ -101,7 +101,7 @@ def download_pub_mlst_xml(originalSpecies, schema_number, outdir):
 
     xmlURL = 'http://pubmlst.org/data/dbases.xml'
     try:
-        content = urllib.request.urlopen(xmlURL)  # TODO: check with other script
+        content = urllib.request.urlopen(xmlURL)
         xml = content.read()
         tree = ET.fromstring(xml)
     except:
@@ -153,14 +153,14 @@ def download_pub_mlst_xml(originalSpecies, schema_number, outdir):
     if not os.path.isdir(pubmlst_dir):
         os.makedirs(pubmlst_dir)
 
-    for SchemaName, info in list(xmlData.items()):  # TODO: check if list works here
+    for SchemaName, info in list(xmlData.items()):
         STdict = {}
         SequenceDict = {}
         mlst_sequences = {}
 
         species_name = '_'.join(determine_species(SchemaName)).replace('/', '_')
 
-        for RetrievalDate, URL in list(info.items()):  # TODO: check if list works here
+        for RetrievalDate, URL in list(info.items()):
             schema_date = species_name + '_' + RetrievalDate
             outDit = os.path.join(pubmlst_dir, schema_date)  # compatible with windows? See if it already exists, if so, break
 
@@ -170,7 +170,7 @@ def download_pub_mlst_xml(originalSpecies, schema_number, outdir):
                     print("\tschema files already exist for %s" % (SchemaName))
                     mlst_dicts = utils.extract_variable_from_pickle(pickle)
                     SequenceDict = mlst_dicts[0]
-                    for lociName, alleleSequences in list(SequenceDict.items()):  # TODO: check if list works here
+                    for lociName, alleleSequences in list(SequenceDict.items()):
                         for sequence in alleleSequences:
                             if lociName not in list(mlst_sequences.keys()):
                                 mlst_sequences[lociName] = sequence
@@ -187,23 +187,21 @@ def download_pub_mlst_xml(originalSpecies, schema_number, outdir):
                 os.makedirs(outDit)
 
             contentProfile = urllib.request.urlopen(URL[0])
-            profileFile = csv.reader(contentProfile, delimiter='\t')
-            # TODO: check bellow if next works
-            header = next(profileFile)  # skip header
+            header = next(contentProfile).decode("utf8").strip().split('\t')  # skip header
             try:
                 indexCC = header.index('clonal_complex') if 'clonal_complex' in header else header.index('CC')
             except:
                 indexCC = len(header)
             lociOrder = header[1:indexCC]
-            for row in profileFile:
+            for row in contentProfile:
+                row = row.decode("utf8").strip().split('\t')
                 ST = row[0]
                 alleles = ','.join(row[1:indexCC])
                 STdict[alleles] = ST
-            for lociName, lociURL in list(URL[1].items()):  # TODO: check if list works here
+            for lociName, lociURL in list(URL[1].items()):
                 if lociName not in list(SequenceDict.keys()):
                     SequenceDict[lociName] = {}
                 url_file = os.path.join(outDit, lociURL.rsplit('/', 1)[1])
-                # TODO: check bellow if next works
                 urllib.request.urlretrieve(lociURL, url_file)
                 sequences, ignore, ignore = rematch_module.get_sequence_information(url_file, 0)
                 for key in list(sequences.keys()):
