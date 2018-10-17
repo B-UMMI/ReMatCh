@@ -1,9 +1,12 @@
 import os.path
 import multiprocessing
-from . import utils
 import functools
 import sys
 import pickle
+
+# https://chrisyeh96.github.io/2017/08/08/definitive-guide-python-imports.html#case-2-syspath-could-change
+sys.path.insert(0, os.path.realpath(__file__))
+import utils as utils
 
 
 def index_fasta_samtools(fasta, region_none, region_outfile_none, print_comand_true):

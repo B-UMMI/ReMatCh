@@ -1,10 +1,11 @@
-from . import utils
 import os.path
 import multiprocessing
 import sys
 import functools
 import time
 import subprocess
+
+import modules.utils as utils
 
 
 def get_read_run_info(ena_id):
