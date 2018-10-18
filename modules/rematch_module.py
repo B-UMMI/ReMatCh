@@ -5,8 +5,8 @@ import sys
 import pickle
 
 # https://chrisyeh96.github.io/2017/08/08/definitive-guide-python-imports.html#case-2-syspath-could-change
-sys.path.insert(0, os.path.realpath(__file__))
-import utils as utils
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+import utils
 
 
 def index_fasta_samtools(fasta, region_none, region_outfile_none, print_comand_true):
@@ -1002,13 +1002,6 @@ def get_sequence_information(fasta_file, length_extra_seq):
     return sequence_dict, headers, headers_changed
 
 
-def determine_threads_2_use(number_sequences, threads):
-    if number_sequences >= threads:
-        return 1
-    else:
-        return threads / number_sequences
-
-
 def sequence_data(sample, reference_file, bam_file, outdir, threads, length_extra_seq, minimum_depth_presence,
                   minimum_depth_call, minimum_depth_frequency_dominant_allele, debug_mode_true, not_write_consensus):
     sequence_data_outdir = os.path.join(outdir, 'sequence_data', '')
@@ -1016,8 +1009,6 @@ def sequence_data(sample, reference_file, bam_file, outdir, threads, length_extr
     os.mkdir(sequence_data_outdir)
 
     sequences, headers, headers_changed = get_sequence_information(reference_file, length_extra_seq)
-
-    # threads_2_use = determine_threads_2_use(len(sequences), threads)
 
     pool = multiprocessing.Pool(processes=threads)
     for sequence_counter in sequences:
