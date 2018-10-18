@@ -211,6 +211,10 @@ def main():
 
     args = parser.parse_args()
 
+    args.outputDir = os.path.abspath(args.outputDir)
+    if not os.path.isdir(args.outputDir):
+        os.makedirs(args.outputDir)
+
     gff_parser(os.path.abspath(args.input.name), args.extraSeq, os.path.abspath(args.outputDir),
                args.keepTemporaryFiles,
                os.path.abspath(args.select.name) if args.select is not None else None,
