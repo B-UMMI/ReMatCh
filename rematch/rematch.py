@@ -35,7 +35,10 @@ import modules.download as download
 import modules.rematch_module as rematch_module
 import modules.checkMLST as check_mlst
 
-version = '4.0'
+try:
+    from __init__ import __version__
+except ImportError:
+    from rematch import __version__
 
 
 def search_fastq_files(directory):
@@ -534,7 +537,8 @@ def main():
                                      description='Reads mapping against target sequences, checking mapping and'
                                                  ' consensus sequences production',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--version', help='Version information', action='version', version=str('%(prog)s v' + version))
+    parser.add_argument('--version', help='Version information', action='version',
+                        version='{prog} v{version}'.format(prog=parser.prog, version=version))
 
     parser_optional_general = parser.add_argument_group('General facultative options')
     parser_optional_general.add_argument('-r', '--reference', type=argparse.FileType('r'),
