@@ -342,7 +342,7 @@ def run_rematch(args):
     logfile, time_str = utils.start_logger(workdir)
 
     # Get general information
-    script_path = utils.general_information(logfile, version, workdir, time_str, args.doNotUseProvidedSoftware,
+    script_path = utils.general_information(logfile, __version__, workdir, time_str, args.doNotUseProvidedSoftware,
                                             aspera_key, args.downloadCramBam, args.SRA, args.SRAopt)
 
     # Set list_ids

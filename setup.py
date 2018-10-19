@@ -1,8 +1,8 @@
-import rematch
+import ReMatCh
 
 from setuptools import setup
 
-VERSION = rematch.__version__
+VERSION = ReMatCh.__version__
 
 with open('README.md') as fh:
     README = fh.read()
