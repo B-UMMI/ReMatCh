@@ -14,10 +14,10 @@ setup(
               'ReMatCh.modules'],
     package_dir={'ReMatCh': 'ReMatCh'},
     package_data={'ReMatCh': ['utils/*',
-                              'modules/mlst_schemas/*'
+                              'modules/mlst_schemas/*',
                               'src/bcftools-1.3.1/bin/*',
                               'src/bowtie2-2.2.9/bowtie2*',
-                              'src/samtools-1.3.1/*']},
+                              'src/samtools-1.3.1/bin/*']},
     include_package_data=True,
     data_files=[('', ['LICENSE'])],
     install_requires=[
