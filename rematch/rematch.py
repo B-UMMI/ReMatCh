@@ -29,16 +29,23 @@ import os
 import sys
 import time
 import argparse
-import modules.utils as utils
-import modules.seqFromWebTaxon as seq_from_web_taxon
-import modules.download as download
-import modules.rematch_module as rematch_module
-import modules.checkMLST as check_mlst
 
 try:
     from __init__ import __version__
+
+    import modules.utils as utils
+    import modules.seqFromWebTaxon as seq_from_web_taxon
+    import modules.download as download
+    import modules.rematch_module as rematch_module
+    import modules.checkMLST as check_mlst
 except ImportError:
-    from rematch import __version__
+    from rematch.__init__ import __version__
+
+    from rematch.modules import utils as utils
+    from rematch.modules import seqFromWebTaxon as seq_from_web_taxon
+    from rematch.modules import download as download
+    from rematch.modules import rematch_module as rematch_module
+    from rematch.modules import checkMLST as check_mlst
 
 
 def search_fastq_files(directory):
@@ -538,7 +545,7 @@ def main():
                                                  ' consensus sequences production',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--version', help='Version information', action='version',
-                        version='{prog} v{version}'.format(prog=parser.prog, version=version))
+                        version='{prog} v{version}'.format(prog=parser.prog, version=__version__))
 
     parser_optional_general = parser.add_argument_group('General facultative options')
     parser_optional_general.add_argument('-r', '--reference', type=argparse.FileType('r'),

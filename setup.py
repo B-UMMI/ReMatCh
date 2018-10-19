@@ -8,7 +8,7 @@ with open('README.md') as fh:
     README = fh.read()
 
 setup(
-    name='ReMatCh',
+    name='rematch',
     version='{}'.format(VERSION),
     packages=['rematch',
               'rematch.modules'],

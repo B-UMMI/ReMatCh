@@ -5,7 +5,10 @@ import functools
 import time
 import subprocess
 
-import modules.utils as utils
+try:
+    import modules.utils as utils
+except ImportError:
+    from rematch.modules import utils as utils
 
 
 def get_read_run_info(ena_id):
