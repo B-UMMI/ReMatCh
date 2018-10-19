@@ -8,12 +8,12 @@ with open('README.md') as fh:
     README = fh.read()
 
 setup(
-    name='rematch',
+    name='ReMatCh',
     version='{}'.format(VERSION),
-    packages=['rematch',
-              'rematch.modules'],
-    package_dir={'rematch': 'rematch'},
-    package_data={'rematch': ['utils/*',
+    packages=['ReMatCh',
+              'ReMatCh.modules'],
+    package_dir={'ReMatCh': 'ReMatCh'},
+    package_data={'ReMatCh': ['utils/*',
                               'modules/mlst_schemas/*'
                               'src/*']},
     data_files=[('', ['LICENSE'])],
@@ -40,8 +40,9 @@ setup(
     license='GPL3',
     entry_points={
         'console_scripts': [
-            'rematch.py = rematch.rematch:main'
+            'rematch.py = ReMatCh.rematch:main',
+            'rematch = ReMatCh.rematch:main'
         ]
     },
-    python_requires='>=3.6'
+    python_requires='>=3.4'
 )

@@ -39,13 +39,13 @@ try:
     import modules.rematch_module as rematch_module
     import modules.checkMLST as check_mlst
 except ImportError:
-    from rematch.__init__ import __version__
+    from ReMatCh.__init__ import __version__
 
-    from rematch.modules import utils as utils
-    from rematch.modules import seqFromWebTaxon as seq_from_web_taxon
-    from rematch.modules import download as download
-    from rematch.modules import rematch_module as rematch_module
-    from rematch.modules import checkMLST as check_mlst
+    from ReMatCh.modules import utils as utils
+    from ReMatCh.modules import seqFromWebTaxon as seq_from_web_taxon
+    from ReMatCh.modules import download as download
+    from ReMatCh.modules import rematch_module as rematch_module
+    from ReMatCh.modules import checkMLST as check_mlst
 
 
 def search_fastq_files(directory):

@@ -332,6 +332,10 @@ For each sample, three fasta files will be produced:
  - *rematch_second_run/* - Folder containing the same files/folders described above, but for the *second_run*. Only created if `--doubleRun` is set
 
 
+## Citation
+
+MP Machado, B Ribeiro-Gonçalves, M Silva1, I Mendes, M Rossi, M Ramirez, JA Carriço. _ReMatCh_ **GitHub** https://github.com/B-UMMI/ReMatCh
+
 ## Contact
 
 Miguel Machado  

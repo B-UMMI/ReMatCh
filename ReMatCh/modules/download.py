@@ -8,7 +8,7 @@ import subprocess
 try:
     import modules.utils as utils
 except ImportError:
-    from rematch.modules import utils as utils
+    from ReMatCh.modules import utils as utils
 
 
 def get_read_run_info(ena_id):
