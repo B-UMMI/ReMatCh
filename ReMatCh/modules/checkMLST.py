@@ -32,6 +32,7 @@ def check_existing_schema(species, schema_number, script_path):
     else:
         schema_number = '#' + str(schema_number)
 
+    mlst_schemas_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'mlst_schemas', '')
     mlst_schemas_folder = os.path.join(os.path.dirname(script_path), 'modules', 'mlst_schemas', '')
     reference = []
     files = [f for f in os.listdir(mlst_schemas_folder) if not f.startswith('.') and os.path.isfile(os.path.join(mlst_schemas_folder, f))]

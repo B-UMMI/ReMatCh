@@ -15,7 +15,10 @@ setup(
     package_dir={'ReMatCh': 'ReMatCh'},
     package_data={'ReMatCh': ['utils/*',
                               'modules/mlst_schemas/*'
-                              'src/*']},
+                              'src/bcftools-1.3.1/bin/*',
+                              'src/bowtie2-2.2.9/bowtie2*',
+                              'src/samtools-1.3.1/*']},
+    include_package_data=True,
     data_files=[('', ['LICENSE'])],
     install_requires=[
         'biopython',
@@ -41,8 +44,7 @@ setup(
     # To use entry_points with .py the first folder cannot have the same name of the script
     entry_points={
         'console_scripts': [
-            'rematch.py = ReMatCh.rematch:main',
-            'rematch = ReMatCh.rematch:main'
+            'rematch.py = ReMatCh.rematch:main'
         ]
     },
     python_requires='>=3.4'
