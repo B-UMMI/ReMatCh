@@ -38,6 +38,7 @@ setup(
     author='Miguel P. Machado',
     author_email='mpmachado@medicina.ulisboa.pt',
     license='GPL3',
+    # To use entry_points with .py the first folder cannot have the same name of the script
     entry_points={
         'console_scripts': [
             'rematch.py = ReMatCh.rematch:main',

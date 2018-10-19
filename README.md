@@ -334,7 +334,7 @@ For each sample, three fasta files will be produced:
 
 ## Citation
 
-MP Machado, B Ribeiro-Gonçalves, M Silva1, I Mendes, M Rossi, M Ramirez, JA Carriço. _ReMatCh_ **GitHub** https://github.com/B-UMMI/ReMatCh
+MP Machado, B Ribeiro-Goncalves, M Silva, I Mendes, M Rossi, M Ramirez, JA Carrico. _ReMatCh_ **GitHub** https://github.com/B-UMMI/ReMatCh
 
 ## Contact
 
