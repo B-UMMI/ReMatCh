@@ -26,7 +26,7 @@ setup(
     long_description=README,
     long_description_content_type='text/markdown',
     keywords=['reference mapping', 'allele variant calling', 'consensus sequence', 'sequence presence/absence',
-                'MLST multilocus sequence typing'],
+              'MLST multilocus sequence typing'],
     classifiers=[
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Environment :: Console',
