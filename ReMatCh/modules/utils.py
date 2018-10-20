@@ -151,7 +151,7 @@ def general_information(logfile, version, outdir, time_str, doNotUseProvidedSoft
     # Print command
     print('\n' + 'COMMAND:')
     script_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'rematch.py')
-    print(sys.executable + ' ' + script_path + ' ' + ' '.join(sys.argv[1:]))
+    print(sys.executable + ' ' + ' '.join(sys.argv))
 
     # Print directory where programme was lunch
     print('\n' + 'PRESENT DIRECTORY:')

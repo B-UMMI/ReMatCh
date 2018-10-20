@@ -20,7 +20,7 @@ setup(
     include_package_data=True,
     data_files=[('', ['LICENSE'])],
     install_requires=[
-        'biopython',
+        'biopython'
     ],
     description='Reads mapping against target sequences, checking mapping and consensus sequences production',
     long_description=README,
