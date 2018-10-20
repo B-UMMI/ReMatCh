@@ -160,7 +160,7 @@ def general_information(logfile, version, outdir, time_str, doNotUseProvidedSoft
 
     # Print program version
     print('\n' + 'VERSION:')
-    scriptVersionGit(version, present_directory, script_path)
+    script_version_git(version, present_directory, script_path)
 
     # Get CPU information
     get_cpu_information(outdir, time_str)
@@ -174,22 +174,41 @@ def general_information(logfile, version, outdir, time_str, doNotUseProvidedSoft
     return script_path
 
 
-def scriptVersionGit(version, directory, script_path):
-    print('Version ' + version)
+def script_version_git(version, current_directory, script_path, no_git_info=False):
+    """
+    Print script version and get GitHub commit information
 
-    try:
-        os.chdir(os.path.dirname(script_path))
-        command = ['git', 'log', '-1', '--date=local', '--pretty=format:"%h (%H) - Commit by %cn, %cd) : %s"']
-        run_successfully, stdout, stderr = run_command_popen_communicate(command, False, 15, False)
-        print(stdout)
-        command = ['git', 'remote', 'show', 'origin']
-        run_successfully, stdout, stderr = run_command_popen_communicate(command, False, 15, False)
-        print(stdout)
-    except:
-        print('HARMLESS WARNING: git command possibly not found. The GitHub repository information will not be'
-              ' obtained.')
-    finally:
-        os.chdir(directory)
+    Parameters
+    ----------
+    version : str
+        Version of the script, e.g. "4.0"
+    current_directory : str
+        Path to the directory where the script was start to run
+    script_path : str
+        Path to the script running
+    no_git_info : bool, default False
+        True if it is not necessary to retreive the GitHub commit information
+
+    Returns
+    -------
+
+    """
+    print('Version {}'.format(version))
+
+    if not no_git_info:
+        try:
+            os.chdir(os.path.dirname(os.path.dirname(script_path)))
+            command = ['git', 'log', '-1', '--date=local', '--pretty=format:"%h (%H) - Commit by %cn, %cd) : %s"']
+            run_successfully, stdout, stderr = run_command_popen_communicate(command, False, 15, False)
+            print(stdout)
+            command = ['git', 'remote', 'show', 'origin']
+            run_successfully, stdout, stderr = run_command_popen_communicate(command, False, 15, False)
+            print(stdout)
+        except:
+            print('HARMLESS WARNING: git command possibly not found. The GitHub repository information will not be'
+                  ' obtained.')
+        finally:
+            os.chdir(current_directory)
 
 
 def run_time(start_time):
