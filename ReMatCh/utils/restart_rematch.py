@@ -101,7 +101,7 @@ def get_files_required(initial_workdir):
     for file_found in files:
         file_path = os.path.join(initial_workdir, file_found)
         file_modification = os.path.getmtime(file_path)
-        for prefix, values in list(files_required.items()):  # TODO: check if list works here
+        for prefix, values in list(files_required.items()):
             if file_found.startswith(prefix + '.') and file_found.endswith('.' + values['extension']):
                 if 'file' not in values:
                     files_required[prefix]['file'] = file_path

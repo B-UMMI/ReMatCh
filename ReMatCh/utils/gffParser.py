@@ -41,7 +41,7 @@ def retrieve_seq_file(fasta_file, coord_file, extra_seq, filename, output_dir):
         fails = 0
         successes = 0
         records = []
-        for contig, listCoords in list(seq_2_get.items()):  # TODO: check if list works here
+        for contig, listCoords in list(seq_2_get.items()):
             contig_seq = records_dict[contig].seq
             for coord in listCoords:
                 coord1 = coord[0] - extra_seq
@@ -75,7 +75,7 @@ def retrieve_seq(fasta_file, gff_features, extra_seq, filename, output_dir):
         fails = 0
         successes = 0
         records = []
-        for locus, location in list(gff_features.items()):  # TODO: check if list works here
+        for locus, location in list(gff_features.items()):
             # print locus
             contig_seq = records_dict[location[0]].seq
             coord1 = location[1] - extra_seq
