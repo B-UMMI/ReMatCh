@@ -25,7 +25,7 @@ class Logger(object):
 
     def write(self, message):
         self.terminal.write(message)
-        self.log.write(message.encode('utf-8'))
+        self.log.write(message)
         self.log.flush()
 
     def flush(self):
@@ -38,7 +38,7 @@ class Logger(object):
 def get_cpu_information(outdir, time_str):
     with open(os.path.join(outdir, 'cpu_information.' + time_str + '.cpu.txt'), 'wt') as writer:
         command = ['cat', '/proc/cpuinfo']
-        run_successfully, stdout, stderr = runCommandPopenCommunicate(command, False, None, False)
+        run_successfully, stdout, stderr = run_command_popen_communicate(command, False, None, False)
         if run_successfully:
             writer.write(stdout)
 
@@ -60,31 +60,31 @@ def setPATHvariable(doNotUseProvidedSoftware, script_path):
         os.environ['PATH'] = str(':'.join([bowtie2, samtools, bcftools, path_variable]))
 
     # Print PATH variable
-    print '\n' + 'PATH variable:'
-    print os.environ['PATH']
+    print('\n' + 'PATH variable:')
+    print(os.environ['PATH'])
 
 
 def checkPrograms(programs_version_dictionary):
-    print '\n' + 'Checking dependencies...'
+    print('\n' + 'Checking dependencies...')
     programs = programs_version_dictionary
     which_program = ['which', '']
     listMissings = []
     for program in programs:
         which_program[1] = program
-        run_successfully, stdout, stderr = runCommandPopenCommunicate(which_program, False, None, False)
+        run_successfully, stdout, stderr = run_command_popen_communicate(which_program, False, None, False)
         if not run_successfully:
             listMissings.append(program + ' not found in PATH.')
         else:
-            print stdout.splitlines()[0]
+            print(stdout.splitlines()[0])
             if programs[program][0] is None:
-                print program + ' (impossible to determine programme version) found at: ' + stdout.splitlines()[0]
+                print(program + ' (impossible to determine programme version) found at: ' + stdout.splitlines()[0])
             else:
                 if program.endswith('.jar'):
                     check_version = ['java', '-jar', stdout.splitlines()[0], programs[program][0]]
                     programs[program].append(stdout.splitlines()[0])
                 else:
                     check_version = [stdout.splitlines()[0], programs[program][0]]
-                run_successfully, stdout, stderr = runCommandPopenCommunicate(check_version, False, None, False)
+                run_successfully, stdout, stderr = run_command_popen_communicate(check_version, False, None, False)
                 if stdout == '':
                     stdout = stderr
                 if program in ['wget', 'awk']:
@@ -96,7 +96,7 @@ def checkPrograms(programs_version_dictionary):
                 replace_characters = ['"', 'v', 'V', '+', ',']
                 for i in replace_characters:
                     version_line = version_line.replace(i, '')
-                print program + ' (' + version_line + ') found'
+                print(program + ' (' + version_line + ') found')
                 if programs[program][1] == '>=':
                     program_found_version = version_line.split('.')
                     program_version_required = programs[program][2].split('.')
@@ -111,10 +111,12 @@ def checkPrograms(programs_version_dictionary):
                         elif int(program_found_version[i]) == int(program_version_required[i]):
                             continue
                         else:
-                            listMissings.append('It is required ' + program + ' with version ' + programs[program][1] + ' ' + programs[program][2])
+                            listMissings.append('It is required ' + program + ' with version ' +
+                                                programs[program][1] + ' ' + programs[program][2])
                 else:
                     if version_line != programs[program][2]:
-                        listMissings.append('It is required ' + program + ' with version ' + programs[program][1] + ' ' + programs[program][2])
+                        listMissings.append('It is required ' + program + ' with version ' + programs[program][1] +
+                                            ' ' + programs[program][2])
     return listMissings
 
 
@@ -139,26 +141,26 @@ def requiredPrograms(asperaKey, downloadCramBam, SRA, SRAopt):
 def general_information(logfile, version, outdir, time_str, doNotUseProvidedSoftware, asperaKey, downloadCramBam, SRA, SRAopt):
     # Check if output directory exists
 
-    print '\n' + '==========> ReMatCh <=========='
-    print '\n' + 'Program start: ' + time.ctime()
+    print('\n' + '==========> ReMatCh <==========')
+    print('\n' + 'Program start: ' + time.ctime())
 
     # Tells where the logfile will be stored
-    print '\n' + 'LOGFILE:'
-    print logfile
+    print('\n' + 'LOGFILE:')
+    print(logfile)
 
     # Print command
-    print '\n' + 'COMMAND:'
-    script_path = os.path.abspath(sys.argv[0])
-    print sys.executable + ' ' + script_path + ' ' + ' '.join(sys.argv[1:])
+    print('\n' + 'COMMAND:')
+    script_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'rematch.py')
+    print(sys.executable + ' ' + ' '.join(sys.argv))
 
     # Print directory where programme was lunch
-    print '\n' + 'PRESENT DIRECTORY:'
+    print('\n' + 'PRESENT DIRECTORY:')
     present_directory = os.path.abspath(os.getcwd())
-    print present_directory
+    print(present_directory)
 
     # Print program version
-    print '\n' + 'VERSION:'
-    scriptVersionGit(version, present_directory, script_path)
+    print('\n' + 'VERSION:')
+    script_version_git(version, present_directory, script_path)
 
     # Get CPU information
     get_cpu_information(outdir, time_str)
@@ -172,30 +174,49 @@ def general_information(logfile, version, outdir, time_str, doNotUseProvidedSoft
     return script_path
 
 
-def scriptVersionGit(version, directory, script_path):
-    print('Version ' + version)
+def script_version_git(version, current_directory, script_path, no_git_info=False):
+    """
+    Print script version and get GitHub commit information
 
-    try:
-        os.chdir(os.path.dirname(script_path))
-        command = ['git', 'log', '-1', '--date=local', '--pretty=format:"%h (%H) - Commit by %cn, %cd) : %s"']
-        run_successfully, stdout, stderr = runCommandPopenCommunicate(command, False, 15, False)
-        print(stdout)
-        command = ['git', 'remote', 'show', 'origin']
-        run_successfully, stdout, stderr = runCommandPopenCommunicate(command, False, 15, False)
-        print(stdout)
-    except:
-        print('HARMLESS WARNING: git command possibly not found. The GitHub repository information will not be'
-              ' obtained.')
-    finally:
-        os.chdir(directory)
+    Parameters
+    ----------
+    version : str
+        Version of the script, e.g. "4.0"
+    current_directory : str
+        Path to the directory where the script was start to run
+    script_path : str
+        Path to the script running
+    no_git_info : bool, default False
+        True if it is not necessary to retreive the GitHub commit information
+
+    Returns
+    -------
+
+    """
+    print('Version {}'.format(version))
+
+    if not no_git_info:
+        try:
+            os.chdir(os.path.dirname(os.path.dirname(script_path)))
+            command = ['git', 'log', '-1', '--date=local', '--pretty=format:"%h (%H) - Commit by %cn, %cd) : %s"']
+            run_successfully, stdout, stderr = run_command_popen_communicate(command, False, 15, False)
+            print(stdout)
+            command = ['git', 'remote', 'show', 'origin']
+            run_successfully, stdout, stderr = run_command_popen_communicate(command, False, 15, False)
+            print(stdout)
+        except:
+            print('HARMLESS WARNING: git command possibly not found. The GitHub repository information will not be'
+                  ' obtained.')
+        finally:
+            os.chdir(current_directory)
 
 
-def runTime(start_time):
+def run_time(start_time):
     end_time = time.time()
     time_taken = end_time - start_time
     hours, rest = divmod(time_taken, 3600)
     minutes, seconds = divmod(rest, 60)
-    print 'Runtime :' + str(hours) + 'h:' + str(minutes) + 'm:' + str(round(seconds, 2)) + 's'
+    print('Runtime :' + str(hours) + 'h:' + str(minutes) + 'm:' + str(round(seconds, 2)) + 's')
     return round(time_taken, 2)
 
 
@@ -207,7 +228,7 @@ def timer(function, name):
 
         results = list(function(*args, **kwargs))  # guarantees return is a list to allow .insert()
 
-        time_taken = runTime(start_time)
+        time_taken = run_time(start_time)
         print('END {0}'.format(name))
 
         results.insert(0, time_taken)
@@ -215,18 +236,18 @@ def timer(function, name):
     return wrapper
 
 
-def removeDirectory(directory):
+def remove_directory(directory):
     if os.path.isdir(directory):
         shutil.rmtree(directory)
 
 
-def saveVariableToPickle(variableToStore, outdir, prefix):
+def save_variable_to_pickle(variableToStore, outdir, prefix):
     pickleFile = os.path.join(outdir, str(prefix + '.pkl'))
     with open(pickleFile, 'wb') as writer:
         pickle.dump(variableToStore, writer)
 
 
-def extractVariableFromPickle(pickleFile):
+def extract_variable_from_pickle(pickleFile):
     with open(pickleFile, 'rb') as reader:
         variable = pickle.load(reader)
     return variable
@@ -248,18 +269,18 @@ def trace_unhandled_exceptions(func):
 
 
 def kill_subprocess_Popen(subprocess_Popen, command):
-    print 'Command run out of time: ' + str(command)
+    print('Command run out of time: ' + str(command))
     subprocess_Popen.kill()
 
 
-def runCommandPopenCommunicate(command, shell_True, timeout_sec_None, print_comand_True):
+def run_command_popen_communicate(command, shell_True, timeout_sec_None, print_comand_True):
     run_successfully = False
-    if not isinstance(command, basestring):
+    if not isinstance(command, str):
         command = ' '.join(command)
     command = shlex.split(command)
 
     if print_comand_True:
-        print 'Running: ' + ' '.join(command)
+        print('Running: ' + ' '.join(command))
 
     if shell_True:
         command = ' '.join(command)
@@ -271,24 +292,24 @@ def runCommandPopenCommunicate(command, shell_True, timeout_sec_None, print_coma
     if timeout_sec_None is None:
         stdout, stderr = proc.communicate()
     else:
-        timer = Timer(timeout_sec_None, kill_subprocess_Popen, args=(proc, command,))
-        timer.start()
+        time_counter = Timer(timeout_sec_None, kill_subprocess_Popen, args=(proc, command,))
+        time_counter.start()
         stdout, stderr = proc.communicate()
-        timer.cancel()
-        not_killed_by_timer = timer.isAlive()
+        time_counter.cancel()
+        not_killed_by_timer = time_counter.isAlive()
 
     if proc.returncode == 0:
         run_successfully = True
     else:
         if not print_comand_True and not_killed_by_timer:
-            print 'Running: ' + str(command)
+            print('Running: ' + str(command))
         if len(stdout) > 0:
-            print 'STDOUT'
-            print stdout.decode("utf-8")
+            print('STDOUT')
+            print(stdout.decode("utf-8"))
         if len(stderr) > 0:
-            print 'STDERR'
-            print stderr.decode("utf-8")
-    return run_successfully, stdout, stderr
+            print('STDERR')
+            print(stderr.decode("utf-8"))
+    return run_successfully, stdout.decode("utf-8"), stderr.decode("utf-8")
 
 
 def rchop(string, ending):
@@ -300,11 +321,11 @@ def rchop(string, ending):
 def reverse_complement(seq):
     complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A', 'N': 'N'}
 
-    reverse_complement = ''
+    reverse_complement_string = ''
 
     seq = reversed(list(seq.upper()))
 
     for base in seq:
-        reverse_complement += complement[base]
+        reverse_complement_string += complement[base]
 
-    return reverse_complement
+    return reverse_complement_string

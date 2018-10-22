@@ -19,7 +19,7 @@ Table of Contents
 Combine the alignment consensus sequences from ReMatCh first run by reference sequences into single files.
 
 **Dependencies**
-- Python (2.7.x)
+- Python v3
 
 **Usage**
 

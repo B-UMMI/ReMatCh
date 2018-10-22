@@ -1,4 +1,3 @@
-import utils
 import os.path
 import multiprocessing
 import sys
@@ -6,16 +5,21 @@ import functools
 import time
 import subprocess
 
+try:
+    import modules.utils as utils
+except ImportError:
+    from ReMatCh.modules import utils as utils
+
 
 def get_read_run_info(ena_id):
-    import urllib
+    import urllib.request
 
     url = 'http://www.ebi.ac.uk/ena/data/warehouse/filereport?accession=' + ena_id + '&result=read_run'
 
     read_run_info = None
     try:
-        url = urllib.urlopen(url)
-        read_run_info = url.read().splitlines()
+        url = urllib.request.urlopen(url)
+        read_run_info = url.read().decode("utf8").splitlines()
         if len(read_run_info) <= 1:
             read_run_info = None
     except Exception as error:
@@ -33,7 +37,7 @@ def get_download_information(read_run_info):
 
     for i in range(0, len(header_line)):
         header = header_line[i].lower().rsplit('_', 1)
-        if header[0] in download_information.keys():
+        if header[0] in list(download_information.keys()):
             if header[1] in download_types:
                 if len(info_line[i]) > 0:
                     files_path = info_line[i].split(';')
@@ -59,7 +63,7 @@ def get_sequencing_information(read_run_info):
 
     for i in range(0, len(header_line)):
         header = header_line[i].lower()
-        if header in sequencing_information.keys():
+        if header in list(sequencing_information.keys()):
             if len(info_line[i]) > 0:
                 sequencing_information[header] = info_line[i]
 
@@ -90,9 +94,9 @@ def download_with_aspera(aspera_file_path, aspera_key, outdir, pickle_prefix, sr
             a=ena_id[:3], b=ena_id[:6], c=ena_id)
         pickle = pickle_prefix + '.' + ena_id
 
-    run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, False, 3600, True)
+    run_successfully, stdout, stderr = utils.run_command_popen_communicate(command, False, 3600, True)
 
-    utils.saveVariableToPickle(run_successfully, outdir, pickle)
+    utils.save_variable_to_pickle(run_successfully, outdir, pickle)
 
 
 @utils.trace_unhandled_exceptions
@@ -108,9 +112,9 @@ def download_with_wget(ftp_file_path, outdir, pickle_prefix, sra, ena_id):
             a=ena_id[:3], b=ena_id[:6], c=ena_id)
         command[4] = os.path.join(outdir, ena_id + '.sra')
         pickle = pickle_prefix + '.' + ena_id
-    run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, False, 3600, True)
+    run_successfully, stdout, stderr = utils.run_command_popen_communicate(command, False, 3600, True)
 
-    utils.saveVariableToPickle(run_successfully, outdir, pickle)
+    utils.save_variable_to_pickle(run_successfully, outdir, pickle)
 
 
 @utils.trace_unhandled_exceptions
@@ -118,12 +122,13 @@ def download_with_sra_prefetch(aspera_key, outdir, pickle_prefix, ena_id):
     command = ['prefetch', '', ena_id]
 
     if aspera_key is not None:
-        _, ascp, _ = utils.runCommandPopenCommunicate(['which', 'ascp'], False, None, False)
+        _, ascp, _ = utils.run_command_popen_communicate(['which', 'ascp'], False, None, False)
         command[1] = '-a {ascp}|{aspera_key}'.format(ascp=ascp.splitlines()[0], aspera_key=aspera_key)
 
-    run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, False, 3600, True)
+    run_successfully, stdout, stderr = utils.run_command_popen_communicate(command, False, 3600, True)
     if run_successfully:
-        _, prefetch_outdir, _ = utils.runCommandPopenCommunicate(['echo', '$HOME/ncbi/public/sra'], True, None, False)
+        _, prefetch_outdir, _ = utils.run_command_popen_communicate(['echo', '$HOME/ncbi/public/sra'], True, None,
+                                                                    False)
 
         try:
             os.rename(os.path.join(prefetch_outdir.splitlines()[0], ena_id + '.sra'),
@@ -138,7 +143,7 @@ def download_with_sra_prefetch(aspera_key, outdir, pickle_prefix, ena_id):
                         os.path.join(outdir, ena_id + '.sra'))
             os.remove(os.path.join(prefetch_outdir.splitlines()[0], ena_id + '.sra'))
 
-    utils.saveVariableToPickle(run_successfully, outdir, pickle_prefix + '.' + ena_id)
+    utils.save_variable_to_pickle(run_successfully, outdir, pickle_prefix + '.' + ena_id)
 
 
 @utils.trace_unhandled_exceptions
@@ -154,9 +159,9 @@ def download_with_curl(ftp_file_path, outdir, pickle_prefix, sra, ena_id):
             a=ena_id[:3], b=ena_id[:6], c=ena_id)
         command[5] = os.path.join(outdir, ena_id + '.sra')
         pickle = pickle_prefix + '.' + ena_id
-    run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, False, 3600, True)
+    run_successfully, stdout, stderr = utils.run_command_popen_communicate(command, False, 3600, True)
 
-    utils.saveVariableToPickle(run_successfully, outdir, pickle)
+    utils.save_variable_to_pickle(run_successfully, outdir, pickle)
 
 
 def get_pickle_run_successfully(directory, pickle_prefix):
@@ -167,7 +172,7 @@ def get_pickle_run_successfully(directory, pickle_prefix):
     if files is not None:
         for file_found in files:
             if run_successfully:
-                run_successfully = utils.extractVariableFromPickle(file_found)
+                run_successfully = utils.extract_variable_from_pickle(file_found)
                 read_pickle = True
 
             os.remove(file_found)
@@ -180,7 +185,7 @@ def get_pickle_run_successfully(directory, pickle_prefix):
 
 def curl_installed():
     command = ['which', 'curl']
-    run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, False, None, False)
+    run_successfully, stdout, stderr = utils.run_command_popen_communicate(command, False, None, False)
     return run_successfully
 
 
@@ -276,7 +281,7 @@ def sort_alignment(alignment_file, output_file, sort_by_name_true, threads):
     command = ['samtools', 'sort', '-o', output_file, '-O', out_format_string, '', '-@', str(threads), alignment_file]
     if sort_by_name_true:
         command[6] = '-n'
-    run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, False, None, True)
+    run_successfully, stdout, stderr = utils.run_command_popen_communicate(command, False, None, True)
 
     if not run_successfully:
         output_file = None
@@ -297,7 +302,7 @@ def alignment_to_fastq(alignment_file, threads, pair_end_type):
         elif pair_end_type == 'single':
             command[2] = '-0 ' + str(fastq_basename + '.fq')
 
-        run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, False, None, True)
+        run_successfully, stdout, stderr = utils.run_command_popen_communicate(command, False, None, True)
         if run_successfully:
             if pair_end_type.lower() == 'paired':
                 outfiles = [str(fastq_basename + '_1.fq'), str(fastq_basename + '_2.fq')]
@@ -311,7 +316,6 @@ def alignment_to_fastq(alignment_file, threads, pair_end_type):
 
 
 def formart_fastq_headers(in_fastq_1, in_fastq_2):
-    import itertools
 
     out_fastq_1 = in_fastq_1 + '.temp'
     out_fastq_2 = in_fastq_2 + '.temp'
@@ -322,7 +326,7 @@ def formart_fastq_headers(in_fastq_1, in_fastq_2):
         plus_line = True
         quality_line = True
         number_reads = 0
-        for in_1, in_2 in itertools.izip(reader_in_fastq_1, reader_in_fastq_2):
+        for in_1, in_2 in zip(reader_in_fastq_1, reader_in_fastq_2):
             if len(in_1) > 0:
                 in_1 = in_1.splitlines()[0]
                 in_2 = in_2.splitlines()[0]
@@ -365,11 +369,12 @@ def gzip_files(file_2_compress, pickle_prefix, outdir):
         out_file = file_2_compress
 
     command = ['gzip', '--stdout', '--best', file_2_compress, '>', str(out_file + '.gz')]
-    run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, True, None, True)
+    run_successfully, stdout, stderr = utils.run_command_popen_communicate(command, True, None, True)
     if run_successfully:
         os.remove(file_2_compress)
 
-    utils.saveVariableToPickle(run_successfully, outdir, str(pickle_prefix + '.' + os.path.basename(file_2_compress)))
+    utils.save_variable_to_pickle(run_successfully, outdir,
+                                  str(pickle_prefix + '.' + os.path.basename(file_2_compress)))
 
 
 def find_files(directory, prefix, suffix):
@@ -477,7 +482,7 @@ def rename_move_files(list_files, new_name, outdir, download_paired_type):
                         os.remove(list_files[i])
                 else:
                     os.rename(list_files[i], list_new_files[i])
-            list_new_files = list_new_files.values()
+            list_new_files = list(list_new_files.values())
         except Exception as e:
             print(e)
             run_successfully = False
@@ -509,7 +514,7 @@ def rename_header_sra(fastq):
 def sra_2_fastq(download_dir, ena_id):
     command = ['fastq-dump', '-I', '-O', download_dir, '--split-files', '{download_dir}{ena_id}.sra'.format(
         download_dir=download_dir, ena_id=ena_id)]
-    run_successfully, stdout, stderr = utils.runCommandPopenCommunicate(command, False, 3600, True)
+    run_successfully, stdout, stderr = utils.run_command_popen_communicate(command, False, 3600, True)
     if run_successfully:
         files = [os.path.join(download_dir, f) for f in os.listdir(download_dir)
                  if not f.startswith('.') and os.path.isfile(os.path.join(download_dir, f)) and f.endswith('.fastq')]
@@ -531,7 +536,7 @@ download_timer = functools.partial(utils.timer, name='Download module')
 def run_download(ena_id, download_paired_type, aspera_key, outdir, download_cram_bam_true, threads, instrument_platform,
                  sra, sra_opt):
     download_dir = os.path.join(outdir, 'download', '')
-    utils.removeDirectory(download_dir)
+    utils.remove_directory(download_dir)
     os.mkdir(download_dir)
 
     run_successfully = False
@@ -589,6 +594,6 @@ def run_download(ena_id, download_paired_type, aspera_key, outdir, download_cram
                 if not run_successfully:
                     run_successfully, downloaded_files = rename_move_files(downloaded_files, ena_id, outdir, 'single')
 
-    utils.removeDirectory(download_dir)
+    utils.remove_directory(download_dir)
 
     return run_successfully, downloaded_files, sequencing_information

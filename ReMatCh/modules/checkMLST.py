@@ -1,7 +1,6 @@
 import sys
 import os
-import urllib2
-import urllib
+import urllib.request
 import csv
 from glob import glob
 import re
@@ -10,8 +9,8 @@ try:
     import xml.etree.cElementTree as ET
 except ImportError:
     import xml.etree.ElementTree as ET
-import utils
-import rematch_module
+from . import utils
+from . import rematch_module
 
 
 def determine_species(species):
@@ -56,10 +55,10 @@ def check_existing_schema(species, schema_number, script_path):
 
 
 def write_mlst_reference(species, mlst_sequences, outdir, time_str):
-    print 'Writing MLST alleles as reference_sequences' + '\n'
+    print('Writing MLST alleles as reference_sequences' + '\n')
     reference_file = os.path.join(outdir, str(species.replace('/', '_').replace(' ', '_') + '.' + time_str + '.fasta'))
     with open(reference_file, 'wt') as writer:
-        for header, sequence in mlst_sequences.items():
+        for header, sequence in list(mlst_sequences.items()):
             writer.write('>' + header + '\n')
             fasta_sequence_lines = rematch_module.chunkstring(sequence, 80)
             for line in fasta_sequence_lines:
@@ -67,21 +66,21 @@ def write_mlst_reference(species, mlst_sequences, outdir, time_str):
     return reference_file
 
 
-def getST(mlst_dicts, dict_sequences):
+def get_st(mlst_dicts, dict_sequences):
     SequenceDict = mlst_dicts[0]
     STdict = mlst_dicts[1]
     lociOrder = mlst_dicts[2]
 
     alleles_profile = ['-'] * len(lociOrder)
-    for x, sequence_data in dict_sequences.items():
+    for x, sequence_data in list(dict_sequences.items()):
         if sequence_data['header'] not in SequenceDict:
-            print sequence_data['header'] + ' not found between consensus sequences!'
+            print(sequence_data['header'] + ' not found between consensus sequences!')
             break
-        if sequence_data['sequence'] in SequenceDict[sequence_data['header']].keys():
+        if sequence_data['sequence'] in list(SequenceDict[sequence_data['header']].keys()):
             allele_number = SequenceDict[sequence_data['header']][sequence_data['sequence']]
             alleles_profile[lociOrder.index(sequence_data['header'])] = allele_number
         else:
-            for sequence_st, allele_number in SequenceDict[sequence_data['header']].items():
+            for sequence_st, allele_number in list(SequenceDict[sequence_data['header']].items()):
                 if sequence_st in sequence_data['sequence']:
                     alleles_profile[lociOrder.index(sequence_data['header'])] = allele_number
 
@@ -97,16 +96,17 @@ downloadPubMLST = functools.partial(utils.timer, name='Download PubMLST module')
 
 
 @downloadPubMLST
-def downloadPubMLSTxml(originalSpecies, schema_number, outdir):
-    print 'Searching MLST database for ' + originalSpecies
+def download_pub_mlst_xml(originalSpecies, schema_number, outdir):
+    print('Searching MLST database for ' + originalSpecies)
 
     xmlURL = 'http://pubmlst.org/data/dbases.xml'
     try:
-        content = urllib2.urlopen(xmlURL)
+        content = urllib.request.urlopen(xmlURL)
         xml = content.read()
         tree = ET.fromstring(xml)
     except:
-        print "Ooops! There might be a problem with the PubMLST service, try later or check if the xml is well formated at " + xmlURL
+        print("Ooops! There might be a problem with the PubMLST service, try later or check if the xml is well formated"
+              " at " + xmlURL)
         raise
 
     xmlData = {}
@@ -142,9 +142,10 @@ def downloadPubMLSTxml(originalSpecies, schema_number, outdir):
     if success == 0:
         sys.exit("\tError. No schema found for %s. Please refer to https://pubmlst.org/databases/" % (originalSpecies))
     elif success > 1:
-        keys = xmlData.keys()
+        keys = list(xmlData.keys())
         keys = sorted(keys)
-        print "\tWarning. More than one schema found for %s. only keeping the first one... %s" % (originalSpecies, keys[0])
+        print("\tWarning. More than one schema found for %s. only keeping the first"
+              " one... %s" % (originalSpecies, keys[0]))
         for key in keys[1:]:
             del xmlData[key]
 
@@ -152,64 +153,64 @@ def downloadPubMLSTxml(originalSpecies, schema_number, outdir):
     if not os.path.isdir(pubmlst_dir):
         os.makedirs(pubmlst_dir)
 
-    for SchemaName, info in xmlData.items():
+    for SchemaName, info in list(xmlData.items()):
         STdict = {}
         SequenceDict = {}
         mlst_sequences = {}
 
         species_name = '_'.join(determine_species(SchemaName)).replace('/', '_')
 
-        for RetrievalDate, URL in info.items():
+        for RetrievalDate, URL in list(info.items()):
             schema_date = species_name + '_' + RetrievalDate
             outDit = os.path.join(pubmlst_dir, schema_date)  # compatible with windows? See if it already exists, if so, break
 
             if os.path.isdir(outDit):
                 pickle = os.path.join(outDit, str(schema_date + '.pkl'))
                 if os.path.isfile(pickle):
-                    print "\tschema files already exist for %s" % (SchemaName)
-                    mlst_dicts = utils.extractVariableFromPickle(pickle)
+                    print("\tschema files already exist for %s" % (SchemaName))
+                    mlst_dicts = utils.extract_variable_from_pickle(pickle)
                     SequenceDict = mlst_dicts[0]
-                    for lociName, alleleSequences in SequenceDict.items():
+                    for lociName, alleleSequences in list(SequenceDict.items()):
                         for sequence in alleleSequences:
-                            if lociName not in mlst_sequences.keys():
+                            if lociName not in list(mlst_sequences.keys()):
                                 mlst_sequences[lociName] = sequence
                             else:
                                 break
                     return mlst_dicts, mlst_sequences
 
             elif any(species_name in x for x in os.listdir(pubmlst_dir)):
-                print "Older version of %s's scheme found! Deleting..." % (SchemaName)
+                print("Older version of %s's scheme found! Deleting..." % (SchemaName))
                 for directory in glob(str(pubmlst_dir + str(species_name + '_*'))):
-                    utils.removeDirectory(directory)
+                    utils.remove_directory(directory)
                     os.makedirs(outDit)
             else:
                 os.makedirs(outDit)
 
-            contentProfile = urllib2.urlopen(URL[0])
-            profileFile = csv.reader(contentProfile, delimiter='\t')
-            header = profileFile.next()  # skip header
+            contentProfile = urllib.request.urlopen(URL[0])
+            header = next(contentProfile).decode("utf8").strip().split('\t')  # skip header
             try:
                 indexCC = header.index('clonal_complex') if 'clonal_complex' in header else header.index('CC')
             except:
                 indexCC = len(header)
             lociOrder = header[1:indexCC]
-            for row in profileFile:
+            for row in contentProfile:
+                row = row.decode("utf8").strip().split('\t')
                 ST = row[0]
                 alleles = ','.join(row[1:indexCC])
                 STdict[alleles] = ST
-            for lociName, lociURL in URL[1].items():
-                if lociName not in SequenceDict.keys():
+            for lociName, lociURL in list(URL[1].items()):
+                if lociName not in list(SequenceDict.keys()):
                     SequenceDict[lociName] = {}
                 url_file = os.path.join(outDit, lociURL.rsplit('/', 1)[1])
-                urllib.urlretrieve(lociURL, url_file)
+                urllib.request.urlretrieve(lociURL, url_file)
                 sequences, ignore, ignore = rematch_module.get_sequence_information(url_file, 0)
-                for key in sequences.keys():
+                for key in list(sequences.keys()):
                     header = re.sub("\D", "", sequences[key]['header'])
                     sequence = sequences[key]['sequence'].upper()
                     SequenceDict[lociName][sequence] = header
-                    if lociName not in mlst_sequences.keys():
+                    if lociName not in list(mlst_sequences.keys()):
                         mlst_sequences[lociName] = sequence
                 os.remove(url_file)
             mlst_dicts = [SequenceDict, STdict, lociOrder]
-            utils.saveVariableToPickle(mlst_dicts, outDit, schema_date)
+            utils.save_variable_to_pickle(mlst_dicts, outDit, schema_date)
     return mlst_dicts, mlst_sequences

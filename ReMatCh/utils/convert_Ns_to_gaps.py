@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # -*- coding: utf-8 -*-
 
@@ -6,9 +6,9 @@
 convert_Ns_to_gaps.py - Convert the Ns into gaps
 <https://github.com/B-UMMI/ReMatCh/>
 
-Copyright (C) 2017 Miguel Machado <mpmachado@medicina.ulisboa.pt>
+Copyright (C) 2018 Miguel Machado <mpmachado@medicina.ulisboa.pt>
 
-Last modified: March 22, 2017
+Last modified: October 15, 2018
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@ import os
 import argparse
 
 
-version = '0.1'
+version = '0.2'
 
 
 def conversion(infile, outfile):
@@ -41,7 +41,7 @@ def conversion(infile, outfile):
                 if line.startswith('>'):
                     writer.write(line + '\n')
                     if counter % 10 == 0:
-                        print '\n' + str(counter) + ' sequences already processed'
+                        print('\n' + str(counter) + ' sequences already processed')
                         last_printed = counter
                     counter += 1
                 else:
@@ -49,10 +49,10 @@ def conversion(infile, outfile):
                         line = line.replace('N', '-')
                         writer.write(line + '\n')
     if last_printed < counter:
-        print '\n' + str(counter - 1) + ' sequences already processed'
+        print('\n' + str(counter - 1) + ' sequences already processed')
 
 
-def convert_Ns_2_gaps(args):
+def convert_n_2_gaps(args):
     outdir = os.path.dirname(os.path.abspath(args.outfile))
     if not os.path.isdir(outdir):
         os.makedirs(outdir)
@@ -65,16 +65,20 @@ def convert_Ns_2_gaps(args):
 
 
 def main():
-    parser = argparse.ArgumentParser(prog='convert_Ns_to_gaps.py', description='Convert the Ns into gaps', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(prog='convert_Ns_to_gaps.py', description='Convert the Ns into gaps',
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--version', help='Version information', action='version', version=str('%(prog)s v' + version))
 
     parser_required = parser.add_argument_group('Required options')
-    parser_required.add_argument('-i', '--infile', type=argparse.FileType('r'), metavar='/path/to/input/file.fasta', help='Path to the fasta file', required=True)
-    parser_required.add_argument('-o', '--outfile', type=str, metavar='/path/to/converted/output/file.fasta', help='Converted output fasta file', required=True, default='converted_Ns_to_gaps.fasta')
+    parser_required.add_argument('-i', '--infile', type=argparse.FileType('r'), metavar='/path/to/input/file.fasta',
+                                 help='Path to the fasta file', required=True)
+    parser_required.add_argument('-o', '--outfile', type=str, metavar='/path/to/converted/output/file.fasta',
+                                 help='Converted output fasta file', required=True,
+                                 default='converted_Ns_to_gaps.fasta')
 
     args = parser.parse_args()
 
-    convert_Ns_2_gaps(args)
+    convert_n_2_gaps(args)
 
 
 if __name__ == "__main__":

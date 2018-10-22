@@ -9,6 +9,7 @@
 Table of Contents
 --
 
+ - [Rational](#rational)
  - [Dependencies](#dependencies)
  - [Installation](#installation)
  - [Input](#input)
@@ -25,12 +26,31 @@ Table of Contents
        - [MultiLocus Sequence Typing for local samples](#multilocus-sequence-typing-for-local-samples)
        - [MultiLocus Sequence Typing for ENA list of IDs or taxon](#multilLocus-sequence-typing-for-ena-list-of-ids-or-taxon)
  - [Outputs](#outputs)
+ - [Citation](#citation)
  - [Contact](#contact)
 
+## Rational
+<html>
+ <div align="right">
+  <a href="#seq_typing">Back to top</a><br>
+ </div>
+</html>
+
+ReMatCh was designed to map HTS reads onto a set of reference sequences in order to determine whether those sequences are present or absent in each sample, and to identify any variation compared to the reference. ReMatCh determines if a sequence is present or absent based on the proportion of reference sequence length covered by at least a predefined number of reads; and the sequence similarity. It relies mainly on the strength of high read numbers to correctly identify two types of variants: SNPs and INDELs. However, when a position does not meet the criteria for being unambiguously called, ReMatCh will designate it as a potential heterozygous position. In order to correctly identify variants over the entire length of a target region, references containing additional sequences flanking the region of interest can be provided and will grant a scaffold for proper read mapping. Moreover, to avoid errors when calling a position due to improper read mapping resulting from divergence between the allele in the genome of interest and the reference sequence, ReMatCh has the option to be executed in “double run” mode, in which the resulting consensus sequences are used as reference sequences in a second run, thereby facilitating read mapping. ReMatCh can use locally stored sequence data, but it can also directly interact with the ENA database and download the read files from sample/run accession numbers provided by the user or all data associated with a given taxon name.
+A ReMatCh module was designed to get the MLST sequence type from HTS reads. Using a provided MLST curated schema with flanking regions or an allele for each MLST loci obtained from PubMLST database (https://pubmlst.org) as reference sequences, the consensus sequences produced by ReMatCh are compared to the ones found in PubMLST database for allele scoring and ST determination.
+ReMatCh software dependencies are: Bowtie2 (Langmead and Salzberg 2012) for read mapping, Samtools (Li et al. 2009) for sam/bam manipulation and variant calling and Bcftools (Li 2011) for consensus sequence production. These software dependencies are provided together with ReMatCh to facilitate the installation and guarantee that the users have the correct versions. Besides the parallelization implemented within Bowtie2 and Samtools, ReMatCh assigns one sequence variant analysis and coverage determination to each available thread.
+
 ## Dependencies
+<html>
+ <div align="right">
+  <a href="#seq_typing">Back to top</a><br>
+ </div>
+</html>
 
 **Mandatory**  
-Required to run ReMatch analysis
+ - *Python* >= v3  
+ 
+Required to run ReMatch analysis (provided)
  - *Bowtie2* >= v2.2.9
  - *Samtools* = v1.3.1
  - *Bcftools* = v1.3.1  
@@ -47,24 +67,56 @@ Required to download sequence data from ENA/SRA database:
  - _GNU Awk_ (optional) (normally found in Linux OS) (for SRA interaction)
 
 ## Installation
-ReMatCh is a standalone python script and does not require any installation. Simply clone the git repository:
+<html>
+ <div align="right">
+  <a href="#seq_typing">Back to top</a><br>
+ </div>
+</html>
 
-    git clone https://github.com/B-UMMI/ReMatCh.git
+````bash
+git clone https://github.com/B-UMMI/ReMatCh.git
+cd ReMatCh
+python3 setup.py install
+````
 
 
 ## Input
+<html>
+ <div align="right">
+  <a href="#seq_typing">Back to top</a><br>
+ </div>
+</html>
+
 #### Reference
+<html>
+ <div align="right">
+  <a href="#seq_typing">Back to top</a><br>
+ </div>
+</html>
+
 ReMatCh requires for the reference sequeces, in fasta file, to be provided through the `-r`option.
 In our experience, the addition of 200nt upstream and downstream of the target region when using Illumina Miseq data (150nt reads), will have the desired effect, and these flanking regions will be ignored in variant calling, unless there is an INDEL affecting the target sequence.  the size of the flanking regions can be set with the opion `--extraSeq`.
 If the `--mlst` option is used, the `--mlstReference` can be used intead of the `-r`, telling ReMatCh to use the curated scheme for the MLST scheme, if available, as reference sequences with 200nt flanking the target regions, or the first alleles of each MLST gene fragment in PubMLST as reference sequences.
 
 #### Samples
+<html>
+ <div align="right">
+  <a href="#seq_typing">Back to top</a><br>
+ </div>
+</html>
+
 The samples can be provided through the `-w` option, if stored locally in a directory, or by telling ReMatCh to interact directly with ENA.
 This can be done by passing rematch a list of IDs to download, through the `-l`option, or to download all the reads from a given taxon, though the `--taxon` option.
 The sample files are required to be in "fq.gz" (or "fastq.gz") format.
 
 
 ## Usage
+<html>
+ <div align="right">
+  <a href="#seq_typing">Back to top</a><br>
+ </div>
+</html>
+
     usage: rematch.py [-h] [--version]
                       (-r /path/to/reference_sequence.fasta | --mlstReference)
                       [-w /path/to/workdir/directory/] [-j N]
@@ -207,9 +259,27 @@ The sample files are required to be in "fq.gz" (or "fastq.gz") format.
 
 
 ### Usage Examples
+<html>
+ <div align="right">
+  <a href="#seq_typing">Back to top</a><br>
+ </div>
+</html>
+
 
 #### Running ReMatCh Beginner
+<html>
+ <div align="right">
+  <a href="#seq_typing">Back to top</a><br>
+ </div>
+</html>
+
 ##### Using local samples for provided reference file
+<html>
+ <div align="right">
+  <a href="#seq_typing">Back to top</a><br>
+ </div>
+</html>
+
 To run ReMatCh in local fastq files, please organize those files into sample folders, as shown bellow.
 E.g.:
 ```
@@ -229,7 +299,19 @@ As so, the command should look something like:
 
 
 #### Running ReMatCh Moderate
+<html>
+ <div align="right">
+  <a href="#seq_typing">Back to top</a><br>
+ </div>
+</html>
+
 ##### Using specific ENA sequencing data for provided reference file
+<html>
+ <div align="right">
+  <a href="#seq_typing">Back to top</a><br>
+ </div>
+</html>
+
 To run ReMatCh in a specific set of ENA IDs you need to provide a file to `--listIDs` containing a list of ENA IDs to be downloaded. The IDs can be Sample Accession numbers or Run Accession numbers (for example), as long as there's only one ID per line in the file.
 In case of IDs containing more than one Run Accession number (like Study accession numbers), only one of them will be downloaded and the remaining will be stored in *sample_report.*.tab* file under extra_run_accession column in a comma separated style.  
 ReMatCh will store the output files in the `--workdir`.
@@ -242,6 +324,12 @@ By default ReMatCh uses `wget` to download the sample files from ENA. We recomme
 
 
 ##### Using ENA sequencing data of a given taxon for provided reference file
+<html>
+ <div align="right">
+  <a href="#seq_typing">Back to top</a><br>
+ </div>
+</html>
+
 To run ReMatCh in all ENA data of a given taxon, provide the taxon name to `--taxon`.
 The ENA Run Accession numbers for the given taxon will be stored in IDs_list.seqFromWebTaxon.tab file.  
 The column content will be:
@@ -257,7 +345,19 @@ The first line of *IDs_list.seqFromWebTaxon.tab* will contain the date of access
 
 
 #### Running ReMatCh Advanced
+<html>
+ <div align="right">
+  <a href="#seq_typing">Back to top</a><br>
+ </div>
+</html>
+
 ##### MultiLocus Sequence Typing for local samples
+<html>
+ <div align="right">
+  <a href="#seq_typing">Back to top</a><br>
+ </div>
+</html>
+
 To run ReMatCh in a set of samples for MLST the option `--mlst` needs to be provided with species name (same as in PubMLST - https://pubmlst.org/databases/) to be used in MLST determination.
 If more than one scheme is available for the species, the desired schema number should be passed to ReMatCh with the `--mlstSchemaNumber` option.
 A fasta file containing the MLST reference sequences (`-r`) is required, along with the size of the flanking regions as recomended by us (set with the opion `--extraSeq`). Alternatively the `--mlstReference` option can be used, telling ReMatCH to use the curated scheme for the MLST scheme, if available, as reference sequences with 200nt flanking the target regions, or the first alleles of each MLST gene fragment in PubMLST as reference sequences.
@@ -271,6 +371,12 @@ As default, ReMatCh uses the consensus sequence "noMatter" in MLST determination
     rematch.py --mlst "Streptococcus agalactiae" --mlstReference --taxon "Streptococcus agalactiae" --workdir /path/to/workdir/ --mlstConsensus all --doubleRun --mlstRun second
 
 ##### MultiLocus Sequence Typing for ENA list of IDs or taxon
+<html>
+ <div align="right">
+  <a href="#seq_typing">Back to top</a><br>
+ </div>
+</html>
+
 As described above, you can run ReMatCh in a specific set of ENA IDs or in all taxon data for MLST by providing the `-l` or `--taxon` options respectively.
 
     rematch.py --mlst "Streptococcus agalactiae" --mlstReference -l IDs.txt --workdir /path/to/workdir/
@@ -279,6 +385,12 @@ As described above, you can run ReMatCh in a specific set of ENA IDs or in all t
 
 
 ## Outputs
+<html>
+ <div align="right">
+  <a href="#seq_typing">Back to top</a><br>
+ </div>
+</html>
+
 **run.*.log**  
 ReMatCh running log file.  
 
@@ -331,7 +443,21 @@ For each sample, three fasta files will be produced:
  - *rematch_second_run/* - Folder containing the same files/folders described above, but for the *second_run*. Only created if `--doubleRun` is set
 
 
+## Citation
+<html>
+ <div align="right">
+  <a href="#seq_typing">Back to top</a><br>
+ </div>
+</html>
+
+MP Machado, B Ribeiro-Goncalves, M Silva, I Mendes, M Rossi, M Ramirez, JA Carrico. _ReMatCh_ **GitHub** https://github.com/B-UMMI/ReMatCh
+
 ## Contact
+<html>
+ <div align="right">
+  <a href="#seq_typing">Back to top</a><br>
+ </div>
+</html>
 
 Miguel Machado  
 <mpmachado@medicina.ulisboa.pt>
