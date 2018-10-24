@@ -1,6 +1,16 @@
+import os
+from setuptools import setup
+
 import ReMatCh
 
-from setuptools import setup
+
+def package_files(directory):
+    paths = []
+    for (path, directories, filenames) in os.walk(directory):
+        for filename in filenames:
+            paths.append(os.path.join('..', path, filename))
+    return paths
+
 
 VERSION = ReMatCh.__version__
 
@@ -13,8 +23,8 @@ setup(
     packages=['ReMatCh',
               'ReMatCh.modules'],
     package_dir={'ReMatCh': 'ReMatCh'},
-    package_data={'ReMatCh': ['../.git/*', '../.git/*/*', '../.git/*/*/*',
-                              'utils/*',
+    package_data={'ReMatCh': package_files('.git') +
+                             ['utils/*',
                               'modules/mlst_schemas/*',
                               'src/bcftools-1.3.1/bin/*', 'src/bowtie2-2.2.9/bowtie2*', 'src/samtools-1.3.1/bin/*']},
     include_package_data=True,
