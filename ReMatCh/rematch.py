@@ -690,22 +690,27 @@ def main():
 
     args = parser.parse_args()
 
+    msg = []
     if args.reference is None and not args.mlstReference:
-        parser.error('At least --reference or --mlstReference should be provided')
+        msg.append('At least --reference or --mlstReference should be provided')
     elif args.reference is not None and args.mlstReference:
-        parser.error('Only --reference or --mlstReference should be provided')
+        msg.append('Only --reference or --mlstReference should be provided')
     else:
         if args.mlstReference:
             if args.mlst is None:
-                parser.error('Please provide species name using --mlst')
-
+                msg.append('Please provide species name using --mlst')
     if args.minFrequencyDominantAllele < 0 or args.minFrequencyDominantAllele > 1:
-        parser.error('--minFrequencyDominantAllele should be a value between [0, 1]')
-
+        msg.append('--minFrequencyDominantAllele should be a value between [0, 1]')
     if args.minGeneCoverage < 0 or args.minGeneCoverage > 100:
-        parser.error('--minGeneCoverage should be a value between [0, 100]')
+        msg.append('--minGeneCoverage should be a value between [0, 100]')
     if args.minGeneIdentity < 0 or args.minGeneIdentity > 100:
-        parser.error('--minGeneIdentity should be a value between [0, 100]')
+        msg.append('--minGeneIdentity should be a value between [0, 100]')
+    if args.notWriteConsensus and args.doubleRun:
+        msg.append('--notWriteConsensus and --doubleRun cannot be used together.'
+                   ' Maybe you only want to use --doubleRun')
+
+    if len(msg) > 0:
+        argparse.ArgumentParser.error('\n'.join(msg))
 
     start_time = time.time()
 

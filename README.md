@@ -78,7 +78,9 @@ git clone https://github.com/B-UMMI/ReMatCh.git
 cd ReMatCh
 python3 setup.py install
 ````
-
+*__NOTE__*:  
+If you don't have permission for global system installation, try the following _install_ command instead:  
+`python3 setup.py install --user`
 
 ## Input
 <html>
