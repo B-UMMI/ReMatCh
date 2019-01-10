@@ -356,7 +356,6 @@ def run_rematch(args):
                                                                                            args.mlstSchemaNumber,
                                                                                            workdir)
         args.softClip_recodeRun = 'first'
-        args.conservedSeq = False
 
     if args.reference is None:
         reference_file = check_mlst.check_existing_schema(args.mlst, args.mlstSchemaNumber, script_path)
