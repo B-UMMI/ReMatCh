@@ -33,15 +33,16 @@ def index_sequence_bowtie2(reference_file, threads):
 
 
 # Mapping with Bowtie2
-def mapping_bowtie2(fastq_files, reference_file, threads, outdir, conserved_true, num_map_loc, bowtie_opt):
+def mapping_bowtie2(fastq_files, reference_file, threads, outdir, num_map_loc,
+                    bowtie_algorithm='--very-sensitive-local', bowtie_opt=None):
     sam_file = os.path.join(outdir, str('alignment.sam'))
 
     # Index reference file
     run_successfully = index_sequence_bowtie2(reference_file, threads)
 
     if run_successfully:
-        command = ['bowtie2', '-k', str(num_map_loc), '-q', '', '--threads', str(threads), '-x', reference_file, '',
-                   '--no-unal', '', '-S', sam_file]
+        command = ['bowtie2', '-k', str(num_map_loc), '-q', bowtie_algorithm, '--threads', str(threads), '-x',
+                   reference_file, '', '--no-unal', '', '-S', sam_file]
 
         if len(fastq_files) == 1:
             command[9] = '-U ' + fastq_files[0]
@@ -49,11 +50,6 @@ def mapping_bowtie2(fastq_files, reference_file, threads, outdir, conserved_true
             command[9] = '-1 ' + fastq_files[0] + ' -2 ' + fastq_files[1]
         else:
             return False, None
-
-        if conserved_true:
-            command[4] = '--sensitive'
-        else:
-            command[4] = '--very-sensitive-local'
 
         if bowtie_opt is not None:
             command[11] = bowtie_opt
@@ -266,17 +262,22 @@ def index_alignment(alignment_file):
     return run_successfully
 
 
-def mapping_reads(fastq_files, reference_file, threads, outdir, conserved_true, num_map_loc, rematch_run,
+def mapping_reads(fastq_files, reference_file, threads, outdir, num_map_loc, rematch_run,
                   soft_clip_base_quality, soft_clip_recode_run, reference_dict, soft_clip_cigar_flag_recode,
-                  bowtie_opt):
+                  bowtie_algorithm, bowtie_opt, clean_run=True):
     # Create a symbolic link to the reference_file
-    reference_link = os.path.join(outdir, os.path.basename(reference_file))
-    os.symlink(reference_file, reference_link)
+    if clean_run:
+        reference_link = os.path.join(outdir, os.path.basename(reference_file))
+        if os.path.islink(reference_link):
+            os.unlink(reference_link)
+        os.symlink(reference_file, reference_link)
+        reference_file = reference_link
 
     bam_file = None
     # Mapping reads using Bowtie2
-    run_successfully, sam_file = mapping_bowtie2(fastq_files, reference_link, threads, outdir, conserved_true,
-                                                 num_map_loc, bowtie_opt)
+    run_successfully, sam_file = mapping_bowtie2(fastq_files=fastq_files, reference_file=reference_file,
+                                                 threads=threads, outdir=outdir, num_map_loc=num_map_loc,
+                                                 bowtie_algorithm=bowtie_algorithm, bowtie_opt=bowtie_opt)
 
     if run_successfully:
         # Remove soft clipping
@@ -294,7 +295,7 @@ def mapping_reads(fastq_files, reference_file, threads, outdir, conserved_true, 
             # Index bam
             run_successfully = index_alignment(bam_file)
 
-    return run_successfully, bam_file, reference_link
+    return run_successfully, bam_file, reference_file
 
 
 def create_vcf(bam_file, sequence_to_analyse, outdir, counter, reference_file):
@@ -913,6 +914,7 @@ def analyse_sequence_data(bam_file, sequence_information, outdir, counter, refer
     mean_coverage = None
     number_diferences = 0
     number_multi_alleles = 0
+    consensus_sequence = {'correct': {}, 'noMatter': {}, 'alignment': {}}
 
     # Create vcf file (for multiple alleles check)
     run_successfully, gene_vcf = create_vcf(bam_file, sequence_information['header'], outdir, counter, reference_file)
@@ -1121,19 +1123,24 @@ rematch_timer = functools.partial(utils.timer, name='ReMatCh module')
 @rematch_timer
 def run_rematch_module(sample, fastq_files, reference_file, threads, outdir, length_extra_seq, minimum_depth_presence,
                        minimum_depth_call, minimum_depth_frequency_dominant_allele, minimum_gene_coverage,
-                       conserved_true, debug_mode_true, num_map_loc, minimum_gene_identity, rematch_run,
+                       debug_mode_true, num_map_loc, minimum_gene_identity, rematch_run,
                        soft_clip_base_quality, soft_clip_recode_run, reference_dict, soft_clip_cigar_flag_recode,
-                       bowtie_opt, gene_list_reference, not_write_consensus):
+                       bowtie_algorithm, bowtie_opt, gene_list_reference, not_write_consensus, clean_run=True):
     rematch_folder = os.path.join(outdir, 'rematch_module', '')
+
     utils.remove_directory(rematch_folder)
     os.mkdir(rematch_folder)
 
     # Map reads
-    run_successfully, bam_file, reference_file = mapping_reads(fastq_files, reference_file, threads, rematch_folder,
-                                                               conserved_true, num_map_loc, rematch_run,
-                                                               soft_clip_base_quality, soft_clip_recode_run,
-                                                               reference_dict, soft_clip_cigar_flag_recode, bowtie_opt)
-
+    run_successfully, bam_file, reference_file = mapping_reads(fastq_files=fastq_files, reference_file=reference_file,
+                                                               threads=threads, outdir=rematch_folder,
+                                                               num_map_loc=num_map_loc, rematch_run=rematch_run,
+                                                               soft_clip_base_quality=soft_clip_base_quality,
+                                                               soft_clip_recode_run=soft_clip_recode_run,
+                                                               reference_dict=reference_dict,
+                                                               soft_clip_cigar_flag_recode=soft_clip_cigar_flag_recode,
+                                                               bowtie_algorithm=bowtie_algorithm, bowtie_opt=bowtie_opt,
+                                                               clean_run=clean_run)
     if run_successfully:
         # Index reference file
         run_successfully, stdout = index_fasta_samtools(reference_file, None, None, True)

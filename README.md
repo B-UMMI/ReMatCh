@@ -129,7 +129,9 @@ The sample files are required to be in "fq.gz" (or "fastq.gz") format.
                       [--minFrequencyDominantAllele 0.6] [--minGeneCoverage N]
                       [--minGeneIdentity N] [--doubleRun]
                       [--reportSequenceCoverage] [--notWriteConsensus]
-                      [--bowtieOPT] [--debug]
+                      [--bowtieAlgo="--very-sensitive-local"]
+                      [--bowtieOPT="--no-mixed"]
+                      [--debug]
                       [--mlstSchemaNumber N] [--mlstConsensus noMatter]
                       [--mlstRun first]
                       [-a /path/to/asperaweb_id_dsa.openssh] [-k]
@@ -212,8 +214,21 @@ The sample files are required to be in "fq.gz" (or "fastq.gz") format.
                             present in at least one sample (usefull when using a
                             large number of reference sequences, and only for
                             first run) (default: False)
-      --bowtieOPT "--no-mixed"
-                            Extra Bowtie2 options (default: None)
+      --bowtieAlgo="--very-sensitive-local"
+                            Bowtie2 alignment mode. It can be an end-to-end alignment
+                            (unclipped alignment) or local alignment (soft clipped
+                            alignment). Also, can choose between fast or sensitive
+                            alignments. Please check Bowtie2 manual for extra information:
+                            http://bowtie-bio.sourceforge.net/bowtie2/index.shtml .
+                            This option should be provided between quotes and starting
+                            with an empty space (like --bowtieAlgo " --very-fast") or
+                            using equal sign (like --bowtieAlgo="--very-fast")
+                            (default: "--very-sensitive-local")
+      --bowtieOPT="--no-mixed"
+                            Extra Bowtie2 options. This option should be provided between
+                            quotes and starting with an empty space
+                            (like --bowtieOPT " --no-mixed") or using equal sign
+                            (like --bowtieOPT="--no-mixed") (default: None)
       --debug               DeBug Mode: do not remove temporary files (default: False)
       --mlstReference       If the curated scheme for MLST alleles is available, tells
                             ReMatCh to use these as reference (force Bowtie2 to run
