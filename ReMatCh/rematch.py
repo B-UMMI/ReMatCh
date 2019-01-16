@@ -7,9 +7,9 @@ rematch.py - Reads mapping against target sequences, checking mapping
 and consensus sequences production
 <https://github.com/B-UMMI/ReMatCh/>
 
-Copyright (C) 2018 Miguel Machado <mpmachado@medicina.ulisboa.pt>
+Copyright (C) 2019 Miguel Machado <mpmachado@medicina.ulisboa.pt>
 
-Last modified: October 15, 2018
+Last modified: January 02, 2019
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -356,7 +356,6 @@ def run_rematch(args):
                                                                                            args.mlstSchemaNumber,
                                                                                            workdir)
         args.softClip_recodeRun = 'first'
-        args.conservedSeq = False
 
     if args.reference is None:
         reference_file = check_mlst.check_existing_schema(args.mlst, args.mlstSchemaNumber, script_path)
@@ -437,10 +436,11 @@ def run_rematch(args):
                 rematch_module.run_rematch_module(sample, fastq_files, reference_file, args.threads, sample_outdir,
                                                   args.extraSeq, args.minCovPresence, args.minCovCall,
                                                   args.minFrequencyDominantAllele, args.minGeneCoverage,
-                                                  args.conservedSeq, args.debug, args.numMapLoc, args.minGeneIdentity,
+                                                  args.debug, args.numMapLoc, args.minGeneIdentity,
                                                   'first', args.softClip_baseQuality, args.softClip_recodeRun,
-                                                  reference_dict, args.softClip_cigarFlagRecode, args.bowtieOPT,
-                                                  gene_list_reference, args.notWriteConsensus)
+                                                  reference_dict, args.softClip_cigarFlagRecode,
+                                                  args.bowtieAlgo, args.bowtieOPT,
+                                                  gene_list_reference, args.notWriteConsensus, clean_run=True)
             if run_successfully_rematch_first:
                 if args.mlst is not None and (args.mlstRun == 'first' or args.mlstRun == 'all'):
                     run_get_st(sample, mlst_dicts, consensus_sequences, args.mlstConsensus, 'first', workdir, time_str)
@@ -471,12 +471,14 @@ def run_rematch(args):
                                                                   args.threads, rematch_second_outdir, args.extraSeq,
                                                                   args.minCovPresence, args.minCovCall,
                                                                   args.minFrequencyDominantAllele, args.minGeneCoverage,
-                                                                  args.conservedSeq, args.debug, args.numMapLoc,
+                                                                  args.debug, args.numMapLoc,
                                                                   args.minGeneIdentity, 'second',
                                                                   args.softClip_baseQuality, args.softClip_recodeRun,
                                                                   consensus_concatenated_dict,
-                                                                  args.softClip_cigarFlagRecode, args.bowtieOPT,
-                                                                  gene_list_reference, args.notWriteConsensus)
+                                                                  args.softClip_cigarFlagRecode,
+                                                                  args.bowtieAlgo, args.bowtieOPT,
+                                                                  gene_list_reference, args.notWriteConsensus,
+                                                                  clean_run=True)
                             if not args.debug:
                                 os.remove(consensus_concatenated_fasta)
                             if run_successfully_rematch_second:
@@ -578,8 +580,6 @@ def main():
                                                     required=False)
 
     parser_optional_rematch = parser.add_argument_group('ReMatCh module facultative options')
-    parser_optional_rematch.add_argument('--conservedSeq', action='store_true', help=argparse.SUPPRESS)
-    # parser_optional_rematch.add_argument('--conservedSeq', action='store_true', help='This option can be used with conserved sequences like MLST genes to speedup the analysis by alignning reads using Bowtie2 sensitive algorithm')
     parser_optional_rematch.add_argument('--extraSeq', type=int, metavar='N',
                                          help='Sequence length added to both ends of target sequences (usefull to'
                                               ' improve reads mapping to the target one) that will be trimmed in'
@@ -621,7 +621,20 @@ def main():
                                               ' sequences, and only for first run)')
     parser_optional_rematch.add_argument('--notWriteConsensus', action='store_true',
                                          help='Do not write consensus sequences')
-    parser_optional_rematch.add_argument('--bowtieOPT', type=str, metavar='"--no-mixed"', help='Extra Bowtie2 options',
+    parser_optional_rematch.add_argument('--bowtieAlgo', type=str, metavar='"--very-sensitive-local"',
+                                         help='Bowtie2 alignment mode. It can be an end-to-end alignment (unclipped'
+                                              ' alignment) or local alignment (soft clipped alignment). Also, can'
+                                              ' choose between fast or sensitive alignments. Please check Bowtie2'
+                                              ' manual for extra'
+                                              ' information: http://bowtie-bio.sourceforge.net/bowtie2/index.shtml .'
+                                              ' This option should be provided between quotes and starting with'
+                                              ' an empty space (like --bowtieAlgo " --very-fast") or using equal'
+                                              ' sign (like --bowtieAlgo="--very-fast")',
+                                         required=False, default='--very-sensitive-local')
+    parser_optional_rematch.add_argument('--bowtieOPT', type=str, metavar='"--no-mixed"',
+                                         help='Extra Bowtie2 options. This option should be provided between quotes and'
+                                              ' starting with an empty space (like --bowtieOPT " --no-mixed") or using'
+                                              ' equal sign (like --bowtieOPT="--no-mixed")',
                                          required=False)
     parser_optional_rematch.add_argument('--debug', action='store_true',
                                          help='DeBug Mode: do not remove temporary files')
