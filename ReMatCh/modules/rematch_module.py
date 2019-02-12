@@ -41,8 +41,12 @@ def mapping_bowtie2(fastq_files, reference_file, threads, outdir, num_map_loc,
     run_successfully = index_sequence_bowtie2(reference_file, threads)
 
     if run_successfully:
-        command = ['bowtie2', '-k', str(num_map_loc), '-q', bowtie_algorithm, '--threads', str(threads), '-x',
+        command = ['bowtie2', '', '', '-q', bowtie_algorithm, '--threads', str(threads), '-x',
                    reference_file, '', '--no-unal', '', '-S', sam_file]
+
+        if num_map_loc is not None and num_map_loc > 1:
+            command[1] = '-k'
+            command[2] = str(num_map_loc)
 
         if len(fastq_files) == 1:
             command[9] = '-U ' + fastq_files[0]
