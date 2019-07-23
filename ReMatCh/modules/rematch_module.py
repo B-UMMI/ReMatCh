@@ -931,6 +931,8 @@ def analyse_sequence_data(bam_file, sequence_information, outdir, counter, refer
             try:
                 variants = get_variants(gene_vcf=gene_vcf, encoding=None)
             except UnicodeDecodeError:
+                print('It was found an enconding error while parsing the following VCF, but lets try forcing it to'
+                      ' "latin_1" encoding: {}'.format(gene_vcf))
                 variants = get_variants(gene_vcf=gene_vcf, encoding='latin_1')
 
             coverage = get_coverage(gene_coverage)
