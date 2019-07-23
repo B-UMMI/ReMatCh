@@ -317,26 +317,26 @@ def create_vcf(bam_file, sequence_to_analyse, outdir, counter, reference_file):
 
 # Read vcf file
 class Vcf:
-    def __init__(self, vcf_file):
-        self.vcf = open(vcf_file, 'rtU')
+    def __init__(self, vcf_file, encoding=None):
+        self.vcf = open(vcf_file, 'rtU', encoding=encoding)
         self.line_read = self.vcf.readline()
         while self.line_read.startswith('#'):
             self.line_read = self.vcf.readline()
         self.line = self.line_read
 
     def readline(self):
-        self.line_stored = self.line
+        line_stored = self.line
         self.line = self.vcf.readline()
-        return self.line_stored
+        return line_stored
 
     def close(self):
         self.vcf.close()
 
 
-def get_variants(gene_vcf):
+def get_variants(gene_vcf, encoding=None):
     variants = {}
 
-    vfc_file = Vcf(gene_vcf)
+    vfc_file = Vcf(vcf_file=gene_vcf, encoding=encoding)
     line = vfc_file.readline()
     while len(line) > 0:
         fields = line.splitlines()[0].split('\t')
@@ -928,7 +928,10 @@ def analyse_sequence_data(bam_file, sequence_information, outdir, counter, refer
             compute_genome_coverage_data(bam_file, sequence_information['header'], outdir, counter)
 
         if run_successfully:
-            variants = get_variants(gene_vcf)
+            try:
+                variants = get_variants(gene_vcf=gene_vcf, encoding=None)
+            except UnicodeDecodeError:
+                variants = get_variants(gene_vcf=gene_vcf, encoding='latin_1')
 
             coverage = get_coverage(gene_coverage)
 

@@ -1,11 +1,11 @@
 import pickle
-import traceback
+from traceback import format_exception as traceback_format_exception
 import shlex
 import subprocess
 from threading import Timer
 import shutil
 import time
-import functools
+from functools import wraps as functools_wraps
 import os.path
 import sys
 
@@ -221,7 +221,7 @@ def run_time(start_time):
 
 
 def timer(function, name):
-    @functools.wraps(function)
+    @functools_wraps(function)
     def wrapper(*args, **kwargs):
         print('\n' + 'RUNNING {0}\n'.format(name))
         start_time = time.time()
@@ -254,7 +254,7 @@ def extract_variable_from_pickle(pickleFile):
 
 
 def trace_unhandled_exceptions(func):
-    @functools.wraps(func)
+    @functools_wraps(func)
     def wrapped_func(*args, **kwargs):
         try:
             func(*args, **kwargs)
@@ -263,8 +263,10 @@ def trace_unhandled_exceptions(func):
             print(e)
 
             exc_type, exc_value, exc_tb = sys.exc_info()
-            # print(exc_value)
-            print(''.join(traceback.format_exception(exc_type, exc_value, exc_tb)))
+            print(''.join(traceback_format_exception(exc_type, exc_value, exc_tb)))
+
+            raise exc_type(exc_value)
+
     return wrapped_func
 
 

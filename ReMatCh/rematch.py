@@ -358,18 +358,21 @@ def run_rematch(args):
         args.softClip_recodeRun = 'first'
 
     if args.reference is None:
-        reference_file = check_mlst.check_existing_schema(args.mlst, args.mlstSchemaNumber, script_path)
-        args.extraSeq = 200
-        if reference_file is None:
-            print('It was not found provided MLST scheme sequences for ' + args.mlst)
-            print('Trying to obtain reference MLST sequences from PubMLST')
-            if len(mlst_sequences) > 0:
-                reference_file = check_mlst.write_mlst_reference(args.mlst, mlst_sequences, workdir, time_str)
-                args.extraSeq = 0
+        if args.mlst is not None:
+            reference_file = check_mlst.check_existing_schema(args.mlst, args.mlstSchemaNumber, script_path)
+            args.extraSeq = 200
+            if reference_file is None:
+                print('It was not found provided MLST scheme sequences for ' + args.mlst)
+                print('Trying to obtain reference MLST sequences from PubMLST')
+                if len(mlst_sequences) > 0:
+                    reference_file = check_mlst.write_mlst_reference(args.mlst, mlst_sequences, workdir, time_str)
+                    args.extraSeq = 0
+                else:
+                    sys.exit('It was not possible to download MLST sequences from PubMLST!')
             else:
-                sys.exit('It was not possible to download MLST sequences from PubMLST!')
+                print('Using provided scheme as referece: ' + reference_file)
         else:
-            print('Using provided scheme as referece: ' + reference_file)
+            sys.exit('Need to provide at least one of the following options: "--reference" and "--mlst"')
     else:
         reference_file = os.path.abspath(args.reference.name)
 
