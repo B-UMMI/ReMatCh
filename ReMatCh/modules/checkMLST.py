@@ -116,7 +116,7 @@ def download_pub_mlst_xml(originalSpecies, schema_number, outdir):
 
     success = 0
     for scheme in tree.findall('species'):
-        species_scheme = scheme.text.splitlines()[0].rsplit('#', 1)
+        species_scheme = scheme.text.rstrip('\r\n').rsplit('#', 1)
         number_scheme = species_scheme[1] if len(species_scheme) == 2 else 1
         species_scheme = species_scheme[0]
         if determine_species(species_scheme) == determine_species(originalSpecies):

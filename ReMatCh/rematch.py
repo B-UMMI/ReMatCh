@@ -103,7 +103,7 @@ def get_list_ids_from_file(file_list_ids):
 
     with open(file_list_ids, 'rtU') as lines:
         for line in lines:
-            line = line.splitlines()[0]
+            line = line.rstrip('\r\n')
             if len(line) > 0:
                 list_ids.append(line)
 
@@ -119,7 +119,7 @@ def get_taxon_run_ids(taxon_name, outputfile):
     run_ids = []
     with open(outputfile, 'rtU') as reader:
         for line in reader:
-            line = line.splitlines()[0]
+            line = line.rstrip('\r\n')
             if len(line) > 0:
                 if not line.startswith('#'):
                     line = line.split('\t')
