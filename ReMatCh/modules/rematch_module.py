@@ -3,10 +3,10 @@ import multiprocessing
 import functools
 import sys
 import pickle
+from . import utils
 
 # https://chrisyeh96.github.io/2017/08/08/definitive-guide-python-imports.html#case-2-syspath-could-change
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
-import utils
 
 
 def index_fasta_samtools(fasta, region_none, region_outfile_none, print_comand_true):
@@ -41,8 +41,12 @@ def mapping_bowtie2(fastq_files, reference_file, threads, outdir, num_map_loc,
     run_successfully = index_sequence_bowtie2(reference_file, threads)
 
     if run_successfully:
-        command = ['bowtie2', '-k', str(num_map_loc), '-q', bowtie_algorithm, '--threads', str(threads), '-x',
+        command = ['bowtie2', '', '', '-q', bowtie_algorithm, '--threads', str(threads), '-x',
                    reference_file, '', '--no-unal', '', '-S', sam_file]
+
+        if num_map_loc is not None and num_map_loc > 1:
+            command[1] = '-k'
+            command[2] = str(num_map_loc)
 
         if len(fastq_files) == 1:
             command[9] = '-U ' + fastq_files[0]
@@ -181,7 +185,7 @@ def parallelized_recode_soft_clipping(line_collection, pickle_file, soft_clip_ba
                                       soft_clip_cigar_flag_recode):
     lines_sam = []
     for line in line_collection:
-        line = line.splitlines()[0]
+        line = line.rstrip('\r\n')
         if len(line) > 0:
             if line.startswith('@'):
                 lines_sam.append(line)
@@ -313,39 +317,54 @@ def create_vcf(bam_file, sequence_to_analyse, outdir, counter, reference_file):
 
 # Read vcf file
 class Vcf:
-    def __init__(self, vcf_file):
-        self.vcf = open(vcf_file, 'rtU')
+    def __init__(self, vcf_file, encoding=None, newline=None):
+        self.vcf = open(vcf_file, 'rt', encoding=encoding, newline=newline)
         self.line_read = self.vcf.readline()
+        self.contigs_info_dict = {}
         while self.line_read.startswith('#'):
+            if self.line_read.startswith('##contig=<ID='):
+                seq = self.line_read.split('=')[2].split(',')[0]
+                seq_len = self.line_read.split('=')[3].split('>')[0]
+                self.contigs_info_dict[seq] = int(seq_len)
             self.line_read = self.vcf.readline()
         self.line = self.line_read
 
     def readline(self):
-        self.line_stored = self.line
+        line_stored = self.line
         self.line = self.vcf.readline()
-        return self.line_stored
+        return line_stored
 
     def close(self):
         self.vcf.close()
 
+    def get_contig_legth(self, contig):
+        return self.contigs_info_dict[contig]
 
-def get_variants(gene_vcf):
+
+def get_variants(gene_vcf, seq_name, encoding=None, newline=None):
     variants = {}
 
-    vfc_file = Vcf(gene_vcf)
+    vfc_file = Vcf(vcf_file=gene_vcf, encoding=encoding, newline=newline)
     line = vfc_file.readline()
+    counter = 1
     while len(line) > 0:
-        fields = line.splitlines()[0].split('\t')
+        fields = line.rstrip('\r\n').split('\t')
         if len(fields) > 0:
             fields[1] = int(fields[1])
 
             info_field = {}
-            for i in fields[7].split(';'):
-                i = i.split('=')
-                if len(i) > 1:
-                    info_field[i[0]] = i[1]
+            try:
+                for i in fields[7].split(';'):
+                    i = i.split('=')
+                    if len(i) > 1:
+                        info_field[i[0]] = i[1]
+                    else:
+                        info_field[i[0]] = None
+            except IndexError:
+                if counter > vfc_file.get_contig_legth(contig=seq_name):
+                    break
                 else:
-                    info_field[i[0]] = None
+                    raise IndexError
 
             format_field = {}
             format_field_name = fields[8].split(':')
@@ -361,7 +380,15 @@ def get_variants(gene_vcf):
             else:
                 variants[fields[1]] = {0: fields_to_store}
 
-        line = vfc_file.readline()
+        try:
+            line = vfc_file.readline()
+        except UnicodeDecodeError:
+            if counter + 1 > vfc_file.get_contig_legth(contig=seq_name):
+                break
+            else:
+                raise UnicodeDecodeError
+
+        counter += 1
     vfc_file.close()
 
     return variants
@@ -781,7 +808,7 @@ def get_coverage(gene_coverage):
 
     with open(gene_coverage, 'rtU') as reader:
         for line in reader:
-            line = line.splitlines()[0]
+            line = line.rstrip('\r\n')
             if len(line) > 0:
                 line = line.split('\t')
                 coverage[int(line[1])] = int(line[2])
@@ -924,7 +951,20 @@ def analyse_sequence_data(bam_file, sequence_information, outdir, counter, refer
             compute_genome_coverage_data(bam_file, sequence_information['header'], outdir, counter)
 
         if run_successfully:
-            variants = get_variants(gene_vcf)
+            try:
+                variants = get_variants(gene_vcf=gene_vcf, seq_name=sequence_information['header'],
+                                        encoding=sys.getdefaultencoding())
+            except UnicodeDecodeError:
+                try:
+                    print('It was found an enconding error while parsing the following VCF, but lets try forcing it to'
+                          ' "utf_8" encoding: {}'.format(gene_vcf))
+                    variants = get_variants(gene_vcf=gene_vcf, seq_name=sequence_information['header'],
+                                            encoding='utf_8')
+                except UnicodeDecodeError:
+                    print('It was found an enconding error while parsing the following VCF, but lets try forcing it to'
+                          ' "latin_1" encoding: {}'.format(gene_vcf))
+                    variants = get_variants(gene_vcf=gene_vcf, seq_name=sequence_information['header'],
+                                            encoding='latin_1')
 
             coverage = get_coverage(gene_coverage)
 
