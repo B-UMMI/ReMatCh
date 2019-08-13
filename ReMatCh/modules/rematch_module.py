@@ -974,9 +974,14 @@ def analyse_sequence_data(bam_file, sequence_information, outdir, counter, refer
                                                  minimum_depth_frequency_dominant_allele,
                                                  sequence_information['sequence'], length_extra_seq)
 
-            count_absent, percentage_low_coverage, mean_coverage = \
-                get_coverage_report(coverage, sequence_information['length'], minimum_depth_presence,
-                                    minimum_depth_call, length_extra_seq)
+            try:
+                count_absent, percentage_low_coverage, mean_coverage = \
+                    get_coverage_report(coverage, sequence_information['length'], minimum_depth_presence,
+                                        minimum_depth_call, length_extra_seq)
+            except KeyError:
+                print('ERROR: KeyError')
+                print(sequence_information)
+                raise KeyError
 
     utils.save_variable_to_pickle([run_successfully, counter, number_multi_alleles, count_absent,
                                    percentage_low_coverage, mean_coverage, consensus_sequence, number_diferences],
