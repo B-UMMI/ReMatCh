@@ -9,7 +9,7 @@ and consensus sequences production
 
 Copyright (C) 2019 Miguel Machado <mpmachado@medicina.ulisboa.pt>
 
-Last modified: August 08, 2019
+Last modified: November 26, 2019
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
