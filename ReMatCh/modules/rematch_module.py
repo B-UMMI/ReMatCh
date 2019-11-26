@@ -318,7 +318,10 @@ def create_vcf(bam_file, sequence_to_analyse, outdir, counter, reference_file):
 # Read vcf file
 class Vcf:
     def __init__(self, vcf_file, encoding=None, newline=None):
-        self.vcf = open(vcf_file, 'rt', encoding=encoding, newline=newline)
+        try:
+            self.vcf = open(vcf_file, 'rt', encoding=encoding, newline=newline)
+        except TypeError:
+            self.vcf = open(vcf_file, 'rt')
         self.line_read = self.vcf.readline()
         self.contigs_info_dict = {}
         while self.line_read.startswith('#'):
