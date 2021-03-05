@@ -122,8 +122,8 @@ def checkPrograms(programs_version_dictionary):
 
 def requiredPrograms(asperaKey, downloadCramBam, SRA, SRAopt):
     programs_version_dictionary = {}
-    programs_version_dictionary['wget'] = ['--version', '>=', '1.12']
-    programs_version_dictionary['gzip'] = ['--version', '>=', '1.6']
+    programs_version_dictionary['wget'] = [None, '>=', '1.12']
+    programs_version_dictionary['gzip'] = [None, '>=', '1.6']
     programs_version_dictionary['bowtie2'] = ['--version', '>=', '2.2.9']
     programs_version_dictionary['samtools'] = ['--version', '==', '1.3.1']
     programs_version_dictionary['bcftools'] = ['--version', '==', '1.3.1']
