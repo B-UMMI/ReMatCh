@@ -132,7 +132,7 @@ def requiredPrograms(asperaKey, downloadCramBam, SRA, SRAopt):
     if SRA or SRAopt:
         programs_version_dictionary['prefetch'] = ['--version', '>=', '2.8.2']
         programs_version_dictionary['fastq-dump'] = ['--version', '>=', '2.8.2']
-        programs_version_dictionary['awk'] = ['--version', '>=', '3.0.4']
+        programs_version_dictionary['awk'] = [None, '>=', '3.0.4']
     missingPrograms = checkPrograms(programs_version_dictionary)
     if len(missingPrograms) > 0:
         sys.exit('\n' + 'Errors:' + '\n' + '\n'.join(missingPrograms))
