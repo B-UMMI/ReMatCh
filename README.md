@@ -135,8 +135,7 @@ The sample files are required to be in "fq.gz" (or "fastq.gz") format.
                       [--mlstSchemaNumber N] [--mlstConsensus noMatter]
                       [--mlstRun first]
                       [-a /path/to/asperaweb_id_dsa.openssh] [-k]
-                      [--downloadLibrariesType PAIRED]
-                      [--downloadInstrumentPlatform ILLUMINA] [--downloadCramBam]
+                      [--downloadLibrariesType PAIRED] [--downloadCramBam]
                       [--SRA | --SRAopt]
 
     Reads mapping against target sequences, checking mapping and consensus
@@ -217,7 +216,7 @@ The sample files are required to be in "fq.gz" (or "fastq.gz") format.
       --bowtieAlgo="--very-sensitive-local"
                             Bowtie2 alignment mode. It can be an end-to-end alignment
                             (unclipped alignment) or local alignment (soft clipped
-                            alignment). Also, can choose between fast or sensitive
+                            alignment). Also, the user can choose between fast or sensitive
                             alignments. Please check Bowtie2 manual for extra information:
                             http://bowtie-bio.sourceforge.net/bowtie2/index.shtml .
                             This option should be provided between quotes and starting
@@ -262,9 +261,6 @@ The sample files are required to be in "fq.gz" (or "fastq.gz") format.
       --downloadLibrariesType PAIRED
                             Tells ReMatCh to download files with specific library
                             layout (default: BOTH)
-      --downloadInstrumentPlatform ILLUMINA
-                            Tells ReMatCh to download files with specific library
-                            layout (default: ILLUMINA)
       --downloadCramBam     Tells ReMatCh to also download cram/bam files and
                             convert them to fastq files (default: False)
                             SRA download options (one of the following):

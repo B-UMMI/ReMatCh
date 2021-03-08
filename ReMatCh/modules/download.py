@@ -450,9 +450,19 @@ def get_fastq_files(download_dir, cram_index_run_successfully, threads, download
     return run_successfully, downloaded_files
 
 
-def rename_move_files(list_files, new_name, outdir, download_paired_type):
+def rename_move_files(list_files, new_name, outdir, download_paired_type, double_check_paired_type=False):
     list_new_files = {}
     run_successfully = False
+
+    if download_paired_type is None:
+        if not double_check_paired_type:
+            if len(list_files) == 2:
+                download_paired_type = 'paired'
+            elif len(list_files) == 1:
+                download_paired_type = 'single'
+        else:
+            print('WARNING: the paired type could not be doubled check, continuing... ({})'.format(new_name))
+            return run_successfully, list_new_files
 
     for i in range(0, len(list_files)):
         temp_name = utils.rchop(os.path.basename(list_files[i]), 'astq.gz')

@@ -675,10 +675,13 @@ def main():
                                           help='Tells ReMatCh to download files with specific library'
                                                ' layout (available options: %(choices)s)',
                                           choices=['PAIRED', 'SINGLE', 'BOTH'], required=False, default='BOTH')
+    # parser_optional_download.add_argument('--downloadInstrumentPlatform', type=str, metavar='ILLUMINA',
+    #                                       help='Tells ReMatCh to download files with specific library layout (available'
+    #                                            ' options: %(choices)s)', choices=['ILLUMINA', 'ALL'], required=False,
+    #                                       default='ILLUMINA')
     parser_optional_download.add_argument('--downloadInstrumentPlatform', type=str, metavar='ILLUMINA',
-                                          help='Tells ReMatCh to download files with specific library layout (available'
-                                               ' options: %(choices)s)', choices=['ILLUMINA', 'ALL'], required=False,
-                                          default='ILLUMINA')
+                                          help=argparse.SUPPRESS, choices=['ILLUMINA', 'ALL'], required=False,
+                                          default='ALL')
     parser_optional_download.add_argument('--downloadCramBam', action='store_true',
                                           help='Tells ReMatCh to also download cram/bam files and convert them to fastq'
                                                ' files')
