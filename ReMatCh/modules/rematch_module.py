@@ -326,8 +326,8 @@ class Vcf:
         self.contigs_info_dict = {}
         while self.line_read.startswith('#'):
             if self.line_read.startswith('##contig=<ID='):
-                seq = self.line_read.split('=')[2].split(',')[0]
-                seq_len = self.line_read.split('=')[3].split('>')[0]
+                seq = self.line_read.split('=', 2)[2].split(',')[0]
+                seq_len = self.line_read.split(',')[1].split('=')[1].split('>')[0]
                 self.contigs_info_dict[seq] = int(seq_len)
             self.line_read = self.vcf.readline()
         self.line = self.line_read
