@@ -132,8 +132,8 @@ The sample files are required to be in "fq.gz" (or "fastq.gz") format.
                       [--bowtieAlgo="--very-sensitive-local"]
                       [--bowtieOPT="--no-mixed"]
                       [--debug]
-                      [--mlstSchemaNumber N] [--mlstConsensus noMatter]
-                      [--mlstRun first]
+                      [--mlstSchemaNumber N] [--mlstUpdate]
+                      [--mlstConsensus noMatter] [--mlstRun first]
                       [-a /path/to/asperaweb_id_dsa.openssh] [-k]
                       [--downloadLibrariesType PAIRED] [--downloadCramBam]
                       [--SRA | --SRAopt]
@@ -241,6 +241,7 @@ The sample files are required to be in "fq.gz" (or "fastq.gz") format.
       --mlstSchemaNumber N  Number of the species PubMLST schema to be used in
                             case of multiple schemes available (by default will
                             use the first schema) (default: None)
+      --mlstUpdate          Update existing PubMLST allele database (default: False)
       --mlstConsensus noMatter
                             Consensus sequence to be used in MLST determination
                             (default: noMatter)
