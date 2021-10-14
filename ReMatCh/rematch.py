@@ -9,7 +9,7 @@ and consensus sequences production
 
 Copyright (C) 2019 Miguel Machado <mpmachado@medicina.ulisboa.pt>
 
-Last modified: August 08, 2019
+Last modified: November 26, 2019
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -352,9 +352,10 @@ def run_rematch(args):
     mlst_sequences = None
     mlst_dicts = None
     if args.mlst is not None:
-        time_taken_pub_mlst, mlst_dicts, mlst_sequences = check_mlst.download_pub_mlst_xml(args.mlst,
-                                                                                           args.mlstSchemaNumber,
-                                                                                           workdir)
+        _, mlst_dicts, mlst_sequences = check_mlst.download_pub_mlst_xml(args.mlst,
+                                                                         args.mlstSchemaNumber,
+                                                                         workdir,
+                                                                         update_pubmlst_database=args.mlstUpdate)
         args.softClip_recodeRun = 'first'
 
     if args.reference is None:
@@ -653,6 +654,8 @@ def main():
     parser_optional_mlst.add_argument('--mlstSchemaNumber', type=int, metavar='N',
                                       help='Number of the species PubMLST schema to be used in case of multiple schemes'
                                            ' available (by default will use the first schema)', required=False)
+    parser_optional_rematch.add_argument('--mlstUpdate', action='store_true',
+                                         help='Update existing PubMLST allele database.')
     parser_optional_mlst.add_argument('--mlstConsensus', choices=['noMatter', 'correct', 'alignment', 'all'], type=str,
                                       metavar='noMatter',
                                       help='Consensus sequence to be used in MLST'
@@ -675,10 +678,13 @@ def main():
                                           help='Tells ReMatCh to download files with specific library'
                                                ' layout (available options: %(choices)s)',
                                           choices=['PAIRED', 'SINGLE', 'BOTH'], required=False, default='BOTH')
+    # parser_optional_download.add_argument('--downloadInstrumentPlatform', type=str, metavar='ILLUMINA',
+    #                                       help='Tells ReMatCh to download files with specific library layout (available'
+    #                                            ' options: %(choices)s)', choices=['ILLUMINA', 'ALL'], required=False,
+    #                                       default='ILLUMINA')
     parser_optional_download.add_argument('--downloadInstrumentPlatform', type=str, metavar='ILLUMINA',
-                                          help='Tells ReMatCh to download files with specific library layout (available'
-                                               ' options: %(choices)s)', choices=['ILLUMINA', 'ALL'], required=False,
-                                          default='ILLUMINA')
+                                          help=argparse.SUPPRESS, choices=['ILLUMINA', 'ALL'], required=False,
+                                          default='ALL')
     parser_optional_download.add_argument('--downloadCramBam', action='store_true',
                                           help='Tells ReMatCh to also download cram/bam files and convert them to fastq'
                                                ' files')
