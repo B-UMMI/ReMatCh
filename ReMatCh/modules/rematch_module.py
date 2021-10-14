@@ -202,7 +202,7 @@ def parallelized_recode_soft_clipping(line_collection, pickle_file, soft_clip_ba
 
 
 def recode_soft_clipping_from_sam(sam_file, outdir, threads, soft_clip_base_quality, reference_dict,
-                                  soft_clip_cigar_flag_recode):
+                                  soft_clip_cigar_flag_recode, debug=False):
     pickle_files = []
     sequences_length = {}
     for x, seq_info in list(reference_dict.items()):
@@ -230,7 +230,15 @@ def recode_soft_clipping_from_sam(sam_file, outdir, threads, soft_clip_base_qual
         pool.close()
         pool.join()
 
-    os.remove(sam_file)
+    if debug:
+        run_successfully, bam_file = sort_alignment(sam_file, str(os.path.splitext(sam_file)[0] + '.bam'), False, threads)
+        if run_successfully:
+            os.remove(sam_file)
+        else:
+            if os.path.isfile(bam_file):
+                os.remove(bam_file)
+    else:
+        os.remove(sam_file)
 
     new_sam_file = os.path.join(outdir, 'alignment_with_soft_clipping_recoded.sam')
     with open(new_sam_file, 'wt') as writer:
@@ -268,7 +276,7 @@ def index_alignment(alignment_file):
 
 def mapping_reads(fastq_files, reference_file, threads, outdir, num_map_loc, rematch_run,
                   soft_clip_base_quality, soft_clip_recode_run, reference_dict, soft_clip_cigar_flag_recode,
-                  bowtie_algorithm, bowtie_opt, clean_run=True):
+                  bowtie_algorithm, bowtie_opt, clean_run=True, debug=False):
     # Create a symbolic link to the reference_file
     if clean_run:
         reference_link = os.path.join(outdir, os.path.basename(reference_file))
@@ -288,7 +296,7 @@ def mapping_reads(fastq_files, reference_file, threads, outdir, num_map_loc, rem
         if rematch_run == soft_clip_recode_run or soft_clip_recode_run == 'both':
             print('Recoding soft clipped regions')
             sam_file = recode_soft_clipping_from_sam(sam_file, outdir, threads, soft_clip_base_quality, reference_dict,
-                                                     soft_clip_cigar_flag_recode)
+                                                     soft_clip_cigar_flag_recode, debug=debug)
 
         # Convert sam to bam and sort bam
         run_successfully, bam_file = sort_alignment(sam_file, str(os.path.splitext(sam_file)[0] + '.bam'), False,
@@ -1188,7 +1196,7 @@ def run_rematch_module(sample, fastq_files, reference_file, threads, outdir, len
                                                                reference_dict=reference_dict,
                                                                soft_clip_cigar_flag_recode=soft_clip_cigar_flag_recode,
                                                                bowtie_algorithm=bowtie_algorithm, bowtie_opt=bowtie_opt,
-                                                               clean_run=clean_run)
+                                                               clean_run=clean_run, debug=debug_mode_true)
     if run_successfully:
         # Index reference file
         run_successfully, stdout = index_fasta_samtools(reference_file, None, None, True)
