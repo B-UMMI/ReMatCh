@@ -249,16 +249,20 @@ def concatenate_extra_seq_2_consensus(consensus_sequence, reference_sequence, ex
     for k, values_consensus in list(consensus_dict.items()):
         for values_reference in list(reference_dict.values()):
             if values_reference['header'] == values_consensus['header']:
-                if len(set(consensus_dict[k]['sequence'])) > 1:
-                    number_consensus_with_sequences += 1
-                    if extra_seq_length <= len(values_reference['sequence']):
-                        right_extra_seq = \
-                            '' if extra_seq_length == 0 else values_reference['sequence'][-extra_seq_length:]
-                        consensus_dict[k]['sequence'] = \
-                            values_reference['sequence'][:extra_seq_length] + \
-                            consensus_dict[k]['sequence'] + \
-                            right_extra_seq
-                        consensus_dict[k]['length'] += extra_seq_length + len(right_extra_seq)
+                if values_consensus['sequence'] != 'N':
+                    if len(set(consensus_dict[k]['sequence'])) > 1:
+                        number_consensus_with_sequences += 1
+                        if extra_seq_length <= len(values_reference['sequence']):
+                            right_extra_seq = \
+                                '' if extra_seq_length == 0 else values_reference['sequence'][-extra_seq_length:]
+                            consensus_dict[k]['sequence'] = \
+                                values_reference['sequence'][:extra_seq_length] + \
+                                consensus_dict[k]['sequence'] + \
+                                right_extra_seq
+                            consensus_dict[k]['length'] += extra_seq_length + len(right_extra_seq)
+                else:
+                    consensus_dict[k]['sequence'] = values_reference['sequence']
+                    consensus_dict[k]['length'] = values_reference['length']
 
     consensus_concatenated = os.path.join(outdir, 'consensus_concatenated_extraSeq.fasta')
     with open(consensus_concatenated, 'wt') as writer:
