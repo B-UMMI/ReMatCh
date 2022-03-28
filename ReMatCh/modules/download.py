@@ -119,20 +119,25 @@ def download_with_wget(ftp_file_path, outdir, pickle_prefix, sra, ena_id):
 
 @utils.trace_unhandled_exceptions
 def download_with_sra_prefetch(aspera_key, outdir, pickle_prefix, ena_id):
-    command = ['prefetch', '', ena_id]
+    outfile = os.path.join(outdir, ena_id + '.sra')
+
+    command = ['prefetch', '', '--output-file', outfile, ena_id]
 
     if aspera_key is not None:
         _, ascp, _ = utils.run_command_popen_communicate(['which', 'ascp'], False, None, False)
         command[1] = '-a {ascp}|{aspera_key}'.format(ascp=ascp.splitlines()[0], aspera_key=aspera_key)
 
     run_successfully, stdout, stderr = utils.run_command_popen_communicate(command, False, 3600, True)
-    if run_successfully:
+    if not run_successfully:
+        command[2] = ''
+        command[3] = ''
+        run_successfully, stdout, stderr = utils.run_command_popen_communicate(command, False, 3600, True)
         _, prefetch_outdir, _ = utils.run_command_popen_communicate(['echo', '$HOME/ncbi/public/sra'], True, None,
                                                                     False)
 
         try:
             os.rename(os.path.join(prefetch_outdir.splitlines()[0], ena_id + '.sra'),
-                      os.path.join(outdir, ena_id + '.sra'))
+                      outfile)
         except OSError as e:
             print('Found the following error:'
                   '{}'.format(e))
@@ -140,7 +145,7 @@ def download_with_sra_prefetch(aspera_key, outdir, pickle_prefix, ena_id):
             from shutil import copy as shutil_copy
 
             shutil_copy(os.path.join(prefetch_outdir.splitlines()[0], ena_id + '.sra'),
-                        os.path.join(outdir, ena_id + '.sra'))
+                        outfile)
             os.remove(os.path.join(prefetch_outdir.splitlines()[0], ena_id + '.sra'))
 
     utils.save_variable_to_pickle(run_successfully, outdir, pickle_prefix + '.' + ena_id)

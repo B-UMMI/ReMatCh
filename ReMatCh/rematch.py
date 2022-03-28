@@ -158,7 +158,7 @@ def format_gene_info(gene_specific_info, minimum_gene_coverage, minimum_gene_ide
             if summary:
                 genes_present[sample][gene_specific_info['header']] = str(s)
         else:
-            s = 'multiAlleles_' + str(gene_specific_info[reported_data_type])
+            s = 'multiAlleles_' + str(round(gene_specific_info[reported_data_type], 2))
             info = str(s)
             if summary:
                 genes_present[sample][gene_specific_info['header']] = str(s)
