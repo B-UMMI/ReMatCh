@@ -146,24 +146,21 @@ def get_list_ids(workdir, file_list_ids, taxon_name):
 
 def format_gene_info(gene_specific_info, minimum_gene_coverage, minimum_gene_identity, reported_data_type, summary,
                      sample, genes_present):
-    info = None
+    info = str(round(gene_specific_info[reported_data_type], 2))
     if gene_specific_info['gene_coverage'] >= minimum_gene_coverage and \
             gene_specific_info['gene_identity'] >= minimum_gene_identity:
         if summary and sample not in genes_present:
             genes_present[sample] = {}
 
         if gene_specific_info['gene_number_positions_multiple_alleles'] == 0:
-            s = str(gene_specific_info[reported_data_type])
-            info = str(s)
             if summary:
-                genes_present[sample][gene_specific_info['header']] = str(s)
+                genes_present[sample][gene_specific_info['header']] = info
         else:
-            s = 'multiAlleles_' + str(round(gene_specific_info[reported_data_type], 2))
-            info = str(s)
+            info = 'multiAlleles_' + info
             if summary:
-                genes_present[sample][gene_specific_info['header']] = str(s)
+                genes_present[sample][gene_specific_info['header']] = info
     else:
-        info = 'absent_' + str(gene_specific_info[reported_data_type])
+        info = 'absent_' + info
 
     return info, genes_present
 
