@@ -239,7 +239,7 @@ def write_sample_report(sample, outdir, time_str, file_size, run_successfully_fa
                      '\t' + ','.join(fastq_used) + '\n')
 
 
-def concatenate_extra_seq_2_consensus(consensus_sequence, reference_sequence, extra_seq_length, outdir):
+def concatenate_extra_seq_2_consensus(consensus_sequence, reference_sequence, extra_seq_length, outdir, debug=False):
     reference_dict, ignore, ignore = rematch_module.get_sequence_information(reference_sequence, extra_seq_length)
     consensus_dict, genes, ignore = rematch_module.get_sequence_information(consensus_sequence, 0)
     number_consensus_with_sequences = 0
@@ -247,6 +247,8 @@ def concatenate_extra_seq_2_consensus(consensus_sequence, reference_sequence, ex
         for values_reference in list(reference_dict.values()):
             if values_reference['header'] == values_consensus['header']:
                 if values_consensus['sequence'] != 'N':
+                    if debug:
+                        print('AAA', values_consensus['sequence'])
                     if len(set(consensus_dict[k]['sequence'])) > 1:
                         number_consensus_with_sequences += 1
                         if extra_seq_length <= len(values_reference['sequence']):
@@ -258,6 +260,8 @@ def concatenate_extra_seq_2_consensus(consensus_sequence, reference_sequence, ex
                                 right_extra_seq
                             consensus_dict[k]['length'] += extra_seq_length + len(right_extra_seq)
                 else:
+                    if debug:
+                        print('BBB', values_consensus['sequence'])
                     consensus_dict[k]['sequence'] = values_reference['sequence']
                     consensus_dict[k]['length'] = values_reference['length']
 
@@ -266,6 +270,8 @@ def concatenate_extra_seq_2_consensus(consensus_sequence, reference_sequence, ex
         for i in consensus_dict:
             writer.write('>' + consensus_dict[i]['header'] + '\n')
             fasta_sequence_lines = rematch_module.chunkstring(consensus_dict[i]['sequence'], 80)
+            if debug:
+                print('CCC', consensus_dict[i]['sequence'])
             for line in fasta_sequence_lines:
                 writer.write(line + '\n')
 
@@ -466,7 +472,7 @@ def run_rematch(args):
                     consensus_concatenated_fasta, consensus_concatenated_gene_list, consensus_concatenated_dict, \
                     number_consensus_with_sequences = \
                         concatenate_extra_seq_2_consensus(consensus_files['noMatter'], reference_file, args.extraSeq,
-                                                          rematch_second_outdir)
+                                                          rematch_second_outdir, args.debug)
                     if len(consensus_concatenated_gene_list) > 0:
                         if args.mlst is None or \
                                 (args.mlst is not None and number_consensus_with_sequences == len(gene_list_reference)):
