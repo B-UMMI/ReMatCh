@@ -873,12 +873,11 @@ def write_variants_vcf(variants, outdir, sequence_to_analyse, sufix, sequence):
                                       'QUALITY_unused', 'FILTER_unused', 'INFO_unused', 'FORMAT_unused']) + '\n')
         for i in sorted(variants.keys()):
             ref = variants[i]['REF']
-            if variants[i]['REF'] == variants[i]['ALT']:
+            seq = sequence[i - 1 : i - 1 + len(variants[i]['REF'])]
+            if ref != seq:
+                ref = seq
+            if ref == variants[i]['ALT']:
                 continue
-            else:
-                seq = sequence[i - 1 : i - 1 + len(variants[i]['REF'])]
-                if ref != seq:
-                    ref = seq
             writer.write('\t'.join([sequence_to_analyse, str(i), '.', ref, variants[i]['ALT'], '.', '.',
                                     '.', '.']) + '\n')
 
@@ -1068,7 +1067,8 @@ def get_sequence_information(fasta_file, length_extra_seq):
 
 
 def sequence_data(sample, reference_file, bam_file, outdir, threads, length_extra_seq, minimum_depth_presence,
-                  minimum_depth_call, minimum_depth_frequency_dominant_allele, debug_mode_true, not_write_consensus):
+                  minimum_depth_call, minimum_depth_frequency_dominant_allele, debug_mode_true, not_write_consensus,
+                  gene_list_reference):
     sequence_data_outdir = os.path.join(outdir, 'sequence_data', '')
     utils.remove_directory(sequence_data_outdir)
     os.mkdir(sequence_data_outdir)
@@ -1089,7 +1089,7 @@ def sequence_data(sample, reference_file, bam_file, outdir, threads, length_extr
 
     run_successfully, sample_data, consensus_files, consensus_sequences = \
         gather_data_together(sample, sequence_data_outdir, sequences, outdir.rsplit('/', 2)[0], debug_mode_true,
-                             length_extra_seq, not_write_consensus)
+                             length_extra_seq, not_write_consensus, gene_list_reference)
 
     return run_successfully, sample_data, consensus_files, consensus_sequences
 
@@ -1100,12 +1100,12 @@ def chunkstring(string, length, write_something=False):
     return (string[0 + i:length + i] for i in range(0, len(string), length))
 
 
-def write_consensus(outdir, sample, consensus_sequence):
+def write_consensus(outdir, sample, consensus_sequence, original_header):
     consensus_files = {}
     for consensus_type in ['correct', 'noMatter', 'alignment']:
         consensus_files[consensus_type] = os.path.join(outdir, str(sample + '.' + consensus_type + '.fasta'))
         with open(consensus_files[consensus_type], 'at') as writer:
-            writer.write('>' + consensus_sequence[consensus_type]['header'] + '\n')
+            writer.write('>' + original_header + '\n')
             fasta_sequence_lines = chunkstring(consensus_sequence[consensus_type]['sequence'], 80, True)
             for line in fasta_sequence_lines:
                 writer.write(line + '\n')
@@ -1113,7 +1113,7 @@ def write_consensus(outdir, sample, consensus_sequence):
 
 
 def gather_data_together(sample, data_directory, sequences_information, outdir, debug_mode_true, length_extra_seq,
-                         not_write_consensus):
+                         not_write_consensus, gene_list_reference):
     run_successfully = True
     counter = 0
     sample_data = {}
@@ -1153,7 +1153,7 @@ def gather_data_together(sample, data_directory, sequences_information, outdir, 
                                 if os.path.isfile(file_to_remove):
                                     os.remove(file_to_remove)
                             write_consensus_first_time = False
-                        consensus_files = write_consensus(outdir, sample, consensus_sequence)
+                        consensus_files = write_consensus(outdir, sample, consensus_sequence, gene_list_reference[sequences_information[sequence_counter]['header']])
 
                     gene_identity = 0
                     if sequences_information[sequence_counter]['length'] - 2 * length_extra_seq - count_absent > 0:
@@ -1214,7 +1214,7 @@ def run_rematch_module(sample, fastq_files, reference_file, threads, outdir, len
             run_successfully, sample_data, consensus_files, consensus_sequences = \
                 sequence_data(sample, reference_file, bam_file, rematch_folder, threads, length_extra_seq,
                               minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele,
-                              debug_mode_true, not_write_consensus)
+                              debug_mode_true, not_write_consensus, gene_list_reference)
 
             if run_successfully:
                 print('Writing report file')
