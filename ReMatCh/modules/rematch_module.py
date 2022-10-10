@@ -865,14 +865,21 @@ def compute_genome_coverage_data(alignment_file, sequence_to_analyse, outdir, co
     return run_successfully, genome_coverage_data_file
 
 
-def write_variants_vcf(variants, outdir, sequence_to_analyse, sufix):
+def write_variants_vcf(variants, outdir, sequence_to_analyse, sufix, sequence):
     vcf_file = os.path.join(outdir, str(sequence_to_analyse + '.' + sufix + '.vcf'))
     with open(vcf_file, 'wt') as writer:
         writer.write('##fileformat=VCFv4.2' + '\n')
         writer.write('#' + '\t'.join(['SEQUENCE', 'POSITION', 'ID_unused', 'REFERENCE_sequence', 'ALTERNATIVE_sequence',
                                       'QUALITY_unused', 'FILTER_unused', 'INFO_unused', 'FORMAT_unused']) + '\n')
         for i in sorted(variants.keys()):
-            writer.write('\t'.join([sequence_to_analyse, str(i), '.', variants[i]['REF'], variants[i]['ALT'], '.', '.',
+            ref = variants[i]['REF']
+            if variants[i]['REF'] == variants[i]['ALT']:
+                continue
+            else:
+                seq = sequence[i - 1 : i - 1 + len(variants[i]['REF'])]
+                if ref != seq:
+                    ref = seq
+            writer.write('\t'.join([sequence_to_analyse, str(i), '.', ref, variants[i]['ALT'], '.', '.',
                                     '.', '.']) + '\n')
 
     compressed_vcf_file = vcf_file + '.gz'
@@ -931,7 +938,7 @@ def create_sample_consensus_sequence(outdir, sequence_to_analyse, reference_file
     consensus = {'correct': {}, 'noMatter': {}, 'alignment': {}}
     for variant_type in ['variants_correct', 'variants_noMatter', 'variants_alignment']:
         run_successfully, compressed_vcf_file = \
-            write_variants_vcf(eval(variant_type), outdir, sequence_to_analyse, variant_type.split('_', 1)[1])
+            write_variants_vcf(eval(variant_type), outdir, sequence_to_analyse, variant_type.split('_', 1)[1], sequence)
         if run_successfully:
             run_successfully, sequence_dict = \
                 compute_consensus_sequence(reference_file, sequence_to_analyse, compressed_vcf_file, outdir)
@@ -1087,7 +1094,9 @@ def sequence_data(sample, reference_file, bam_file, outdir, threads, length_extr
     return run_successfully, sample_data, consensus_files, consensus_sequences
 
 
-def chunkstring(string, length):
+def chunkstring(string, length, write_something=False):
+    if write_something and len(string) == 0:
+        string = 'N'
     return (string[0 + i:length + i] for i in range(0, len(string), length))
 
 
@@ -1097,7 +1106,7 @@ def write_consensus(outdir, sample, consensus_sequence):
         consensus_files[consensus_type] = os.path.join(outdir, str(sample + '.' + consensus_type + '.fasta'))
         with open(consensus_files[consensus_type], 'at') as writer:
             writer.write('>' + consensus_sequence[consensus_type]['header'] + '\n')
-            fasta_sequence_lines = chunkstring(consensus_sequence[consensus_type]['sequence'], 80)
+            fasta_sequence_lines = chunkstring(consensus_sequence[consensus_type]['sequence'], 80, True)
             for line in fasta_sequence_lines:
                 writer.write(line + '\n')
     return consensus_files
