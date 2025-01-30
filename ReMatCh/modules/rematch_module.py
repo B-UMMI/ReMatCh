@@ -1138,18 +1138,18 @@ def gather_data_together(sample, data_directory, sequences_information, outdir, 
                             write_consensus_first_time = False
                         consensus_files = write_consensus(outdir, sample, consensus_sequence)
 
+                    ref_length = sequences_information[sequence_counter]['length'] - 2 * length_extra_seq
+
                     gene_identity = 0
-                    if sequences_information[sequence_counter]['length'] - 2 * length_extra_seq - count_absent > 0:
+                    if ref_length - count_absent > 0:
                         gene_identity = 100 - \
                                         (float(number_diferences) /
-                                         (sequences_information[sequence_counter]['length'] - 2 * length_extra_seq -
-                                          count_absent)) * 100
+                                         (ref_length - count_absent)) * 100
 
                     sample_data[sequence_counter] = \
                         {'header': sequences_information[sequence_counter]['header'],
-                         'gene_coverage': 100 - (float(count_absent) /
-                                                 (sequences_information[sequence_counter]['length'] - 2 *
-                                                  length_extra_seq)) * 100,
+                         'ref_length': ref_length,
+                         'gene_coverage': 100 - (float(count_absent) / ref_length * 100),
                          'gene_low_coverage': percentage_low_coverage,
                          'gene_number_positions_multiple_alleles': multiple_alleles_found,
                          'gene_mean_read_coverage': mean_coverage,
@@ -1242,10 +1242,15 @@ def run_rematch_module(sample, fastq_files, reference_file, threads, outdir, len
     if not debug_mode_true:
         utils.remove_directory(rematch_folder)
 
-    return run_successfully, sample_data if 'sample_data' in locals() else None, \
-           {'number_absent_genes': number_absent_genes if 'number_absent_genes' in locals() else None,
-            'number_genes_multiple_alleles': number_genes_multiple_alleles if
-            'number_genes_multiple_alleles' in locals() else None,
-            'mean_sample_coverage': round(mean_sample_coverage, 2) if 'mean_sample_coverage' in locals() else None}, \
-           consensus_files if 'consensus_files' in locals() else None,\
-           consensus_sequences if 'consensus_sequences' in locals() else None
+    return (
+            run_successfully,
+            sample_data if 'sample_data' in locals() else None,
+            {
+                'number_absent_genes': number_absent_genes if 'number_absent_genes' in locals() else None,
+                'number_genes_multiple_alleles': number_genes_multiple_alleles if
+                'number_genes_multiple_alleles' in locals() else None,
+                'mean_sample_coverage': round(mean_sample_coverage, 2) if 'mean_sample_coverage' in locals() else None
+            },
+            consensus_files if 'consensus_files' in locals() else None,
+            consensus_sequences if 'consensus_sequences' in locals() else None
+        )
