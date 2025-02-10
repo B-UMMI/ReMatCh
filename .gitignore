@@ -1,6 +1,9 @@
 # sandbox
 /sandbox/
 
+ReMatCh.egg-info/
+dist/
+
 # Python stuff
 *.py[cod]
 

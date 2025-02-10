@@ -122,8 +122,8 @@ def checkPrograms(programs_version_dictionary):
 
 def requiredPrograms(asperaKey, downloadCramBam, SRA, SRAopt):
     programs_version_dictionary = {}
-    programs_version_dictionary['wget'] = ['--version', '>=', '1.12']
-    programs_version_dictionary['gzip'] = ['--version', '>=', '1.6']
+    programs_version_dictionary['wget'] = [None, '>=', '1.12']
+    programs_version_dictionary['gzip'] = [None, '>=', '1.6']
     programs_version_dictionary['bowtie2'] = ['--version', '>=', '2.2.9']
     programs_version_dictionary['samtools'] = ['--version', '==', '1.3.1']
     programs_version_dictionary['bcftools'] = ['--version', '==', '1.3.1']
@@ -132,7 +132,7 @@ def requiredPrograms(asperaKey, downloadCramBam, SRA, SRAopt):
     if SRA or SRAopt:
         programs_version_dictionary['prefetch'] = ['--version', '>=', '2.8.2']
         programs_version_dictionary['fastq-dump'] = ['--version', '>=', '2.8.2']
-        programs_version_dictionary['awk'] = ['--version', '>=', '3.0.4']
+        programs_version_dictionary['awk'] = [None, '>=', '3.0.4']
     missingPrograms = checkPrograms(programs_version_dictionary)
     if len(missingPrograms) > 0:
         sys.exit('\n' + 'Errors:' + '\n' + '\n'.join(missingPrograms))

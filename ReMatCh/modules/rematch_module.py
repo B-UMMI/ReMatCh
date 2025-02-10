@@ -202,7 +202,7 @@ def parallelized_recode_soft_clipping(line_collection, pickle_file, soft_clip_ba
 
 
 def recode_soft_clipping_from_sam(sam_file, outdir, threads, soft_clip_base_quality, reference_dict,
-                                  soft_clip_cigar_flag_recode):
+                                  soft_clip_cigar_flag_recode, debug=False):
     pickle_files = []
     sequences_length = {}
     for x, seq_info in list(reference_dict.items()):
@@ -230,7 +230,15 @@ def recode_soft_clipping_from_sam(sam_file, outdir, threads, soft_clip_base_qual
         pool.close()
         pool.join()
 
-    os.remove(sam_file)
+    if debug:
+        run_successfully, bam_file = sort_alignment(sam_file, str(os.path.splitext(sam_file)[0] + '.bam'), False, threads)
+        if run_successfully:
+            os.remove(sam_file)
+        else:
+            if os.path.isfile(bam_file):
+                os.remove(bam_file)
+    else:
+        os.remove(sam_file)
 
     new_sam_file = os.path.join(outdir, 'alignment_with_soft_clipping_recoded.sam')
     with open(new_sam_file, 'wt') as writer:
@@ -268,7 +276,7 @@ def index_alignment(alignment_file):
 
 def mapping_reads(fastq_files, reference_file, threads, outdir, num_map_loc, rematch_run,
                   soft_clip_base_quality, soft_clip_recode_run, reference_dict, soft_clip_cigar_flag_recode,
-                  bowtie_algorithm, bowtie_opt, clean_run=True):
+                  bowtie_algorithm, bowtie_opt, clean_run=True, debug=False):
     # Create a symbolic link to the reference_file
     if clean_run:
         reference_link = os.path.join(outdir, os.path.basename(reference_file))
@@ -288,7 +296,7 @@ def mapping_reads(fastq_files, reference_file, threads, outdir, num_map_loc, rem
         if rematch_run == soft_clip_recode_run or soft_clip_recode_run == 'both':
             print('Recoding soft clipped regions')
             sam_file = recode_soft_clipping_from_sam(sam_file, outdir, threads, soft_clip_base_quality, reference_dict,
-                                                     soft_clip_cigar_flag_recode)
+                                                     soft_clip_cigar_flag_recode, debug=debug)
 
         # Convert sam to bam and sort bam
         run_successfully, bam_file = sort_alignment(sam_file, str(os.path.splitext(sam_file)[0] + '.bam'), False,
@@ -857,14 +865,20 @@ def compute_genome_coverage_data(alignment_file, sequence_to_analyse, outdir, co
     return run_successfully, genome_coverage_data_file
 
 
-def write_variants_vcf(variants, outdir, sequence_to_analyse, sufix):
+def write_variants_vcf(variants, outdir, sequence_to_analyse, sufix, sequence):
     vcf_file = os.path.join(outdir, str(sequence_to_analyse + '.' + sufix + '.vcf'))
     with open(vcf_file, 'wt') as writer:
         writer.write('##fileformat=VCFv4.2' + '\n')
         writer.write('#' + '\t'.join(['SEQUENCE', 'POSITION', 'ID_unused', 'REFERENCE_sequence', 'ALTERNATIVE_sequence',
                                       'QUALITY_unused', 'FILTER_unused', 'INFO_unused', 'FORMAT_unused']) + '\n')
         for i in sorted(variants.keys()):
-            writer.write('\t'.join([sequence_to_analyse, str(i), '.', variants[i]['REF'], variants[i]['ALT'], '.', '.',
+            ref = variants[i]['REF']
+            seq = sequence[i - 1 : i - 1 + len(variants[i]['REF'])]
+            if ref != seq:
+                ref = seq
+            if ref == variants[i]['ALT']:
+                continue
+            writer.write('\t'.join([sequence_to_analyse, str(i), '.', ref, variants[i]['ALT'], '.', '.',
                                     '.', '.']) + '\n')
 
     compressed_vcf_file = vcf_file + '.gz'
@@ -923,7 +937,7 @@ def create_sample_consensus_sequence(outdir, sequence_to_analyse, reference_file
     consensus = {'correct': {}, 'noMatter': {}, 'alignment': {}}
     for variant_type in ['variants_correct', 'variants_noMatter', 'variants_alignment']:
         run_successfully, compressed_vcf_file = \
-            write_variants_vcf(eval(variant_type), outdir, sequence_to_analyse, variant_type.split('_', 1)[1])
+            write_variants_vcf(eval(variant_type), outdir, sequence_to_analyse, variant_type.split('_', 1)[1], sequence)
         if run_successfully:
             run_successfully, sequence_dict = \
                 compute_consensus_sequence(reference_file, sequence_to_analyse, compressed_vcf_file, outdir)
@@ -1053,7 +1067,8 @@ def get_sequence_information(fasta_file, length_extra_seq):
 
 
 def sequence_data(sample, reference_file, bam_file, outdir, threads, length_extra_seq, minimum_depth_presence,
-                  minimum_depth_call, minimum_depth_frequency_dominant_allele, debug_mode_true, not_write_consensus):
+                  minimum_depth_call, minimum_depth_frequency_dominant_allele, debug_mode_true, not_write_consensus,
+                  gene_list_reference):
     sequence_data_outdir = os.path.join(outdir, 'sequence_data', '')
     utils.remove_directory(sequence_data_outdir)
     os.mkdir(sequence_data_outdir)
@@ -1074,29 +1089,31 @@ def sequence_data(sample, reference_file, bam_file, outdir, threads, length_extr
 
     run_successfully, sample_data, consensus_files, consensus_sequences = \
         gather_data_together(sample, sequence_data_outdir, sequences, outdir.rsplit('/', 2)[0], debug_mode_true,
-                             length_extra_seq, not_write_consensus)
+                             length_extra_seq, not_write_consensus, gene_list_reference)
 
     return run_successfully, sample_data, consensus_files, consensus_sequences
 
 
-def chunkstring(string, length):
+def chunkstring(string, length, write_something=False):
+    if write_something and len(string) == 0:
+        string = 'N'
     return (string[0 + i:length + i] for i in range(0, len(string), length))
 
 
-def write_consensus(outdir, sample, consensus_sequence):
+def write_consensus(outdir, sample, consensus_sequence, original_header):
     consensus_files = {}
     for consensus_type in ['correct', 'noMatter', 'alignment']:
         consensus_files[consensus_type] = os.path.join(outdir, str(sample + '.' + consensus_type + '.fasta'))
         with open(consensus_files[consensus_type], 'at') as writer:
-            writer.write('>' + consensus_sequence[consensus_type]['header'] + '\n')
-            fasta_sequence_lines = chunkstring(consensus_sequence[consensus_type]['sequence'], 80)
+            writer.write('>' + original_header + '\n')
+            fasta_sequence_lines = chunkstring(consensus_sequence[consensus_type]['sequence'], 80, True)
             for line in fasta_sequence_lines:
                 writer.write(line + '\n')
     return consensus_files
 
 
 def gather_data_together(sample, data_directory, sequences_information, outdir, debug_mode_true, length_extra_seq,
-                         not_write_consensus):
+                         not_write_consensus, gene_list_reference):
     run_successfully = True
     counter = 0
     sample_data = {}
@@ -1136,7 +1153,7 @@ def gather_data_together(sample, data_directory, sequences_information, outdir, 
                                 if os.path.isfile(file_to_remove):
                                     os.remove(file_to_remove)
                             write_consensus_first_time = False
-                        consensus_files = write_consensus(outdir, sample, consensus_sequence)
+                        consensus_files = write_consensus(outdir, sample, consensus_sequence, gene_list_reference[sequences_information[sequence_counter]['header']])
 
                     ref_length = sequences_information[sequence_counter]['length'] - 2 * length_extra_seq
 
@@ -1188,7 +1205,7 @@ def run_rematch_module(sample, fastq_files, reference_file, threads, outdir, len
                                                                reference_dict=reference_dict,
                                                                soft_clip_cigar_flag_recode=soft_clip_cigar_flag_recode,
                                                                bowtie_algorithm=bowtie_algorithm, bowtie_opt=bowtie_opt,
-                                                               clean_run=clean_run)
+                                                               clean_run=clean_run, debug=debug_mode_true)
     if run_successfully:
         # Index reference file
         run_successfully, stdout = index_fasta_samtools(reference_file, None, None, True)
@@ -1203,7 +1220,7 @@ def run_rematch_module(sample, fastq_files, reference_file, threads, outdir, len
             run_successfully, sample_data, consensus_files, consensus_sequences = \
                 sequence_data(sample, reference_file, bam_file, rematch_folder, threads, length_extra_seq,
                               minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele,
-                              debug_mode_true, not_write_consensus)
+                              debug_mode_true, not_write_consensus, gene_list_reference)
 
             if run_successfully:
                 print('Writing report file')
@@ -1214,20 +1231,20 @@ def run_rematch_module(sample, fastq_files, reference_file, threads, outdir, len
                     writer.write('\t'.join(['#gene', 'percentage_gene_coverage', 'gene_mean_read_coverage',
                                             'percentage_gene_low_coverage', 'number_positions_multiple_alleles',
                                             'percentage_gene_identity']) + '\n')
-                    for i in range(1, len(sample_data) + 1):
-                        writer.write('\t'.join([gene_list_reference[sample_data[i]['header']],
-                                                str(round(sample_data[i]['gene_coverage'], 2)),
-                                                str(round(sample_data[i]['gene_mean_read_coverage'], 2)),
-                                                str(round(sample_data[i]['gene_low_coverage'], 2)),
-                                                str(sample_data[i]['gene_number_positions_multiple_alleles']),
-                                                str(round(sample_data[i]['gene_identity'], 2))]) + '\n')
+                    for seq_data in sample_data.values():
+                        writer.write('\t'.join([gene_list_reference[seq_data['header']],
+                                                str(round(seq_data['gene_coverage'], 2)),
+                                                str(round(seq_data['gene_mean_read_coverage'], 2)),
+                                                str(round(seq_data['gene_low_coverage'], 2)),
+                                                str(seq_data['gene_number_positions_multiple_alleles']),
+                                                str(round(seq_data['gene_identity'], 2))]) + '\n')
 
-                        if sample_data[i]['gene_coverage'] < minimum_gene_coverage or \
-                                sample_data[i]['gene_identity'] < minimum_gene_identity:
+                        if seq_data['gene_coverage'] < minimum_gene_coverage or \
+                                seq_data['gene_identity'] < minimum_gene_identity:
                             number_absent_genes += 1
                         else:
-                            mean_sample_coverage += sample_data[i]['gene_mean_read_coverage']
-                            if sample_data[i]['gene_number_positions_multiple_alleles'] > 0:
+                            mean_sample_coverage += seq_data['gene_mean_read_coverage']
+                            if seq_data['gene_number_positions_multiple_alleles'] > 0:
                                 number_genes_multiple_alleles += 1
 
                     if len(sample_data) - number_absent_genes > 0:

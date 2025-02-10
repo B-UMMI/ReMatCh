@@ -5,6 +5,7 @@ import csv
 from glob import glob
 import re
 import functools
+from datetime import datetime
 try:
     import xml.etree.cElementTree as ET
 except ImportError:
@@ -96,7 +97,20 @@ downloadPubMLST = functools.partial(utils.timer, name='Download PubMLST module')
 
 
 @downloadPubMLST
-def download_pub_mlst_xml(originalSpecies, schema_number, outdir):
+def download_pub_mlst_xml(originalSpecies, schema_number, outdir, update_pubmlst_database=False):
+
+    def get_pubmlst_database_from_pickel(pickle, mlst_sequences={}):
+        mlst_dicts = utils.extract_variable_from_pickle(pickle)
+        SequenceDict = mlst_dicts[0]
+        for lociName, alleleSequences in list(SequenceDict.items()):
+            for sequence in alleleSequences:
+                if lociName not in list(mlst_sequences.keys()):
+                    mlst_sequences[lociName] = sequence
+                else:
+                    break
+        return mlst_dicts, mlst_sequences
+    
+
     print('Searching MLST database for ' + originalSpecies)
 
     xmlURL = 'http://pubmlst.org/data/dbases.xml'
@@ -125,20 +139,27 @@ def download_pub_mlst_xml(originalSpecies, schema_number, outdir):
                 xmlData[scheme.text.strip()] = {}
                 for info in scheme:  # mlst
                     for database in info:  # database
-                        for retrievedDate in database.findall('retrieved'):
-                            retrieved = retrievedDate.text
+                        retrieved_dates = database.findall('retrieved')
+                        if len(retrieved_dates) > 0:
+                            for retrievedDate in database.findall('retrieved'):
+                                retrieved = retrievedDate.text
+                                xmlData[scheme.text.strip()][retrieved] = []
+                        else:
+                            retrieved = datetime.utcnow().date().isoformat()
                             xmlData[scheme.text.strip()][retrieved] = []
-                        for profile in database.findall('profiles'):
-                                profileURl = profile.find('url').text
-                                xmlData[scheme.text.strip()][retrieved].append(profileURl)
-                        for lociScheme in database.findall('loci'):
-                            loci = {}
-                            for locus in lociScheme:
-                                locusID = locus.text
-                                for locusInfo in locus:
-                                    locusUrl = locusInfo.text
-                                    loci[locusID.strip()] = locusUrl
-                                xmlData[scheme.text.strip()][retrieved].append(loci)
+                        
+                        for retrieved in xmlData[scheme.text.strip()]:
+                            for profile in database.findall('profiles'):
+                                    profileURl = profile.find('url').text
+                                    xmlData[scheme.text.strip()][retrieved].append(profileURl)
+                            for lociScheme in database.findall('loci'):
+                                loci = {}
+                                for locus in lociScheme:
+                                    locusID = locus.text
+                                    for locusInfo in locus:
+                                        locusUrl = locusInfo.text
+                                        loci[locusID.strip()] = locusUrl
+                                    xmlData[scheme.text.strip()][retrieved].append(loci)
     if success == 0:
         sys.exit("\tError. No schema found for %s. Please refer to https://pubmlst.org/databases/" % (originalSpecies))
     elif success > 1:
@@ -163,29 +184,33 @@ def download_pub_mlst_xml(originalSpecies, schema_number, outdir):
         for RetrievalDate, URL in list(info.items()):
             schema_date = species_name + '_' + RetrievalDate
             outDit = os.path.join(pubmlst_dir, schema_date)  # compatible with windows? See if it already exists, if so, break
+            pickle = os.path.join(outDit, str(schema_date + '.pkl'))
 
             if os.path.isdir(outDit):
-                pickle = os.path.join(outDit, str(schema_date + '.pkl'))
                 if os.path.isfile(pickle):
                     print("\tschema files already exist for %s" % (SchemaName))
-                    mlst_dicts = utils.extract_variable_from_pickle(pickle)
-                    SequenceDict = mlst_dicts[0]
-                    for lociName, alleleSequences in list(SequenceDict.items()):
-                        for sequence in alleleSequences:
-                            if lociName not in list(mlst_sequences.keys()):
-                                mlst_sequences[lociName] = sequence
-                            else:
-                                break
-                    return mlst_dicts, mlst_sequences
+                    return get_pubmlst_database_from_pickel(pickle, mlst_sequences=mlst_sequences)
 
             elif any(species_name in x for x in os.listdir(pubmlst_dir)):
-                print("Older version of %s's scheme found! Deleting..." % (SchemaName))
-                for directory in glob(str(pubmlst_dir + str(species_name + '_*'))):
-                    utils.remove_directory(directory)
+                print("Older version of %s's scheme found!" % (SchemaName))
+
+                if update_pubmlst_database:
+                    print("Deleting existing database...")
+                    for directory in glob(str(pubmlst_dir + str(species_name + '_*'))):
+                        utils.remove_directory(directory)
+                        print('\tDeleted {}'.format(directory))
                     os.makedirs(outDit)
+                else:
+                    outDit = sorted(glob(str(pubmlst_dir + str(species_name + '_*'))))[-1]
+                    pickle = os.path.join(outDit, os.path.basename(outDit) + '.pkl')
+                    if os.path.isfile(pickle):
+                        print("Using existing database: {}".format(outDit))
+                        return get_pubmlst_database_from_pickel(pickle, mlst_sequences=mlst_sequences)
+
             else:
                 os.makedirs(outDit)
 
+            print('Prepare PubMLST database')
             contentProfile = urllib.request.urlopen(URL[0])
             header = next(contentProfile).decode("utf8").strip().split('\t')  # skip header
             try:
