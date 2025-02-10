@@ -305,7 +305,7 @@ def mapping_reads(fastq_files, reference_file, threads, outdir, num_map_loc, rem
 def create_vcf(bam_file, sequence_to_analyse, outdir, counter, reference_file):
     gene_vcf = os.path.join(outdir, 'samtools_mpileup.sequence_' + str(counter) + '.vcf')
 
-    command = ['samtools', 'mpileup', '--count-orphans', '--no-BAQ', '--min-BQ', '0', '--min-MQ', str(7), '--fasta-ref',
+    command = ['samtools', 'mpileup', '--count-orphans', '--no-BAQ', '--min-BQ', '0', '--min-MQ', '1', '--fasta-ref',
                reference_file, '--region', sequence_to_analyse, '--output', gene_vcf, '--VCF', '--uncompressed',
                '--output-tags', 'INFO/AD,AD,DP', bam_file]
 
@@ -322,15 +322,15 @@ class Vcf:
             self.vcf = open(vcf_file, 'rt', encoding=encoding, newline=newline)
         except TypeError:
             self.vcf = open(vcf_file, 'rt')
-        self.line_read = self.vcf.readline()
+        line_read = self.vcf.readline()
         self.contigs_info_dict = {}
-        while self.line_read.startswith('#'):
-            if self.line_read.startswith('##contig=<ID='):
-                seq = self.line_read.split('=')[2].split(',')[0]
-                seq_len = self.line_read.split('=')[3].split('>')[0]
+        while line_read.startswith('#'):
+            if line_read.startswith('##contig=<ID='):
+                seq = line_read.split('=', 2)[2].split(',')[0]
+                seq_len = line_read.split(',')[1].split('=')[1].split('>')[0]
                 self.contigs_info_dict[seq] = int(seq_len)
-            self.line_read = self.vcf.readline()
-        self.line = self.line_read
+            line_read = self.vcf.readline()
+        self.line = line_read
 
     def readline(self):
         line_stored = self.line
@@ -1193,7 +1193,13 @@ def run_rematch_module(sample, fastq_files, reference_file, threads, outdir, len
         # Index reference file
         run_successfully, stdout = index_fasta_samtools(reference_file, None, None, True)
         if run_successfully:
-            print('Analysing alignment data')
+            print("\nAnalysing alignment data\n")
+
+            print(f"length_extra_seq: {length_extra_seq}")
+            print(f"minimum_depth_presence: {minimum_depth_presence}")
+            print(f"minimum_depth_call: {minimum_depth_call}")
+            print(f"minimum_depth_frequency_dominant_allele: {minimum_depth_frequency_dominant_allele}\n")
+
             run_successfully, sample_data, consensus_files, consensus_sequences = \
                 sequence_data(sample, reference_file, bam_file, rematch_folder, threads, length_extra_seq,
                               minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele,

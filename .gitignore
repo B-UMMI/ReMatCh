@@ -1,5 +1,5 @@
-# mpmachado_stuff - file with different mpmachado stuffs
-mpmachado_stuff.*
+# sandbox
+/sandbox/
 
 # Python stuff
 *.py[cod]
