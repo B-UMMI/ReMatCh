@@ -313,7 +313,7 @@ def mapping_reads(fastq_files, reference_file, threads, outdir, num_map_loc, rem
 def create_vcf(bam_file, sequence_to_analyse, outdir, counter, reference_file):
     gene_vcf = os.path.join(outdir, 'samtools_mpileup.sequence_' + str(counter) + '.vcf')
 
-    command = ['samtools', 'mpileup', '--count-orphans', '--no-BAQ', '--min-BQ', '0', '--min-MQ', str(7), '--fasta-ref',
+    command = ['samtools', 'mpileup', '--count-orphans', '--no-BAQ', '--min-BQ', '0', '--min-MQ', '1', '--fasta-ref',
                reference_file, '--region', sequence_to_analyse, '--output', gene_vcf, '--VCF', '--uncompressed',
                '--output-tags', 'INFO/AD,AD,DP', bam_file]
 
@@ -330,15 +330,15 @@ class Vcf:
             self.vcf = open(vcf_file, 'rt', encoding=encoding, newline=newline)
         except TypeError:
             self.vcf = open(vcf_file, 'rt')
-        self.line_read = self.vcf.readline()
+        line_read = self.vcf.readline()
         self.contigs_info_dict = {}
-        while self.line_read.startswith('#'):
-            if self.line_read.startswith('##contig=<ID='):
-                seq = self.line_read.split('=', 2)[2].split(',')[0]
-                seq_len = self.line_read.split(',')[1].split('=')[1].split('>')[0]
+        while line_read.startswith('#'):
+            if line_read.startswith('##contig=<ID='):
+                seq = line_read.split('=', 2)[2].split(',')[0]
+                seq_len = line_read.split(',')[1].split('=')[1].split('>')[0]
                 self.contigs_info_dict[seq] = int(seq_len)
-            self.line_read = self.vcf.readline()
-        self.line = self.line_read
+            line_read = self.vcf.readline()
+        self.line = line_read
 
     def readline(self):
         line_stored = self.line
@@ -1155,18 +1155,18 @@ def gather_data_together(sample, data_directory, sequences_information, outdir, 
                             write_consensus_first_time = False
                         consensus_files = write_consensus(outdir, sample, consensus_sequence, gene_list_reference[sequences_information[sequence_counter]['header']])
 
+                    ref_length = sequences_information[sequence_counter]['length'] - 2 * length_extra_seq
+
                     gene_identity = 0
-                    if sequences_information[sequence_counter]['length'] - 2 * length_extra_seq - count_absent > 0:
+                    if ref_length - count_absent > 0:
                         gene_identity = 100 - \
                                         (float(number_diferences) /
-                                         (sequences_information[sequence_counter]['length'] - 2 * length_extra_seq -
-                                          count_absent)) * 100
+                                         (ref_length - count_absent)) * 100
 
                     sample_data[sequence_counter] = \
                         {'header': sequences_information[sequence_counter]['header'],
-                         'gene_coverage': 100 - (float(count_absent) /
-                                                 (sequences_information[sequence_counter]['length'] - 2 *
-                                                  length_extra_seq)) * 100,
+                         'ref_length': ref_length,
+                         'gene_coverage': 100 - (float(count_absent) / ref_length * 100),
                          'gene_low_coverage': percentage_low_coverage,
                          'gene_number_positions_multiple_alleles': multiple_alleles_found,
                          'gene_mean_read_coverage': mean_coverage,
@@ -1210,7 +1210,13 @@ def run_rematch_module(sample, fastq_files, reference_file, threads, outdir, len
         # Index reference file
         run_successfully, stdout = index_fasta_samtools(reference_file, None, None, True)
         if run_successfully:
-            print('Analysing alignment data')
+            print("\nAnalysing alignment data\n")
+
+            print(f"length_extra_seq: {length_extra_seq}")
+            print(f"minimum_depth_presence: {minimum_depth_presence}")
+            print(f"minimum_depth_call: {minimum_depth_call}")
+            print(f"minimum_depth_frequency_dominant_allele: {minimum_depth_frequency_dominant_allele}\n")
+
             run_successfully, sample_data, consensus_files, consensus_sequences = \
                 sequence_data(sample, reference_file, bam_file, rematch_folder, threads, length_extra_seq,
                               minimum_depth_presence, minimum_depth_call, minimum_depth_frequency_dominant_allele,
@@ -1259,10 +1265,15 @@ def run_rematch_module(sample, fastq_files, reference_file, threads, outdir, len
     if not debug_mode_true:
         utils.remove_directory(rematch_folder)
 
-    return run_successfully, sample_data if 'sample_data' in locals() else None, \
-           {'number_absent_genes': number_absent_genes if 'number_absent_genes' in locals() else None,
-            'number_genes_multiple_alleles': number_genes_multiple_alleles if
-            'number_genes_multiple_alleles' in locals() else None,
-            'mean_sample_coverage': round(mean_sample_coverage, 2) if 'mean_sample_coverage' in locals() else None}, \
-           consensus_files if 'consensus_files' in locals() else None,\
-           consensus_sequences if 'consensus_sequences' in locals() else None
+    return (
+            run_successfully,
+            sample_data if 'sample_data' in locals() else None,
+            {
+                'number_absent_genes': number_absent_genes if 'number_absent_genes' in locals() else None,
+                'number_genes_multiple_alleles': number_genes_multiple_alleles if
+                'number_genes_multiple_alleles' in locals() else None,
+                'mean_sample_coverage': round(mean_sample_coverage, 2) if 'mean_sample_coverage' in locals() else None
+            },
+            consensus_files if 'consensus_files' in locals() else None,
+            consensus_sequences if 'consensus_sequences' in locals() else None
+        )
