@@ -9,7 +9,7 @@ and consensus sequences production
 
 Copyright (C) 2019 Miguel Machado <mpmachado@medicina.ulisboa.pt>
 
-Last modified: August 08, 2019
+Last modified: February 02, 2025
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -146,24 +146,21 @@ def get_list_ids(workdir, file_list_ids, taxon_name):
 
 def format_gene_info(gene_specific_info, minimum_gene_coverage, minimum_gene_identity, reported_data_type, summary,
                      sample, genes_present):
-    info = None
+    info = str(round(gene_specific_info[reported_data_type], 2))
     if gene_specific_info['gene_coverage'] >= minimum_gene_coverage and \
             gene_specific_info['gene_identity'] >= minimum_gene_identity:
         if summary and sample not in genes_present:
             genes_present[sample] = {}
 
         if gene_specific_info['gene_number_positions_multiple_alleles'] == 0:
-            s = str(gene_specific_info[reported_data_type])
-            info = str(s)
             if summary:
-                genes_present[sample][gene_specific_info['header']] = str(s)
+                genes_present[sample][gene_specific_info['header']] = info
         else:
-            s = 'multiAlleles_' + str(gene_specific_info[reported_data_type])
-            info = str(s)
+            info = 'multiAlleles_' + info
             if summary:
-                genes_present[sample][gene_specific_info['header']] = str(s)
+                genes_present[sample][gene_specific_info['header']] = info
     else:
-        info = 'absent_' + str(gene_specific_info[reported_data_type])
+        info = 'absent_' + info
 
     return info, genes_present
 
@@ -249,16 +246,20 @@ def concatenate_extra_seq_2_consensus(consensus_sequence, reference_sequence, ex
     for k, values_consensus in list(consensus_dict.items()):
         for values_reference in list(reference_dict.values()):
             if values_reference['header'] == values_consensus['header']:
-                if len(set(consensus_dict[k]['sequence'])) > 1:
-                    number_consensus_with_sequences += 1
-                    if extra_seq_length <= len(values_reference['sequence']):
-                        right_extra_seq = \
-                            '' if extra_seq_length == 0 else values_reference['sequence'][-extra_seq_length:]
-                        consensus_dict[k]['sequence'] = \
-                            values_reference['sequence'][:extra_seq_length] + \
-                            consensus_dict[k]['sequence'] + \
-                            right_extra_seq
-                        consensus_dict[k]['length'] += extra_seq_length + len(right_extra_seq)
+                if values_consensus['sequence'] != 'N':
+                    if len(set(consensus_dict[k]['sequence'])) > 1:
+                        number_consensus_with_sequences += 1
+                        if extra_seq_length <= len(values_reference['sequence']):
+                            right_extra_seq = \
+                                '' if extra_seq_length == 0 else values_reference['sequence'][-extra_seq_length:]
+                            consensus_dict[k]['sequence'] = \
+                                values_reference['sequence'][:extra_seq_length] + \
+                                consensus_dict[k]['sequence'] + \
+                                right_extra_seq
+                            consensus_dict[k]['length'] += extra_seq_length + len(right_extra_seq)
+                else:
+                    consensus_dict[k]['sequence'] = values_reference['sequence']
+                    consensus_dict[k]['length'] = values_reference['length']
 
     consensus_concatenated = os.path.join(outdir, 'consensus_concatenated_extraSeq.fasta')
     with open(consensus_concatenated, 'wt') as writer:
@@ -352,9 +353,10 @@ def run_rematch(args):
     mlst_sequences = None
     mlst_dicts = None
     if args.mlst is not None:
-        time_taken_pub_mlst, mlst_dicts, mlst_sequences = check_mlst.download_pub_mlst_xml(args.mlst,
-                                                                                           args.mlstSchemaNumber,
-                                                                                           workdir)
+        _, mlst_dicts, mlst_sequences = check_mlst.download_pub_mlst_xml(args.mlst,
+                                                                         args.mlstSchemaNumber,
+                                                                         workdir,
+                                                                         update_pubmlst_database=args.mlstUpdate)
         args.softClip_recodeRun = 'first'
 
     if args.reference is None:
@@ -653,6 +655,8 @@ def main():
     parser_optional_mlst.add_argument('--mlstSchemaNumber', type=int, metavar='N',
                                       help='Number of the species PubMLST schema to be used in case of multiple schemes'
                                            ' available (by default will use the first schema)', required=False)
+    parser_optional_rematch.add_argument('--mlstUpdate', action='store_true',
+                                         help='Update existing PubMLST allele database.')
     parser_optional_mlst.add_argument('--mlstConsensus', choices=['noMatter', 'correct', 'alignment', 'all'], type=str,
                                       metavar='noMatter',
                                       help='Consensus sequence to be used in MLST'
@@ -675,10 +679,13 @@ def main():
                                           help='Tells ReMatCh to download files with specific library'
                                                ' layout (available options: %(choices)s)',
                                           choices=['PAIRED', 'SINGLE', 'BOTH'], required=False, default='BOTH')
+    # parser_optional_download.add_argument('--downloadInstrumentPlatform', type=str, metavar='ILLUMINA',
+    #                                       help='Tells ReMatCh to download files with specific library layout (available'
+    #                                            ' options: %(choices)s)', choices=['ILLUMINA', 'ALL'], required=False,
+    #                                       default='ILLUMINA')
     parser_optional_download.add_argument('--downloadInstrumentPlatform', type=str, metavar='ILLUMINA',
-                                          help='Tells ReMatCh to download files with specific library layout (available'
-                                               ' options: %(choices)s)', choices=['ILLUMINA', 'ALL'], required=False,
-                                          default='ILLUMINA')
+                                          help=argparse.SUPPRESS, choices=['ILLUMINA', 'ALL'], required=False,
+                                          default='ALL')
     parser_optional_download.add_argument('--downloadCramBam', action='store_true',
                                           help='Tells ReMatCh to also download cram/bam files and convert them to fastq'
                                                ' files')

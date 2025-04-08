@@ -1,5 +1,8 @@
-# mpmachado_stuff - file with different mpmachado stuffs
-mpmachado_stuff.*
+# sandbox
+/sandbox/
+
+ReMatCh.egg-info/
+dist/
 
 # Python stuff
 *.py[cod]

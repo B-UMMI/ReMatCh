@@ -119,20 +119,25 @@ def download_with_wget(ftp_file_path, outdir, pickle_prefix, sra, ena_id):
 
 @utils.trace_unhandled_exceptions
 def download_with_sra_prefetch(aspera_key, outdir, pickle_prefix, ena_id):
-    command = ['prefetch', '', ena_id]
+    outfile = os.path.join(outdir, ena_id + '.sra')
+
+    command = ['prefetch', '', '--output-file', outfile, ena_id]
 
     if aspera_key is not None:
         _, ascp, _ = utils.run_command_popen_communicate(['which', 'ascp'], False, None, False)
         command[1] = '-a {ascp}|{aspera_key}'.format(ascp=ascp.splitlines()[0], aspera_key=aspera_key)
 
     run_successfully, stdout, stderr = utils.run_command_popen_communicate(command, False, 3600, True)
-    if run_successfully:
+    if not run_successfully:
+        command[2] = ''
+        command[3] = ''
+        run_successfully, stdout, stderr = utils.run_command_popen_communicate(command, False, 3600, True)
         _, prefetch_outdir, _ = utils.run_command_popen_communicate(['echo', '$HOME/ncbi/public/sra'], True, None,
                                                                     False)
 
         try:
             os.rename(os.path.join(prefetch_outdir.splitlines()[0], ena_id + '.sra'),
-                      os.path.join(outdir, ena_id + '.sra'))
+                      outfile)
         except OSError as e:
             print('Found the following error:'
                   '{}'.format(e))
@@ -140,7 +145,7 @@ def download_with_sra_prefetch(aspera_key, outdir, pickle_prefix, ena_id):
             from shutil import copy as shutil_copy
 
             shutil_copy(os.path.join(prefetch_outdir.splitlines()[0], ena_id + '.sra'),
-                        os.path.join(outdir, ena_id + '.sra'))
+                        outfile)
             os.remove(os.path.join(prefetch_outdir.splitlines()[0], ena_id + '.sra'))
 
     utils.save_variable_to_pickle(run_successfully, outdir, pickle_prefix + '.' + ena_id)
@@ -420,17 +425,17 @@ def bam_cram_2_fastq(alignment_file, outdir, threads, pair_end_type):
 
 
 def check_correct_links(download_information):
-    for i in download_information:
-        if download_information[i] is not None:
-            if download_information[i]['aspera'] is not None:
-                for j in range(0, len(download_information[i]['aspera'])):
-                    if download_information[i]['aspera'][j].startswith('fasp.sra.ebi.ac.uk/'):
-                        download_information[i]['aspera'][j] = download_information[i]['aspera'][j].replace(
+    for i, info_data in download_information.items():
+        if info_data is not None:
+            if 'aspera' in info_data and info_data['aspera'] is not None:
+                for j in range(0, len(info_data['aspera'])):
+                    if info_data['aspera'][j].startswith('fasp.sra.ebi.ac.uk/'):
+                        download_information[i]['aspera'][j] = info_data['aspera'][j].replace(
                             'fasp.sra.ebi.ac.uk/', 'fasp.sra.ebi.ac.uk:/', 1)
-            if download_information[i]['ftp'] is not None:
-                for j in range(0, len(download_information[i]['ftp'])):
-                    if '#' in download_information[i]['ftp'][j]:
-                        download_information[i]['ftp'][j] = download_information[i]['ftp'][j].replace('#', '%23')
+            if info_data['ftp'] is not None:
+                for j in range(0, len(info_data['ftp'])):
+                    if '#' in info_data['ftp'][j]:
+                        download_information[i]['ftp'][j] = info_data['ftp'][j].replace('#', '%23')
     return download_information
 
 
@@ -450,9 +455,19 @@ def get_fastq_files(download_dir, cram_index_run_successfully, threads, download
     return run_successfully, downloaded_files
 
 
-def rename_move_files(list_files, new_name, outdir, download_paired_type):
+def rename_move_files(list_files, new_name, outdir, download_paired_type, double_check_paired_type=False):
     list_new_files = {}
     run_successfully = False
+
+    if download_paired_type is None:
+        if not double_check_paired_type:
+            if len(list_files) == 2:
+                download_paired_type = 'paired'
+            elif len(list_files) == 1:
+                download_paired_type = 'single'
+        else:
+            print('WARNING: the paired type could not be doubled check, continuing... ({})'.format(new_name))
+            return run_successfully, list_new_files
 
     for i in range(0, len(list_files)):
         temp_name = utils.rchop(os.path.basename(list_files[i]), 'astq.gz')
